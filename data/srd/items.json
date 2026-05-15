@@ -1,0 +1,24 @@
+[
+    {
+        "name": "Longsword",
+        "type": "Weapon",
+        "weight": "3 lb.",
+        "damage": "1d8 slashing",
+        "properties": "Versatile (1d10)",
+        "description": "A classic martial weapon used by knights and soldiers."
+    },
+    {
+        "name": "Chain Mail",
+        "type": "Armor",
+        "weight": "55 lb.",
+        "ac": 16,
+        "stealth": "Disadvantage",
+        "description": "Made of interlocking metal rings, chain mail includes a layer of quilted fabric worn underneath the mail to prevent chafing and to cushion the impact of blows."
+    },
+    {
+        "name": "Healing Potion",
+        "type": "Consumable",
+        "weight": "0.5 lb.",
+        "description": "You regain 2d4 + 2 hit points when you drink this potion."
+    }
+]

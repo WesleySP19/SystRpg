@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-br" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="DOMÍNIO RPG v5.0 — Plataforma completa de mestre para D&D 5e. Combate, fichas, loot e IA narrativa.">
+    <title>DOMÍNIO RPG | Architect v5.0</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Outfit:wght@300;400;600;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Design System -->
+    <link rel="stylesheet" href="assets/styles.css">
+    <link rel="stylesheet" href="assets/sheet-theme.css">
+</head>
+<body>
+    <div id="app-root" class="animate-fade">
+        <aside id="sidebar-target" class="sidebar"></aside>
+        <main id="view-target" class="main-stage"></main>
+    </div>
+
+    <!-- Discreet Floating Dice Roller -->
+    <div class="dice-roller-container">
+        <div class="dice-roller-tray" id="dice-tray">
+            <button class="dice-btn" onclick="rollDice(4)">d4</button>
+            <button class="dice-btn" onclick="rollDice(6)">d6</button>
+            <button class="dice-btn" onclick="rollDice(8)">d8</button>
+            <button class="dice-btn" onclick="rollDice(10)">d10</button>
+            <button class="dice-btn" onclick="rollDice(12)">d12</button>
+            <button class="dice-btn" onclick="rollDice(20)">d20</button>
+        </div>
+        <button class="dice-fab" onclick="document.getElementById('dice-tray').classList.toggle('active')">
+            <i class="fa-solid fa-dice-d20"></i>
+        </button>
+    </div>
+
+    <!-- System Bootstrap Overlay -->
+    <div id="boot-status" style="position:fixed; inset:0; background:#0f172a; color:#f8fafc; z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:'Outfit', sans-serif;">
+        <div style="margin-bottom:2rem; text-align:center;">
+            <h1 style="font-family:'Cinzel', serif; color:#fbbf24; margin:0;">DOMÍNIO RPG</h1>
+            <p style="opacity:0.6;">Architect System v5.0</p>
+        </div>
+        <div id="boot-log" style="width:min(90%, 500px); background:#020617; padding:1.5rem; border-radius:12px; border:1px solid #1e293b; font-family:'JetBrains Mono', monospace; font-size:0.85rem; max-height:300px; overflow-y:auto; box-shadow:0 10px 15px -3px rgba(0,0,0,0.5);">
+            <div style="color:#64748b;">> Iniciando sistemas...</div>
+        </div>
+        <div id="boot-retry" style="display:none; margin-top:1.5rem;">
+            <button onclick="location.reload()" style="background:#fbbf24; color:#0f172a; border:none; padding:0.75rem 1.5rem; border-radius:6px; font-weight:800; cursor:pointer;">RECOMENTAR SISTEMA</button>
+        </div>
+    </div>
+
+    <!-- Bootstrap -->
+    <script type="module">
+        import { TOME } from './core/Registry.js';
+        import { AudioService } from './services/AudioService.js';
+        import { AIService } from './services/AIService.js';
+        import { PersistenceService } from './services/PersistenceService.js';
+        import { Sidebar } from './ui/components/Sidebar.js';
+        import { Dashboard } from './ui/pages/Dashboard.js';
+        import { Dice } from './utils/Dice.js';
+
+        const bootLog = document.getElementById('boot-log');
+        // Restore theme preference
+        const savedTheme = localStorage.getItem('dome-theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+
+        const addLog = (msg, type = 'info') => {
+            const colors = { info: '#94a3b8', success: '#22c55e', error: '#f43f5e', warn: '#fbbf24' };
+            const entry = document.createElement('div');
+            entry.style.color = colors[type];
+            entry.style.marginBottom = '4px';
+            entry.textContent = `> [${new Date().toLocaleTimeString()}] ${msg}`;
+            bootLog.appendChild(entry);
+            bootLog.scrollTop = bootLog.scrollHeight;
+            console.log(`[BOOT] ${msg}`);
+        };
+
+        async function bootstrap() {
+            try {
+                addLog('Iniciando Registry...', 'info');
+                
+                addLog('Registrando AudioService...', 'info');
+                TOME.registerService('audio', new AudioService());
+                
+                addLog('Registrando AIService...', 'info');
+                TOME.registerService('ai', new AIService());
+
+                addLog('Configurando Persistência...', 'info');
+                const persistence = new PersistenceService();
+                TOME.registerService('persistence', persistence);
+
+                addLog('Sincronizando com Servidor...', 'info');
+                await persistence.init();
+                
+                addLog('Carregando dados do mundo...', 'info');
+                const loaded = await persistence.load();
+                if (loaded) addLog('Dados recuperados com sucesso.', 'success');
+                else addLog('Nenhum dado prévio encontrado (Iniciando Novo Mundo).', 'warn');
+                
+                persistence.startAutoSave();
+
+                addLog('Montando Interface...', 'info');
+                const sidebar = new Sidebar({
+                    store: TOME.store,
+                    element: document.getElementById('sidebar-target')
+                });
+
+
+                const dashboard = new Dashboard({
+                    store: TOME.store,
+                    element: document.getElementById('view-target')
+                });
+
+                sidebar.mount();
+                dashboard.mount();
+                addLog('Interface montada com sucesso.', 'success');
+
+                // Global dice function
+                window.rollDice = function(sides) {
+                    const result = Dice.roll(`1d${sides}`);
+                    import('./ui/components/Toast.js').then(m => {
+                        m.Toast.show(`🎲 d${sides}: ${result.total}`, 'info');
+                    });
+                };
+
+                addLog('Verificando Service Worker...', 'info');
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.register('./service-worker.js')
+                        .then(() => addLog('Shield Protection (SW) Ativa.', 'success'))
+                        .catch(e => addLog('SW offline: ' + e.message, 'warn'));
+                }
+
+                addLog('SISTEMA ONLINE!', 'success');
+                
+                // Finalize Boot
+                setTimeout(() => {
+                    document.getElementById('boot-status').style.opacity = '0';
+                    setTimeout(() => document.getElementById('boot-status').remove(), 500);
+                }, 800);
+
+            } catch (error) {
+                addLog('FALHA CRÍTICA: ' + error.message, 'error');
+                console.error('Bootstrap failed:', error);
+                document.getElementById('boot-retry').style.display = 'block';
+            }
+        }
+
+        bootstrap();
+    </script>
+</body>
+</html>
