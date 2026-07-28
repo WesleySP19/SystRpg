@@ -117,20 +117,22 @@ export class VaultExplorer extends Component {
             }
 
             if (this.state.category === 'items') {
-                const items = (player.items || '').split('\n').filter(x => x.trim());
+                const items = (player.equipment?.items || '').split('\n').filter(x => x.trim());
                 items.push(`${item.name} (${item.type})`);
-                player.items = items.join('\n');
+                if (!player.equipment) player.equipment = { items: '' };
+                player.equipment.items = items.join('\n');
             } else {
-                const notes = (player.notes || '').split('\n').filter(x => x.trim());
+                const notes = (player.spells?.lvl0 || '').split('\n').filter(x => x.trim());
                 notes.push(`✨ MAGIA: ${item.name} (Nível ${item.level}) - ${item.description.substring(0, 50)}...`);
-                player.notes = notes.join('\n');
+                if (!player.spells) player.spells = {};
+                player.spells.lvl0 = notes.join('\n');
             }
             Toast.show(`${item.name} adicionado à ficha de ${player.name}!`, 'success');
         });
     }
 
     onMount() {
-        this.element.addEventListener('vaultSearch', (e) => {
+        this.listen(this.element, 'vaultSearch', (e) => {
             this.state.query = e.detail;
             clearTimeout(this._searchTimer);
             this._searchTimer = setTimeout(() => this.search(), 300);

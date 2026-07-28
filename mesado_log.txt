@@ -1,0 +1,854 @@
+22/05/2026 09:22:36 - Iniciando script de servidor: C:\\Users\\02751132138\\Desktop\\RPGPsigologos\\scripts\\start_server.bat
+22/05/2026 09:22:49 - Iniciando script de servidor: C:\\Users\\02751132138\\Desktop\\RPGPsigologos\\scripts\\start_server.bat
+22/05/2026 09:34:38 [INFO] ============================================================
+22/05/2026 09:34:38 [INFO] Iniciando Mesa do Mestre v2.0
+22/05/2026 09:34:38 [INFO] Base path: C:\Users\02751132138\Desktop\RPGPsigologos
+22/05/2026 09:34:38 [INFO] Batch script localizado: C:\Users\02751132138\Desktop\RPGPsigologos\scripts\start_server.bat
+22/05/2026 09:34:39 [INFO] Python disponível no PATH
+22/05/2026 09:34:39 [WARN] Porta 8000 em uso – limpando processos anteriores...
+22/05/2026 09:34:41 [INFO] Porta 8000 liberada com sucesso.
+22/05/2026 09:34:41 [INFO] Lançando servidor na porta 8000...
+22/05/2026 09:34:41 [INFO] Aguardando health-check do servidor...
+22/05/2026 09:34:43 [INFO] Health-check OK na tentativa 1/20 (300ms)
+22/05/2026 09:34:43 [INFO] Servidor pronto em 4,7s – abrindo UI
+22/05/2026 13:17:43 [INFO] ============================================================
+22/05/2026 13:17:43 [INFO] Iniciando Mesa do Mestre v2.0
+22/05/2026 13:17:43 [INFO] Base path: C:\Users\02751132138\Desktop\RPGPsigologos
+22/05/2026 13:17:44 [INFO] Batch script localizado: C:\Users\02751132138\Desktop\RPGPsigologos\scripts\start_server.bat
+22/05/2026 13:17:44 [INFO] Python disponível no PATH
+22/05/2026 13:17:44 [WARN] Porta 8000 em uso – limpando processos anteriores...
+22/05/2026 13:17:46 [INFO] Porta 8000 liberada com sucesso.
+22/05/2026 13:17:46 [INFO] Lançando servidor na porta 8000...
+22/05/2026 13:17:46 [INFO] Aguardando health-check do servidor...
+22/05/2026 13:17:47 [INFO] Health-check OK na tentativa 1/20 (300ms)
+22/05/2026 13:17:47 [INFO] Servidor pronto em 3,8s – abrindo UI
+22/05/2026 23:18:43 [INFO] ============================================================
+22/05/2026 23:18:43 [INFO] Iniciando Mesa do Mestre v2.0
+22/05/2026 23:18:43 [INFO] Base path: C:\Users\hawnk\Documents\RPG\Nova pasta\RPGPsigologos
+22/05/2026 23:18:43 [INFO] Batch script localizado: C:\Users\hawnk\Documents\RPG\Nova pasta\RPGPsigologos\scripts\start_server.bat
+22/05/2026 23:18:44 [ERRO] PowerShell não encontrado no PATH do sistema.
+22/05/2026 23:19:08 [INFO] ============================================================
+22/05/2026 23:19:08 [INFO] Iniciando Mesa do Mestre v2.0
+22/05/2026 23:19:08 [INFO] Base path: C:\Users\hawnk\Documents\RPG\Nova pasta\RPGPsigologos
+22/05/2026 23:19:08 [INFO] Batch script localizado: C:\Users\hawnk\Documents\RPG\Nova pasta\RPGPsigologos\scripts\start_server.bat
+22/05/2026 23:19:09 [ERRO] PowerShell não encontrado no PATH do sistema.
+22/05/2026 23:21:44 [INFO] ============================================================
+22/05/2026 23:21:44 [INFO] Iniciando Mesa do Mestre v2.0
+22/05/2026 23:21:44 [INFO] Base path: C:\Users\hawnk\Documents\RPG\Nova pasta\RPGPsigologos
+22/05/2026 23:21:44 [INFO] Batch script localizado: C:\Users\hawnk\Documents\RPG\Nova pasta\RPGPsigologos\scripts\start_server.bat
+22/05/2026 23:21:45 [ERRO] PowerShell não encontrado no PATH do sistema.
+22/05/2026 23:24:47 [INFO] ============================================================
+22/05/2026 23:24:47 [INFO] Iniciando Mesa do Mestre v2.0
+22/05/2026 23:24:47 [INFO] Base path: C:\Users\hawnk\Documents\RPG\Nova pasta\RPGPsigologos
+22/05/2026 23:24:47 [INFO] Batch script localizado: C:\Users\hawnk\Documents\RPG\Nova pasta\RPGPsigologos\scripts\start_server.bat
+22/05/2026 23:24:48 [INFO] PowerShell disponível no sistema
+22/05/2026 23:24:49 [INFO] Porta 8000 livre.
+22/05/2026 23:24:49 [INFO] Lançando servidor na porta 8000...
+22/05/2026 23:24:49 [INFO] Aguardando health-check do servidor...
+22/05/2026 23:24:50 [INFO] Health-check OK na tentativa 1/20 (300ms)
+22/05/2026 23:24:50 [INFO] Servidor pronto em 3,2s – abrindo UI
+23/05/2026 00:16:05 [INFO] ============================================================
+23/05/2026 00:16:05 [INFO] Iniciando Mesa do Mestre v2.0
+23/05/2026 00:16:05 [INFO] Base path: C:\Users\hawnk\Documents\RPG\Nova pasta\RPGPsigologos
+23/05/2026 00:16:05 [INFO] Batch script localizado: C:\Users\hawnk\Documents\RPG\Nova pasta\RPGPsigologos\scripts\start_server.bat
+23/05/2026 00:16:06 [INFO] PowerShell disponível no sistema
+23/05/2026 00:16:06 [WARN] Porta 8000 em uso – limpando processos anteriores...
+23/05/2026 00:16:08 [ERRO] Porta 8000 permanece ocupada após cleanup.
+23/05/2026 00:16:24 [INFO] ============================================================
+23/05/2026 00:16:24 [INFO] Iniciando Mesa do Mestre v2.0
+23/05/2026 00:16:24 [INFO] Base path: C:\Users\hawnk\Documents\RPG\Nova pasta\RPGPsigologos
+23/05/2026 00:16:24 [INFO] Batch script localizado: C:\Users\hawnk\Documents\RPG\Nova pasta\RPGPsigologos\scripts\start_server.bat
+23/05/2026 00:16:25 [INFO] PowerShell disponível no sistema
+23/05/2026 00:16:25 [WARN] Porta 8000 em uso – limpando processos anteriores...
+23/05/2026 00:16:27 [ERRO] Porta 8000 permanece ocupada após cleanup.
+23/05/2026 00:17:43 [INFO] ============================================================
+23/05/2026 00:17:43 [INFO] Iniciando Mesa do Mestre v2.0
+23/05/2026 00:17:43 [INFO] Base path: C:\Users\hawnk\Documents\RPG\Nova pasta\RPGPsigologos
+23/05/2026 00:17:43 [INFO] Batch script localizado: C:\Users\hawnk\Documents\RPG\Nova pasta\RPGPsigologos\scripts\start_server.bat
+23/05/2026 00:17:44 [INFO] PowerShell disponível no sistema
+23/05/2026 00:17:45 [WARN] Porta 8000 em uso – limpando processos anteriores...
+23/05/2026 00:17:48 [ERRO] Porta 8000 permanece ocupada após cleanup.
+23/05/2026 07:04:06 [INFO] ============================================================
+23/05/2026 07:04:06 [INFO] Iniciando Mesa do Mestre v2.0
+23/05/2026 07:04:06 [INFO] Base path: C:\Users\hawnk\Documents\RPG\Nova pasta\RPGPsigologos
+23/05/2026 07:04:06 [INFO] Batch script localizado: C:\Users\hawnk\Documents\RPG\Nova pasta\RPGPsigologos\scripts\start_server.bat
+23/05/2026 07:04:07 [INFO] PowerShell disponível no sistema
+23/05/2026 07:04:07 [WARN] Porta 8000 em uso – limpando processos anteriores...
+23/05/2026 07:04:09 [ERRO] Porta 8000 permanece ocupada após cleanup.
+23/05/2026 07:04:18 [INFO] ============================================================
+23/05/2026 07:04:18 [INFO] Iniciando Mesa do Mestre v2.0
+23/05/2026 07:04:18 [INFO] Base path: C:\Users\hawnk\Documents\RPG\Nova pasta\RPGPsigologos
+23/05/2026 07:04:18 [INFO] Batch script localizado: C:\Users\hawnk\Documents\RPG\Nova pasta\RPGPsigologos\scripts\start_server.bat
+23/05/2026 07:04:19 [INFO] PowerShell disponível no sistema
+23/05/2026 07:04:19 [WARN] Porta 8000 em uso – limpando processos anteriores...
+23/05/2026 07:04:21 [ERRO] Porta 8000 permanece ocupada após cleanup.
+23/05/2026 08:38:29 [INFO] ============================================================
+23/05/2026 08:38:29 [INFO] Iniciando Mesa do Mestre v2.0
+23/05/2026 08:38:29 [INFO] Base path: C:\Users\hawnk\Documents\RPG\Nova pasta\RPGPsigologos
+23/05/2026 08:38:29 [INFO] Batch script localizado: C:\Users\hawnk\Documents\RPG\Nova pasta\RPGPsigologos\scripts\start_server.bat
+23/05/2026 08:38:30 [INFO] PowerShell disponível no sistema
+23/05/2026 08:38:30 [INFO] Usando porta: 8001
+23/05/2026 08:38:30 [INFO] Lançando servidor na porta 8001...
+23/05/2026 08:38:30 [INFO] Aguardando health-check do servidor...
+23/05/2026 08:38:31 [INFO] Health-check OK na tentativa 1/20 (300ms)
+23/05/2026 08:38:31 [INFO] Servidor pronto em 1,7s – abrindo UI
+23/05/2026 08:38:36 [INFO] Fluxo concluído com sucesso.
+23/05/2026 08:38:36 [INFO] ============================================================
+25/05/2026 21:23:17 [INFO] ============================================================
+25/05/2026 21:23:17 [INFO] Iniciando Mesa do Mestre v2.0
+25/05/2026 21:23:17 [INFO] Base path: C:\Users\hawnk\Documents\RPG\Nova pasta\RPGPsigologos
+25/05/2026 21:23:17 [INFO] Batch script localizado: C:\Users\hawnk\Documents\RPG\Nova pasta\RPGPsigologos\scripts\start_server.bat
+25/05/2026 21:23:18 [INFO] PowerShell disponível no sistema
+25/05/2026 21:23:18 [INFO] Usando porta: 8000
+25/05/2026 21:23:18 [INFO] Lançando servidor na porta 8000...
+25/05/2026 21:23:18 [INFO] Aguardando health-check do servidor...
+25/05/2026 21:23:19 [INFO] Health-check OK na tentativa 1/20 (300ms)
+25/05/2026 21:23:19 [INFO] Servidor pronto em 1,7s – abrindo UI
+25/05/2026 21:23:24 [INFO] Fluxo concluído com sucesso.
+25/05/2026 21:23:24 [INFO] ============================================================
+25/05/2026 22:37:26 [INFO] ============================================================
+25/05/2026 22:37:26 [INFO] Iniciando Mesa do Mestre v2.0
+25/05/2026 22:37:26 [INFO] Base path: C:\Users\hawnk\Documents\RPG\Nova pasta\RPGPsigologos
+25/05/2026 22:37:26 [INFO] Batch script localizado: C:\Users\hawnk\Documents\RPG\Nova pasta\RPGPsigologos\scripts\start_server.bat
+25/05/2026 22:37:27 [INFO] PowerShell disponível no sistema
+25/05/2026 22:37:31 [WARN] Porta 8000 em uso – limpando processos anteriores...
+25/05/2026 22:37:33 [INFO] Limpando processos via PowerShell na porta 8000...
+25/05/2026 22:37:42 [ERRO] Porta 8000 permanece ocupada após cleanup.
+25/05/2026 22:37:46 [INFO] Porta 8080 liberada/livre com sucesso.
+25/05/2026 22:37:46 [INFO] Usando porta definitiva: 8080
+25/05/2026 22:37:46 [INFO] Lançando servidor na porta 8080...
+25/05/2026 22:37:46 [INFO] Aguardando health-check do servidor...
+25/05/2026 22:37:47 [INFO] Health-check OK na tentativa 1/20 (300ms)
+25/05/2026 22:37:47 [INFO] Servidor pronto em 21s – abrindo UI
+25/05/2026 22:37:53 [INFO] Fluxo concluído com sucesso.
+25/05/2026 22:37:53 [INFO] ============================================================
+25/05/2026 22:42:49 [INFO] ============================================================
+25/05/2026 22:42:49 [INFO] Iniciando Mesa do Mestre v2.0
+25/05/2026 22:42:49 [INFO] Base path: C:\Users\hawnk\Documents\RPG\Nova pasta\RPGPsigologos
+25/05/2026 22:42:49 [INFO] Batch script localizado: C:\Users\hawnk\Documents\RPG\Nova pasta\RPGPsigologos\scripts\start_server.bat
+25/05/2026 22:42:51 [INFO] PowerShell disponível no sistema
+25/05/2026 22:42:52 [WARN] Porta 8000 em uso – limpando processos anteriores...
+25/05/2026 22:42:54 [INFO] Limpando processos via PowerShell na porta 8000...
+25/05/2026 22:43:00 [INFO] Porta 8000 liberada/livre com sucesso.
+25/05/2026 22:43:00 [INFO] Usando porta definitiva: 8000
+25/05/2026 22:43:00 [INFO] Lançando servidor na porta 8000...
+25/05/2026 22:43:00 [INFO] Aguardando health-check do servidor...
+25/05/2026 22:43:01 [INFO] Health-check OK na tentativa 1/20 (300ms)
+25/05/2026 22:43:01 [INFO] Servidor pronto em 11,9s – abrindo UI
+25/05/2026 22:43:06 [INFO] Fluxo concluído com sucesso.
+25/05/2026 22:43:06 [INFO] ============================================================
+25/05/2026 23:21:58 [INFO] ============================================================
+25/05/2026 23:21:58 [INFO] Iniciando Mesa do Mestre v2.0
+25/05/2026 23:21:58 [INFO] Base path: C:\Users\hawnk\Documents\RPG\Nova pasta\RPGPsigologos
+25/05/2026 23:21:58 [INFO] Batch script localizado: C:\Users\hawnk\Documents\RPG\Nova pasta\RPGPsigologos\scripts\start_server.bat
+25/05/2026 23:21:58 [INFO] PowerShell disponível no sistema
+25/05/2026 23:22:01 [INFO] Porta 8000 liberada/livre com sucesso.
+25/05/2026 23:22:01 [INFO] Usando porta definitiva: 8000
+25/05/2026 23:22:01 [INFO] Lançando servidor na porta 8000...
+25/05/2026 23:22:01 [INFO] Aguardando health-check do servidor...
+25/05/2026 23:22:02 [INFO] Health-check OK na tentativa 1/20 (300ms)
+25/05/2026 23:22:02 [INFO] Servidor pronto em 4,8s – abrindo UI
+25/05/2026 23:22:08 [INFO] Fluxo concluído com sucesso.
+25/05/2026 23:22:08 [INFO] ============================================================
+26/05/2026 08:49:05 [INFO] ============================================================
+26/05/2026 08:49:05 [INFO] Iniciando Mesa do Mestre v2.0
+26/05/2026 08:49:05 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+26/05/2026 08:49:05 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+26/05/2026 08:49:06 [INFO] PowerShell disponível no sistema
+26/05/2026 08:49:10 [INFO] Porta 8000 liberada/livre com sucesso.
+26/05/2026 08:49:10 [INFO] Usando porta definitiva: 8000
+26/05/2026 08:49:10 [INFO] Lançando servidor na porta 8000...
+26/05/2026 08:49:10 [INFO] Aguardando health-check do servidor...
+26/05/2026 08:49:10 [INFO] Health-check OK na tentativa 1/20 (300ms)
+26/05/2026 08:49:10 [INFO] Servidor pronto em 5,1s – abrindo UI
+26/05/2026 08:49:16 [INFO] Fluxo concluído com sucesso.
+26/05/2026 08:49:16 [INFO] ============================================================
+26/05/2026 12:23:01 [INFO] ============================================================
+26/05/2026 12:23:01 [INFO] Iniciando Mesa do Mestre v2.0
+26/05/2026 12:23:01 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+26/05/2026 12:23:01 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+26/05/2026 12:23:01 [INFO] PowerShell disponível no sistema
+26/05/2026 12:23:03 [WARN] Porta 8000 em uso – limpando processos anteriores...
+26/05/2026 12:23:04 [INFO] Limpando processos via PowerShell na porta 8000...
+26/05/2026 12:23:09 [ERRO] Porta 8000 permanece ocupada após cleanup.
+26/05/2026 12:23:10 [INFO] ============================================================
+26/05/2026 12:23:10 [INFO] Iniciando Mesa do Mestre v2.0
+26/05/2026 12:23:10 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+26/05/2026 12:23:10 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+26/05/2026 12:23:11 [INFO] PowerShell disponível no sistema
+26/05/2026 12:23:13 [WARN] Porta 8000 em uso – limpando processos anteriores...
+26/05/2026 12:23:13 [INFO] Limpando processos via PowerShell na porta 8000...
+26/05/2026 12:23:13 [INFO] Porta 8080 liberada/livre com sucesso.
+26/05/2026 12:23:13 [INFO] Usando porta definitiva: 8080
+26/05/2026 12:23:13 [INFO] Lançando servidor na porta 8080...
+26/05/2026 12:23:13 [INFO] Aguardando health-check do servidor...
+26/05/2026 12:23:14 [INFO] Health-check OK na tentativa 1/20 (300ms)
+26/05/2026 12:23:14 [INFO] Servidor pronto em 13,4s – abrindo UI
+26/05/2026 12:23:19 [ERRO] Porta 8000 permanece ocupada após cleanup.
+26/05/2026 12:23:20 [INFO] Fluxo concluído com sucesso.
+26/05/2026 12:23:20 [INFO] ============================================================
+26/05/2026 12:23:21 [WARN] Porta 8080 em uso – limpando processos anteriores...
+26/05/2026 12:23:22 [INFO] Limpando processos via PowerShell na porta 8080...
+26/05/2026 12:23:27 [ERRO] Porta 8080 permanece ocupada após cleanup.
+26/05/2026 12:23:31 [INFO] Porta 8001 liberada/livre com sucesso.
+26/05/2026 12:23:31 [INFO] Usando porta definitiva: 8001
+26/05/2026 12:23:31 [INFO] Lançando servidor na porta 8001...
+26/05/2026 12:23:31 [INFO] Aguardando health-check do servidor...
+26/05/2026 12:23:32 [INFO] Health-check OK na tentativa 1/20 (300ms)
+26/05/2026 12:23:32 [INFO] Servidor pronto em 21,9s – abrindo UI
+26/05/2026 12:23:37 [INFO] Fluxo concluído com sucesso.
+26/05/2026 12:23:37 [INFO] ============================================================
+26/05/2026 13:19:45 [INFO] ============================================================
+26/05/2026 13:19:45 [INFO] Iniciando Mesa do Mestre v2.0
+26/05/2026 13:19:45 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+26/05/2026 13:19:45 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+26/05/2026 13:19:45 [INFO] PowerShell disponível no sistema
+26/05/2026 13:19:47 [WARN] Porta 8000 em uso – limpando processos anteriores...
+26/05/2026 13:19:48 [INFO] Limpando processos via PowerShell na porta 8000...
+26/05/2026 13:19:53 [ERRO] Porta 8000 permanece ocupada após cleanup.
+26/05/2026 13:19:55 [WARN] Porta 8080 em uso – limpando processos anteriores...
+26/05/2026 13:19:55 [INFO] Limpando processos via PowerShell na porta 8080...
+26/05/2026 13:19:58 [INFO] ============================================================
+26/05/2026 13:19:58 [INFO] Iniciando Mesa do Mestre v2.0
+26/05/2026 13:19:58 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+26/05/2026 13:19:58 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+26/05/2026 13:19:58 [INFO] PowerShell disponível no sistema
+26/05/2026 13:20:00 [WARN] Porta 8000 em uso – limpando processos anteriores...
+26/05/2026 13:20:00 [INFO] ============================================================
+26/05/2026 13:20:00 [INFO] Iniciando Mesa do Mestre v2.0
+26/05/2026 13:20:00 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+26/05/2026 13:20:00 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+26/05/2026 13:20:00 [INFO] Limpando processos via PowerShell na porta 8000...
+26/05/2026 13:20:01 [ERRO] Porta 8080 permanece ocupada após cleanup.
+26/05/2026 13:20:01 [INFO] PowerShell disponível no sistema
+26/05/2026 13:20:03 [WARN] Porta 8001 em uso – limpando processos anteriores...
+26/05/2026 13:20:03 [WARN] Porta 8000 em uso – limpando processos anteriores...
+26/05/2026 13:20:04 [INFO] Limpando processos via PowerShell na porta 8001...
+26/05/2026 13:20:04 [INFO] Limpando processos via PowerShell na porta 8000...
+26/05/2026 13:20:07 [ERRO] Porta 8000 permanece ocupada após cleanup.
+26/05/2026 13:20:09 [WARN] Porta 8080 em uso – limpando processos anteriores...
+26/05/2026 13:20:10 [INFO] Limpando processos via PowerShell na porta 8080...
+26/05/2026 13:20:10 [ERRO] Porta 8001 permanece ocupada após cleanup.
+26/05/2026 13:20:10 [ERRO] Nenhuma porta disponível (8000, 8080, 8001).
+26/05/2026 13:20:10 [ERRO] Porta 8000 permanece ocupada após cleanup.
+26/05/2026 13:20:12 [WARN] Porta 8080 em uso – limpando processos anteriores...
+26/05/2026 13:20:13 [INFO] Limpando processos via PowerShell na porta 8080...
+26/05/2026 13:20:16 [ERRO] Porta 8080 permanece ocupada após cleanup.
+26/05/2026 13:20:18 [WARN] Porta 8001 em uso – limpando processos anteriores...
+26/05/2026 13:20:18 [INFO] Limpando processos via PowerShell na porta 8001...
+26/05/2026 13:20:18 [ERRO] Porta 8080 permanece ocupada após cleanup.
+26/05/2026 13:20:21 [WARN] Porta 8001 em uso – limpando processos anteriores...
+26/05/2026 13:20:21 [INFO] Limpando processos via PowerShell na porta 8001...
+26/05/2026 13:20:24 [ERRO] Porta 8001 permanece ocupada após cleanup.
+26/05/2026 13:20:24 [ERRO] Nenhuma porta disponível (8000, 8080, 8001).
+26/05/2026 13:20:26 [ERRO] Porta 8001 permanece ocupada após cleanup.
+26/05/2026 13:20:26 [ERRO] Nenhuma porta disponível (8000, 8080, 8001).
+26/05/2026 13:21:03 [INFO] ============================================================
+26/05/2026 13:21:03 [INFO] Iniciando Mesa do Mestre v2.0
+26/05/2026 13:21:03 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+26/05/2026 13:21:03 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+26/05/2026 13:21:03 [INFO] PowerShell disponível no sistema
+26/05/2026 13:21:05 [WARN] Porta 8000 em uso – limpando processos anteriores...
+26/05/2026 13:21:05 [INFO] Limpando processos via PowerShell na porta 8000...
+26/05/2026 13:21:11 [ERRO] Porta 8000 permanece ocupada após cleanup.
+26/05/2026 13:21:13 [WARN] Porta 8080 em uso – limpando processos anteriores...
+26/05/2026 13:21:14 [INFO] Limpando processos via PowerShell na porta 8080...
+26/05/2026 13:21:19 [ERRO] Porta 8080 permanece ocupada após cleanup.
+26/05/2026 13:21:21 [WARN] Porta 8001 em uso – limpando processos anteriores...
+26/05/2026 13:21:22 [INFO] Limpando processos via PowerShell na porta 8001...
+26/05/2026 13:21:27 [ERRO] Porta 8001 permanece ocupada após cleanup.
+26/05/2026 13:21:27 [ERRO] Nenhuma porta disponível (8000, 8080, 8001).
+26/05/2026 13:25:04 [INFO] ============================================================
+26/05/2026 13:25:04 [INFO] Iniciando Mesa do Mestre v2.0
+26/05/2026 13:25:04 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+26/05/2026 13:25:04 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+26/05/2026 13:25:04 [INFO] PowerShell disponivel no sistema
+26/05/2026 13:25:05 [INFO] Porta 8000 liberada/livre com sucesso.
+26/05/2026 13:25:05 [INFO] Usando porta definitiva: 8000
+26/05/2026 13:25:05 [INFO] Lancando servidor na porta 8000...
+26/05/2026 13:25:05 [INFO] Aguardando health-check do servidor...
+26/05/2026 13:25:05 [INFO] Health-check OK na tentativa 1/20 (300ms)
+26/05/2026 13:25:05 [INFO] Servidor pronto em 1,3s - abrindo UI
+26/05/2026 13:25:11 [INFO] Fluxo concluido com sucesso.
+26/05/2026 13:25:11 [INFO] ============================================================
+26/05/2026 14:15:38 [INFO] ============================================================
+26/05/2026 14:15:38 [INFO] Iniciando Mesa do Mestre v2.0
+26/05/2026 14:15:38 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+26/05/2026 14:15:38 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+26/05/2026 14:15:39 [INFO] PowerShell disponivel no sistema
+26/05/2026 14:15:39 [INFO] Porta 8000 liberada/livre com sucesso.
+26/05/2026 14:15:39 [INFO] Usando porta definitiva: 8000
+26/05/2026 14:15:39 [INFO] Lancando servidor na porta 8000...
+26/05/2026 14:15:39 [INFO] Aguardando health-check do servidor...
+26/05/2026 14:15:40 [INFO] Health-check OK na tentativa 1/20 (300ms)
+26/05/2026 14:15:40 [INFO] Servidor pronto em 1,7s - abrindo UI
+26/05/2026 14:15:45 [INFO] Fluxo concluido com sucesso.
+26/05/2026 14:15:45 [INFO] ============================================================
+26/05/2026 14:39:52 [INFO] ============================================================
+26/05/2026 14:39:52 [INFO] Iniciando Mesa do Mestre v2.0
+26/05/2026 14:39:52 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+26/05/2026 14:39:52 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+26/05/2026 14:39:53 [INFO] PowerShell disponivel no sistema
+26/05/2026 14:39:53 [INFO] Porta 8000 liberada/livre com sucesso.
+26/05/2026 14:39:53 [INFO] Usando porta definitiva: 8000
+26/05/2026 14:39:53 [INFO] Lancando servidor na porta 8000...
+26/05/2026 14:39:53 [INFO] Aguardando health-check do servidor...
+26/05/2026 14:39:53 [INFO] Health-check OK na tentativa 1/20 (300ms)
+26/05/2026 14:39:53 [INFO] Servidor pronto em 1,3s - abrindo UI
+26/05/2026 14:39:59 [INFO] Fluxo concluido com sucesso.
+26/05/2026 14:39:59 [INFO] ============================================================
+26/05/2026 14:48:37 [INFO] ============================================================
+26/05/2026 14:48:37 [INFO] Iniciando Mesa do Mestre v2.0
+26/05/2026 14:48:37 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+26/05/2026 14:48:37 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+26/05/2026 14:48:38 [INFO] PowerShell disponivel no sistema
+26/05/2026 14:48:38 [INFO] Porta 8000 liberada/livre com sucesso.
+26/05/2026 14:48:38 [INFO] Usando porta definitiva: 8000
+26/05/2026 14:48:38 [INFO] Lancando servidor na porta 8000...
+26/05/2026 14:48:38 [INFO] Aguardando health-check do servidor...
+26/05/2026 14:48:39 [INFO] Health-check OK na tentativa 1/20 (300ms)
+26/05/2026 14:48:39 [INFO] Servidor pronto em 1,6s - abrindo UI
+26/05/2026 14:48:44 [INFO] Fluxo concluido com sucesso.
+26/05/2026 14:48:44 [INFO] ============================================================
+26/05/2026 15:07:54 [INFO] ============================================================
+26/05/2026 15:07:54 [INFO] Iniciando Mesa do Mestre v2.0
+26/05/2026 15:07:54 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+26/05/2026 15:07:54 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+26/05/2026 15:07:55 [INFO] PowerShell disponivel no sistema
+26/05/2026 15:07:55 [INFO] Porta 8000 liberada/livre com sucesso.
+26/05/2026 15:07:55 [INFO] Usando porta definitiva: 8000
+26/05/2026 15:07:55 [INFO] Lancando servidor na porta 8000...
+26/05/2026 15:07:55 [INFO] Aguardando health-check do servidor...
+26/05/2026 15:07:55 [INFO] Health-check OK na tentativa 1/20 (300ms)
+26/05/2026 15:07:55 [INFO] Servidor pronto em 1,2s - abrindo UI
+26/05/2026 15:08:01 [INFO] Fluxo concluido com sucesso.
+26/05/2026 15:08:01 [INFO] ============================================================
+26/05/2026 15:10:53 [INFO] ============================================================
+26/05/2026 15:10:53 [INFO] Iniciando Mesa do Mestre v2.0
+26/05/2026 15:10:53 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+26/05/2026 15:10:53 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+26/05/2026 15:10:54 [INFO] PowerShell disponivel no sistema
+26/05/2026 15:10:54 [INFO] Porta 8000 liberada/livre com sucesso.
+26/05/2026 15:10:54 [INFO] Usando porta definitiva: 8000
+26/05/2026 15:10:54 [INFO] Lancando servidor na porta 8000...
+26/05/2026 15:10:54 [INFO] Aguardando health-check do servidor...
+26/05/2026 15:10:54 [INFO] Health-check OK na tentativa 1/20 (300ms)
+26/05/2026 15:10:54 [INFO] Servidor pronto em 1,3s - abrindo UI
+26/05/2026 15:11:00 [INFO] Fluxo concluido com sucesso.
+26/05/2026 15:11:00 [INFO] ============================================================
+2026-05-26 15:37:58 [INFO] ============================================================
+2026-05-26 15:37:58 [INFO] Iniciando Mesa do Mestre v2.0
+2026-05-26 15:37:58 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+2026-05-26 15:37:58 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+2026-05-26 15:37:59 [INFO] PowerShell disponivel no sistema
+2026-05-26 15:37:59 [INFO] Porta 8000 liberada/livre com sucesso.
+2026-05-26 15:37:59 [INFO] Usando porta definitiva: 8000
+2026-05-26 15:37:59 [INFO] Lancando servidor na porta 8000...
+2026-05-26 15:37:59 [INFO] Aguardando health-check do servidor...
+2026-05-26 15:38:00 [INFO] Health-check OK na tentativa 1/20 (300ms)
+2026-05-26 15:38:00 [INFO] Servidor pronto em 1,4s - abrindo UI
+2026-05-26 15:38:05 [INFO] Fluxo concluido com sucesso.
+2026-05-26 15:38:05 [INFO] ============================================================
+2026-05-26 15:52:36 [INFO] ============================================================
+2026-05-26 15:52:36 [INFO] Iniciando Mesa do Mestre v2.0 (Otimizado)
+2026-05-26 15:52:36 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+2026-05-26 15:52:36 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+2026-05-26 15:52:36 [INFO] PowerShell disponivel no sistema
+2026-05-26 15:52:37 [INFO] Porta 8000 liberada/livre com sucesso.
+2026-05-26 15:52:37 [INFO] Usando porta definitiva: 8000
+2026-05-26 15:52:37 [INFO] Lancando servidor na porta 8000...
+2026-05-26 15:52:37 [INFO] Aguardando health-check do servidor...
+
+================================================================================
+Iniciando Servidor RPG na Porta: 8000
+================================================================================
+
+[CONFIG] Porta obtida da variavel de ambiente: 8000
+[WARN] Porta 8000 em uso, usando fallback: 9152
+Raiz do servidor: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+--- DOM�?NIO RPG VTT ---
+Servidor Ativo em: http://localhost:9152
+Pressione Ctrl+C para encerrar.
+2026-05-26 16:39:48 [INFO] ============================================================
+2026-05-26 16:39:48 [INFO] Iniciando Mesa do Mestre v2.0 (Otimizado)
+2026-05-26 16:39:48 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+2026-05-26 16:39:48 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+2026-05-26 16:39:48 [INFO] PowerShell disponivel no sistema
+2026-05-26 16:39:48 [INFO] Porta 8000 liberada/livre com sucesso.
+2026-05-26 16:39:48 [INFO] Usando porta definitiva: 8000
+2026-05-26 16:39:48 [INFO] Lancando servidor na porta 8000...
+2026-05-26 16:39:48 [INFO] Aguardando health-check do servidor...
+
+================================================================================
+Iniciando Servidor RPG na Porta: 8000
+================================================================================
+
+[CONFIG] Porta obtida da variavel de ambiente: 8000
+[WARN] Porta 8000 em uso, usando fallback: 9649
+Raiz do servidor: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+--- DOM�?NIO RPG VTT ---
+Servidor Ativo em: http://localhost:9649
+Pressione Ctrl+C para encerrar.
+2026-05-27 09:47:32 [INFO] ============================================================
+2026-05-27 09:47:32 [INFO] Iniciando Mesa do Mestre v2.0 (Otimizado)
+2026-05-27 09:47:32 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+2026-05-27 09:47:32 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+2026-05-27 09:47:33 [INFO] PowerShell disponivel no sistema
+2026-05-27 09:47:34 [INFO] Porta 8000 liberada/livre com sucesso.
+2026-05-27 09:47:34 [INFO] Usando porta definitiva: 8000
+2026-05-27 09:47:34 [INFO] Lancando servidor na porta 8000...
+2026-05-27 09:47:34 [INFO] Aguardando health-check do servidor...
+
+================================================================================
+Iniciando Servidor RPG na Porta: 8000
+================================================================================
+
+[CONFIG] Porta obtida da variavel de ambiente: 8000
+Raiz do servidor: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+--- DOM�?NIO RPG VTT ---
+Servidor Ativo em: http://localhost:8000
+Pressione Ctrl+C para encerrar.
+2026-05-28 11:41:24 [INFO] ============================================================
+2026-05-28 11:41:24 [INFO] Iniciando Mesa do Mestre v10.0
+2026-05-28 11:41:24 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+2026-05-28 11:41:24 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+2026-05-28 11:41:24 [INFO] PowerShell disponivel no sistema
+2026-05-28 11:41:25 [INFO] Porta 8000 liberada/livre com sucesso.
+2026-05-28 11:41:25 [INFO] Usando porta definitiva: 8000
+2026-05-28 11:41:25 [INFO] Lancando servidor na porta 8000...
+2026-05-28 11:41:25 [INFO] Aguardando health-check do servidor...
+2026-05-28 11:41:25 [INFO] Health-check OK na tentativa 1/20 (300ms)
+2026-05-28 11:41:25 [INFO] Servidor pronto em 1,7s
+2026-05-28 11:41:31 [INFO] Abrindo interface: Dashboard (http://127.0.0.1:8000/index.html)
+2026-05-28 11:41:36 [INFO] Fluxo concluido com sucesso.
+2026-05-28 11:41:36 [INFO] ============================================================
+2026-05-28 11:55:28 [INFO] ============================================================
+2026-05-28 11:55:28 [INFO] Iniciando Mesa do Mestre v10.0
+2026-05-28 11:55:28 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+2026-05-28 11:55:28 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+2026-05-28 11:55:29 [INFO] PowerShell disponivel no sistema
+2026-05-28 11:55:30 [INFO] Porta 8000 liberada/livre com sucesso.
+2026-05-28 11:55:30 [INFO] Usando porta definitiva: 8000
+2026-05-28 11:55:30 [INFO] Lancando servidor na porta 8000...
+2026-05-28 11:55:30 [INFO] Aguardando health-check do servidor...
+2026-05-28 11:55:30 [INFO] Health-check OK na tentativa 1/20 (300ms)
+2026-05-28 11:55:30 [INFO] Servidor pronto em 2,4s
+2026-05-28 11:55:36 [INFO] Abrindo interface: Dashboard (http://127.0.0.1:8000/index.html)
+2026-05-28 11:55:41 [INFO] Fluxo concluido com sucesso.
+2026-05-28 11:55:41 [INFO] ============================================================
+2026-05-28 11:58:10 [INFO] ============================================================
+2026-05-28 11:58:10 [INFO] Iniciando Mesa do Mestre v10.0
+2026-05-28 11:58:10 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+2026-05-28 11:58:10 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+2026-05-28 11:58:10 [INFO] PowerShell disponivel no sistema
+2026-05-28 11:58:11 [INFO] Porta 8000 liberada/livre com sucesso.
+2026-05-28 11:58:11 [INFO] Usando porta definitiva: 8000
+2026-05-28 11:58:11 [INFO] Lancando servidor na porta 8000...
+2026-05-28 11:58:11 [INFO] Aguardando health-check do servidor...
+2026-05-28 11:58:12 [INFO] Health-check OK na tentativa 1/20 (300ms)
+2026-05-28 11:58:12 [INFO] Servidor pronto em 1,7s
+2026-05-28 11:58:17 [INFO] Abrindo interface: Dashboard (http://127.0.0.1:8000/index.html)
+2026-05-28 11:58:22 [INFO] Fluxo concluido com sucesso.
+2026-05-28 11:58:22 [INFO] ============================================================
+2026-05-28 12:28:48 [INFO] ============================================================
+2026-05-28 12:28:48 [INFO] Iniciando Mesa do Mestre v10.0
+2026-05-28 12:28:48 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+2026-05-28 12:28:48 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+2026-05-28 12:28:48 [INFO] PowerShell disponivel no sistema
+2026-05-28 12:28:49 [INFO] Porta 8000 liberada/livre com sucesso.
+2026-05-28 12:28:49 [INFO] Usando porta definitiva: 8000
+2026-05-28 12:28:49 [INFO] Lancando servidor na porta 8000...
+2026-05-28 12:28:49 [INFO] Aguardando health-check do servidor...
+2026-05-28 12:28:50 [INFO] Health-check OK na tentativa 1/20 (300ms)
+2026-05-28 12:28:50 [INFO] Servidor pronto em 2,1s
+2026-05-28 12:28:53 [INFO] Abrindo interface: Dashboard (http://127.0.0.1:8000/index.html)
+2026-05-28 12:28:54 [INFO] Fluxo concluido com sucesso.
+2026-05-28 12:28:54 [INFO] ============================================================
+2026-05-28 14:30:32 [INFO] ============================================================
+2026-05-28 14:30:32 [INFO] Iniciando Mesa do Mestre v10.0
+2026-05-28 14:30:32 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+2026-05-28 14:30:32 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+2026-05-28 14:30:33 [INFO] PowerShell disponivel no sistema
+2026-05-28 14:30:34 [INFO] Porta 8000 liberada/livre com sucesso.
+2026-05-28 14:30:34 [INFO] Usando porta definitiva: 8000
+2026-05-28 14:30:34 [INFO] Lancando servidor na porta 8000...
+2026-05-28 14:30:34 [INFO] Aguardando health-check do servidor...
+2026-05-28 14:30:34 [INFO] Health-check OK na tentativa 1/20 (300ms)
+2026-05-28 14:30:34 [INFO] Servidor pronto em 1,9s
+2026-05-28 14:30:40 [INFO] Abrindo interface: Dashboard (http://127.0.0.1:8000/index.html)
+2026-05-28 14:30:45 [INFO] Fluxo concluido com sucesso.
+2026-05-28 14:30:45 [INFO] ============================================================
+2026-05-28 14:51:24 [INFO] ============================================================
+2026-05-28 14:51:24 [INFO] Iniciando Mesa do Mestre v10.0
+2026-05-28 14:51:24 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+2026-05-28 14:51:24 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+2026-05-28 14:51:24 [INFO] PowerShell disponivel no sistema
+2026-05-28 14:51:26 [INFO] Porta 8000 liberada/livre com sucesso.
+2026-05-28 14:51:26 [INFO] Usando porta definitiva: 8000
+2026-05-28 14:51:26 [INFO] Lancando servidor na porta 8000...
+2026-05-28 14:51:26 [INFO] Aguardando health-check do servidor...
+2026-05-28 14:51:26 [INFO] Health-check OK na tentativa 1/20 (300ms)
+2026-05-28 14:51:26 [INFO] Servidor pronto em 2,2s
+2026-05-28 14:51:31 [INFO] Abrindo interface: Dashboard (http://127.0.0.1:8000/index.html)
+2026-05-28 14:51:37 [INFO] Fluxo concluido com sucesso.
+2026-05-28 14:51:37 [INFO] ============================================================
+2026-05-28 16:26:17 [INFO] ============================================================
+2026-05-28 16:26:17 [INFO] Iniciando Mesa do Mestre v10.0
+2026-05-28 16:26:17 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+2026-05-28 16:26:18 [INFO] Node.js nao disponivel ou start_node_server.bat ausente. Caindo para backend PowerShell resiliente.
+2026-05-28 16:26:18 [INFO] PowerShell disponivel no sistema.
+2026-05-28 16:26:18 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+2026-05-28 16:26:19 [INFO] Porta 8000 liberada/livre com sucesso.
+2026-05-28 16:26:19 [INFO] Usando porta definitiva: 8000
+2026-05-28 16:26:19 [INFO] Lancando servidor na porta 8000...
+2026-05-28 16:26:19 [INFO] Aguardando health-check do servidor...
+2026-05-28 16:26:19 [INFO] Health-check OK na tentativa 1/20 (300ms)
+2026-05-28 16:26:19 [INFO] Servidor pronto em 1,9s
+2026-05-28 16:26:25 [INFO] Abrindo interface: Dashboard (http://127.0.0.1:8000/index.html)
+2026-05-28 16:26:30 [INFO] Fluxo concluido com sucesso.
+2026-05-28 16:26:30 [INFO] ============================================================
+2026-05-28 16:43:43 [INFO] ============================================================
+2026-05-28 16:43:43 [INFO] Iniciando Mesa do Mestre v10.0
+2026-05-28 16:43:43 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+2026-05-28 16:43:43 [INFO] Node.js nao disponivel ou start_node_server.bat ausente. Caindo para backend PowerShell resiliente.
+2026-05-28 16:43:44 [INFO] PowerShell disponivel no sistema.
+2026-05-28 16:43:44 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+2026-05-28 16:43:45 [INFO] Porta 8000 liberada/livre com sucesso.
+2026-05-28 16:43:45 [INFO] Usando porta definitiva: 8000
+2026-05-28 16:43:45 [INFO] Lancando servidor na porta 8000...
+2026-05-28 16:43:45 [INFO] Aguardando health-check do servidor...
+2026-05-28 16:43:45 [INFO] Health-check OK na tentativa 1/20 (300ms)
+2026-05-28 16:43:45 [INFO] Servidor pronto em 2s
+2026-05-28 16:43:50 [INFO] Abrindo interface: Dashboard (http://127.0.0.1:8000/index.html)
+2026-05-28 16:43:56 [INFO] Fluxo concluido com sucesso.
+2026-05-28 16:43:56 [INFO] ============================================================
+2026-05-28 17:09:50 [INFO] ============================================================
+2026-05-28 17:09:50 [INFO] Iniciando Mesa do Mestre v10.0
+2026-05-28 17:09:50 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+2026-05-28 17:09:51 [INFO] Node.js nao disponivel ou start_node_server.bat ausente. Caindo para backend PowerShell resiliente.
+2026-05-28 17:09:51 [INFO] PowerShell disponivel no sistema.
+2026-05-28 17:09:51 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+2026-05-28 17:09:52 [INFO] Porta 8000 liberada/livre com sucesso.
+2026-05-28 17:09:52 [INFO] Usando porta definitiva: 8000
+2026-05-28 17:09:52 [INFO] Lancando servidor na porta 8000...
+2026-05-28 17:09:52 [INFO] Aguardando health-check do servidor...
+2026-05-28 17:09:52 [INFO] Health-check OK na tentativa 1/20 (300ms)
+2026-05-28 17:09:52 [INFO] Servidor pronto em 1,8s
+2026-05-28 17:09:58 [INFO] Abrindo interface: Dashboard (http://127.0.0.1:8000/index.html)
+2026-05-28 17:10:03 [INFO] Fluxo concluido com sucesso.
+2026-05-28 17:10:03 [INFO] ============================================================
+2026-05-29 08:49:49 [INFO] ============================================================
+2026-05-29 08:49:49 [INFO] Iniciando Mesa do Mestre v10.0
+2026-05-29 08:49:49 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+2026-05-29 08:49:49 [INFO] Node.js nao disponivel ou start_node_server.bat ausente. Caindo para backend PowerShell resiliente.
+2026-05-29 08:49:50 [INFO] PowerShell disponivel no sistema.
+2026-05-29 08:49:50 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+2026-05-29 08:49:51 [INFO] Porta 8000 liberada/livre com sucesso.
+2026-05-29 08:49:51 [INFO] Usando porta definitiva: 8000
+2026-05-29 08:49:51 [INFO] Lancando servidor na porta 8000...
+2026-05-29 08:49:51 [INFO] Aguardando health-check do servidor...
+2026-05-29 08:49:52 [INFO] Health-check OK na tentativa 1/20 (300ms)
+2026-05-29 08:49:52 [INFO] Servidor pronto em 2,4s
+2026-05-29 08:49:57 [INFO] Abrindo interface: Dashboard (http://127.0.0.1:8000/index.html)
+2026-05-29 08:50:02 [INFO] Fluxo concluido com sucesso.
+2026-05-29 08:50:02 [INFO] ============================================================
+2026-05-29 08:57:40 [INFO] ============================================================
+2026-05-29 08:57:40 [INFO] Iniciando Mesa do Mestre v10.0
+2026-05-29 08:57:41 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+2026-05-29 08:57:41 [INFO] Node.js nao disponivel ou start_node_server.bat ausente. Caindo para backend PowerShell resiliente.
+2026-05-29 08:57:41 [INFO] PowerShell disponivel no sistema.
+2026-05-29 08:57:41 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+2026-05-29 08:57:42 [INFO] Porta 8000 liberada/livre com sucesso.
+2026-05-29 08:57:42 [INFO] Usando porta definitiva: 8000
+2026-05-29 08:57:42 [INFO] Lancando servidor na porta 8000...
+2026-05-29 08:57:42 [INFO] Aguardando health-check do servidor...
+2026-05-29 08:57:43 [INFO] Health-check OK na tentativa 1/20 (300ms)
+2026-05-29 08:57:43 [INFO] Servidor pronto em 2,3s
+2026-05-29 08:57:48 [INFO] Abrindo interface: Dashboard (http://127.0.0.1:8000/index.html)
+2026-05-29 08:57:53 [INFO] Fluxo concluido com sucesso.
+2026-05-29 08:57:53 [INFO] ============================================================
+2026-05-29 10:40:14 [INFO] ============================================================
+2026-05-29 10:40:14 [INFO] Iniciando Mesa do Mestre v12.0
+2026-05-29 10:40:14 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+2026-05-29 10:40:14 [INFO] Node.js nao disponivel ou start_node_server.bat ausente. Caindo para backend PowerShell resiliente.
+2026-05-29 10:40:15 [INFO] PowerShell disponivel no sistema.
+2026-05-29 10:40:15 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+2026-05-29 10:40:16 [INFO] Porta 8000 liberada/livre com sucesso.
+2026-05-29 10:40:16 [INFO] Usando porta definitiva: 8000
+2026-05-29 10:40:16 [INFO] Lancando servidor na porta 8000...
+2026-05-29 10:40:16 [INFO] Aguardando health-check do servidor...
+2026-05-29 10:40:16 [INFO] Health-check OK na tentativa 1/20 (300ms)
+2026-05-29 10:40:16 [INFO] Servidor pronto em 2,1s
+2026-05-29 10:40:22 [INFO] Abrindo interface: Dashboard (http://127.0.0.1:8000/index.html)
+2026-05-29 10:40:27 [INFO] Fluxo concluido com sucesso.
+2026-05-29 10:40:27 [INFO] ============================================================
+2026-07-02 07:22:53 [INFO] ============================================================
+2026-07-02 07:22:53 [INFO] Iniciando Mesa do Mestre v12.0
+2026-07-02 07:22:53 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+2026-07-02 07:22:54 [INFO] Node.js nao disponivel ou start_node_server.bat ausente. Caindo para backend PowerShell resiliente.
+2026-07-02 07:22:54 [INFO] PowerShell disponivel no sistema.
+2026-07-02 07:22:54 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+2026-07-02 07:22:55 [INFO] Porta 8000 liberada/livre com sucesso.
+2026-07-02 07:22:55 [INFO] Usando porta definitiva: 8000
+2026-07-02 07:22:55 [INFO] Lancando servidor na porta 8000...
+2026-07-02 07:22:55 [INFO] Aguardando health-check do servidor...
+2026-07-02 07:22:55 [INFO] Health-check OK na tentativa 1/20 (300ms)
+2026-07-02 07:22:55 [INFO] Servidor pronto em 1,8s
+2026-07-02 07:22:59 [INFO] Abrindo interface: Dashboard (http://127.0.0.1:8000/index.html)
+2026-07-02 07:23:05 [INFO] Fluxo concluido com sucesso.
+2026-07-02 07:23:05 [INFO] ============================================================
+2026-07-02 12:42:13 [INFO] ============================================================
+2026-07-02 12:42:13 [INFO] Iniciando Mesa do Mestre v12.0
+2026-07-02 12:42:13 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+2026-07-02 12:42:13 [INFO] Node.js nao disponivel ou start_node_server.bat ausente. Caindo para backend PowerShell resiliente.
+2026-07-02 12:42:13 [INFO] PowerShell disponivel no sistema.
+2026-07-02 12:42:13 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+2026-07-02 12:42:14 [INFO] Porta 8000 liberada/livre com sucesso.
+2026-07-02 12:42:14 [INFO] Usando porta definitiva: 8000
+2026-07-02 12:42:14 [INFO] Lancando servidor na porta 8000...
+2026-07-02 12:42:14 [INFO] Aguardando health-check do servidor...
+2026-07-02 12:42:14 [INFO] Health-check OK na tentativa 1/20 (300ms)
+2026-07-02 12:42:14 [INFO] Servidor pronto em 1,8s
+2026-07-02 12:42:20 [INFO] Abrindo interface: Dashboard (http://127.0.0.1:8000/index.html)
+2026-07-02 12:42:25 [INFO] Fluxo concluido com sucesso.
+2026-07-02 12:42:25 [INFO] ============================================================
+2026-07-02 12:44:18 [INFO] ============================================================
+2026-07-02 12:44:18 [INFO] Iniciando Mesa do Mestre v12.0
+2026-07-02 12:44:18 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+2026-07-02 12:44:18 [INFO] Node.js nao disponivel ou start_node_server.bat ausente. Caindo para backend PowerShell resiliente.
+2026-07-02 12:44:18 [INFO] PowerShell disponivel no sistema.
+2026-07-02 12:44:18 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+2026-07-02 12:44:19 [INFO] Porta 8000 liberada/livre com sucesso.
+2026-07-02 12:44:19 [INFO] Usando porta definitiva: 8000
+2026-07-02 12:44:19 [INFO] Lancando servidor na porta 8000...
+2026-07-02 12:44:19 [INFO] Aguardando health-check do servidor...
+2026-07-02 12:44:20 [INFO] Health-check OK na tentativa 1/20 (300ms)
+2026-07-02 12:44:20 [INFO] Servidor pronto em 1,8s
+2026-07-02 12:44:25 [INFO] Abrindo interface: Dashboard (http://127.0.0.1:8000/index.html)
+2026-07-02 12:44:30 [INFO] Fluxo concluido com sucesso.
+2026-07-02 12:44:30 [INFO] ============================================================
+2026-07-02 12:51:19 [INFO] ============================================================
+2026-07-02 12:51:19 [INFO] Iniciando Mesa do Mestre v12.0
+2026-07-02 12:51:19 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+2026-07-02 12:51:20 [INFO] Node.js nao disponivel ou start_node_server.bat ausente. Caindo para backend PowerShell resiliente.
+2026-07-02 12:51:20 [INFO] PowerShell disponivel no sistema.
+2026-07-02 12:51:20 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+2026-07-02 12:51:21 [INFO] Porta 8000 liberada/livre com sucesso.
+2026-07-02 12:51:21 [INFO] Usando porta definitiva: 8000
+2026-07-02 12:51:21 [INFO] Lancando servidor na porta 8000...
+2026-07-02 12:51:21 [INFO] Aguardando health-check do servidor...
+2026-07-02 12:51:21 [INFO] Health-check OK na tentativa 1/20 (300ms)
+2026-07-02 12:51:21 [INFO] Servidor pronto em 1,7s
+2026-07-02 12:51:27 [INFO] Abrindo interface: Dashboard (http://127.0.0.1:8000/index.html)
+2026-07-02 12:51:32 [INFO] Fluxo concluido com sucesso.
+2026-07-02 12:51:32 [INFO] ============================================================
+2026-07-02 13:10:16 [INFO] ============================================================
+2026-07-02 13:10:16 [INFO] Iniciando Mesa do Mestre v12.0
+2026-07-02 13:10:16 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+2026-07-02 13:10:16 [INFO] Node.js nao disponivel ou start_node_server.bat ausente. Caindo para backend PowerShell resiliente.
+2026-07-02 13:10:16 [INFO] PowerShell disponivel no sistema.
+2026-07-02 13:10:16 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+2026-07-02 13:10:17 [INFO] Porta 8000 liberada/livre com sucesso.
+2026-07-02 13:10:17 [INFO] Usando porta definitiva: 8000
+2026-07-02 13:10:17 [INFO] Lancando servidor na porta 8000...
+2026-07-02 13:10:17 [INFO] Aguardando health-check do servidor...
+2026-07-02 13:10:18 [INFO] Health-check OK na tentativa 1/20 (300ms)
+2026-07-02 13:10:18 [INFO] Servidor pronto em 1,8s
+2026-07-02 13:10:23 [INFO] Abrindo interface: Dashboard (http://127.0.0.1:8000/index.html)
+2026-07-02 13:10:28 [INFO] Fluxo concluido com sucesso.
+2026-07-02 13:10:28 [INFO] ============================================================
+2026-07-02 13:43:05 [INFO] ============================================================
+2026-07-02 13:43:05 [INFO] Iniciando Mesa do Mestre v12.0
+2026-07-02 13:43:05 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+2026-07-02 13:43:06 [INFO] Node.js nao disponivel ou start_node_server.bat ausente. Caindo para backend PowerShell resiliente.
+2026-07-02 13:43:06 [INFO] PowerShell disponivel no sistema.
+2026-07-02 13:43:06 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+2026-07-02 13:43:07 [INFO] Porta 8000 liberada/livre com sucesso.
+2026-07-02 13:43:07 [INFO] Usando porta definitiva: 8000
+2026-07-02 13:43:07 [INFO] Lancando servidor na porta 8000...
+2026-07-02 13:43:07 [INFO] Aguardando health-check do servidor...
+2026-07-02 13:43:08 [INFO] Health-check OK na tentativa 1/20 (300ms)
+2026-07-02 13:43:08 [INFO] Servidor pronto em 2,3s
+2026-07-02 13:43:13 [INFO] Abrindo interface: Dashboard (http://127.0.0.1:8000/index.html)
+2026-07-02 13:43:18 [INFO] Fluxo concluido com sucesso.
+2026-07-02 13:43:18 [INFO] ============================================================
+2026-07-02 14:03:39 [INFO] ============================================================
+2026-07-02 14:03:39 [INFO] Iniciando Mesa do Mestre v12.0
+2026-07-02 14:03:39 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+2026-07-02 14:03:39 [INFO] Node.js nao disponivel ou start_node_server.bat ausente. Caindo para backend PowerShell resiliente.
+2026-07-02 14:03:40 [INFO] PowerShell disponivel no sistema.
+2026-07-02 14:03:40 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+2026-07-02 14:03:41 [INFO] Porta 8000 liberada/livre com sucesso.
+2026-07-02 14:03:41 [INFO] Usando porta definitiva: 8000
+2026-07-02 14:03:41 [INFO] Lancando servidor na porta 8000...
+2026-07-02 14:03:41 [INFO] Aguardando health-check do servidor...
+2026-07-02 14:03:41 [INFO] Health-check OK na tentativa 1/20 (300ms)
+2026-07-02 14:03:41 [INFO] Servidor pronto em 2,1s
+2026-07-02 14:03:47 [INFO] Abrindo interface: Dashboard (http://127.0.0.1:8000/index.html)
+2026-07-02 14:03:52 [INFO] Fluxo concluido com sucesso.
+2026-07-02 14:03:52 [INFO] ============================================================
+2026-07-02 14:45:51 [INFO] ============================================================
+2026-07-02 14:45:51 [INFO] Iniciando Mesa do Mestre v12.0
+2026-07-02 14:45:51 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+2026-07-02 14:45:51 [INFO] Node.js nao disponivel ou start_node_server.bat ausente. Caindo para backend PowerShell resiliente.
+2026-07-02 14:45:51 [INFO] PowerShell disponivel no sistema.
+2026-07-02 14:45:51 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+2026-07-02 14:45:52 [INFO] Porta 8000 liberada/livre com sucesso.
+2026-07-02 14:45:52 [INFO] Usando porta definitiva: 8000
+2026-07-02 14:45:52 [INFO] Lancando servidor na porta 8000...
+2026-07-02 14:45:52 [INFO] Aguardando health-check do servidor...
+2026-07-02 14:45:53 [INFO] Health-check OK na tentativa 1/20 (300ms)
+2026-07-02 14:45:53 [INFO] Servidor pronto em 2s
+2026-07-02 14:45:58 [INFO] Abrindo interface: Dashboard (http://127.0.0.1:8000/index.html)
+2026-07-02 14:46:03 [INFO] Fluxo concluido com sucesso.
+2026-07-02 14:46:03 [INFO] ============================================================
+2026-07-02 15:19:03 [INFO] ============================================================
+2026-07-02 15:19:03 [INFO] Iniciando Mesa do Mestre v12.0
+2026-07-02 15:19:03 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+2026-07-02 15:19:04 [INFO] Node.js nao disponivel ou start_node_server.bat ausente. Caindo para backend PowerShell resiliente.
+2026-07-02 15:19:04 [INFO] PowerShell disponivel no sistema.
+2026-07-02 15:19:04 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+2026-07-02 15:19:05 [INFO] Porta 8000 liberada/livre com sucesso.
+2026-07-02 15:19:05 [INFO] Usando porta definitiva: 8000
+2026-07-02 15:19:05 [INFO] Lancando servidor na porta 8000...
+2026-07-02 15:19:05 [INFO] Aguardando health-check do servidor...
+2026-07-02 15:19:06 [INFO] Health-check OK na tentativa 1/20 (300ms)
+2026-07-02 15:19:06 [INFO] Servidor pronto em 2,5s
+2026-07-02 15:19:08 [INFO] Abrindo interface: Dashboard (http://127.0.0.1:8000/index.html)
+2026-07-02 15:19:13 [INFO] Fluxo concluido com sucesso.
+2026-07-02 15:19:13 [INFO] ============================================================
+2026-07-02 16:11:55 [INFO] ============================================================
+2026-07-02 16:11:55 [INFO] Iniciando Mesa do Mestre v12.0
+2026-07-02 16:11:55 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+2026-07-02 16:11:55 [INFO] Node.js nao disponivel ou start_node_server.bat ausente. Caindo para backend PowerShell resiliente.
+2026-07-02 16:11:56 [INFO] PowerShell disponivel no sistema.
+2026-07-02 16:11:56 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+2026-07-02 16:11:56 [INFO] Porta 8000 liberada/livre com sucesso.
+2026-07-02 16:11:56 [INFO] Usando porta definitiva: 8000
+2026-07-02 16:11:56 [INFO] Lancando servidor na porta 8000...
+2026-07-02 16:11:57 [INFO] Aguardando health-check do servidor...
+2026-07-02 16:11:57 [INFO] Health-check OK na tentativa 1/20 (300ms)
+2026-07-02 16:11:57 [INFO] Servidor pronto em 1,8s
+2026-07-02 16:12:02 [INFO] Abrindo interface: Dashboard (http://127.0.0.1:8000/index.html)
+2026-07-02 16:12:08 [INFO] Fluxo concluido com sucesso.
+2026-07-02 16:12:08 [INFO] ============================================================
+2026-07-02 16:59:01 [INFO] ============================================================
+2026-07-02 16:59:01 [INFO] Iniciando Mesa do Mestre v12.0
+2026-07-02 16:59:01 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+2026-07-02 16:59:01 [INFO] Node.js nao disponivel ou start_node_server.bat ausente. Caindo para backend PowerShell resiliente.
+2026-07-02 16:59:02 [INFO] PowerShell disponivel no sistema.
+2026-07-02 16:59:02 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+2026-07-02 16:59:03 [INFO] Porta 8000 liberada/livre com sucesso.
+2026-07-02 16:59:03 [INFO] Usando porta definitiva: 8000
+2026-07-02 16:59:03 [INFO] Lancando servidor na porta 8000...
+2026-07-02 16:59:03 [INFO] Aguardando health-check do servidor...
+2026-07-02 16:59:03 [INFO] Health-check OK na tentativa 1/20 (300ms)
+2026-07-02 16:59:03 [INFO] Servidor pronto em 2s
+2026-07-02 16:59:09 [INFO] Abrindo interface: Dashboard (http://127.0.0.1:8000/index.html)
+2026-07-02 16:59:14 [INFO] Fluxo concluido com sucesso.
+2026-07-02 16:59:14 [INFO] ============================================================
+2026-07-02 17:31:06 [INFO] ============================================================
+2026-07-02 17:31:06 [INFO] Iniciando Mesa do Mestre v12.0
+2026-07-02 17:31:06 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+2026-07-02 17:31:06 [INFO] Node.js nao disponivel ou start_node_server.bat ausente. Caindo para backend PowerShell resiliente.
+2026-07-02 17:31:07 [INFO] PowerShell disponivel no sistema.
+2026-07-02 17:31:07 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+2026-07-02 17:31:08 [INFO] Porta 8000 liberada/livre com sucesso.
+2026-07-02 17:31:08 [INFO] Usando porta definitiva: 8000
+2026-07-02 17:31:08 [INFO] Lancando servidor na porta 8000...
+2026-07-02 17:31:08 [INFO] Aguardando health-check do servidor...
+2026-07-02 17:31:09 [INFO] Health-check OK na tentativa 1/20 (300ms)
+2026-07-02 17:31:09 [INFO] Servidor pronto em 2,7s
+2026-07-02 17:31:14 [INFO] Abrindo interface: Dashboard (http://127.0.0.1:8000/index.html)
+2026-07-02 17:31:17 [INFO] Fluxo concluido com sucesso.
+2026-07-02 17:31:17 [INFO] ============================================================
+2026-07-27 16:11:35 [INFO] ============================================================
+2026-07-27 16:11:35 [INFO] Iniciando Mesa do Mestre v12.0
+2026-07-27 16:11:35 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+2026-07-27 16:11:36 [INFO] Node.js nao disponivel ou start_node_server.bat ausente. Caindo para backend PowerShell resiliente.
+2026-07-27 16:11:36 [INFO] PowerShell disponivel no sistema.
+2026-07-27 16:11:36 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+2026-07-27 16:11:37 [INFO] Porta 8000 liberada/livre com sucesso.
+2026-07-27 16:11:37 [INFO] Usando porta definitiva: 8000
+2026-07-27 16:11:37 [INFO] Lancando servidor na porta 8000...
+2026-07-27 16:11:37 [INFO] Aguardando health-check do servidor...
+2026-07-27 16:11:38 [INFO] Health-check OK na tentativa 1/20 (300ms)
+2026-07-27 16:11:38 [INFO] Servidor pronto em 2,7s
+2026-07-27 16:11:44 [INFO] Abrindo interface: Dashboard (http://127.0.0.1:8000/index.html)
+2026-07-27 16:11:49 [INFO] Fluxo concluido com sucesso.
+2026-07-27 16:11:49 [INFO] ============================================================
+2026-07-27 16:25:59 [INFO] ============================================================
+2026-07-27 16:25:59 [INFO] Iniciando Mesa do Mestre Multissistema v1.0 (Julho 2026)
+2026-07-27 16:25:59 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+2026-07-27 16:25:59 [INFO] Node.js nao disponivel ou start_node_server.bat ausente. Caindo para backend PowerShell resiliente.
+2026-07-27 16:26:00 [INFO] PowerShell disponivel no sistema.
+2026-07-27 16:26:00 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+2026-07-27 16:26:01 [INFO] Porta 8000 liberada/livre com sucesso.
+2026-07-27 16:26:01 [INFO] Usando porta definitiva: 8000
+2026-07-27 16:26:01 [INFO] Lancando servidor na porta 8000...
+2026-07-27 16:26:01 [INFO] Aguardando health-check do servidor...
+2026-07-27 16:26:01 [INFO] Health-check OK na tentativa 1/20 (300ms)
+2026-07-27 16:26:01 [INFO] Servidor pronto em 2s
+2026-07-27 16:26:07 [INFO] Abrindo interface: Dashboard (http://127.0.0.1:8000/index.html)
+2026-07-27 16:26:12 [INFO] Fluxo concluido com sucesso.
+2026-07-27 16:26:12 [INFO] ============================================================
+2026-07-27 16:30:21 [INFO] ============================================================
+2026-07-27 16:30:21 [INFO] Iniciando Mesa do Mestre Multissistema v1.0 (Julho 2026)
+2026-07-27 16:30:21 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+2026-07-27 16:30:21 [INFO] Node.js nao disponivel ou start_node_server.bat ausente. Caindo para backend PowerShell resiliente.
+2026-07-27 16:30:21 [INFO] PowerShell disponivel no sistema.
+2026-07-27 16:30:21 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+2026-07-27 16:30:22 [INFO] Porta 8000 liberada/livre com sucesso.
+2026-07-27 16:30:22 [INFO] Usando porta definitiva: 8000
+2026-07-27 16:30:22 [INFO] Lancando servidor na porta 8000...
+2026-07-27 16:30:22 [INFO] Aguardando health-check do servidor...
+2026-07-27 16:30:23 [INFO] Health-check OK na tentativa 1/20 (300ms)
+2026-07-27 16:30:23 [INFO] Servidor pronto em 1,9s
+2026-07-27 16:30:28 [INFO] Abrindo interface: Dashboard (http://127.0.0.1:8000/index.html)
+2026-07-27 16:30:33 [INFO] Fluxo concluido com sucesso.
+2026-07-27 16:30:33 [INFO] ============================================================
+2026-07-27 16:46:24 [INFO] ============================================================
+2026-07-27 16:46:24 [INFO] Iniciando Mesa do Mestre Multissistema v12.3.5 (Julho 2026)
+2026-07-27 16:46:24 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+2026-07-27 16:46:24 [INFO] Node.js nao disponivel ou start_node_server.bat ausente. Caindo para backend PowerShell resiliente.
+2026-07-27 16:46:25 [INFO] PowerShell disponivel no sistema.
+2026-07-27 16:46:25 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+2026-07-27 16:46:26 [INFO] Porta 8000 liberada/livre com sucesso.
+2026-07-27 16:46:26 [INFO] Usando porta definitiva: 8000
+2026-07-27 16:46:26 [INFO] Lancando servidor na porta 8000...
+2026-07-27 16:46:26 [INFO] Aguardando health-check do servidor...
+2026-07-27 16:46:26 [INFO] Health-check OK na tentativa 1/20 (300ms)
+2026-07-27 16:46:26 [INFO] Servidor pronto em 2s
+2026-07-27 16:46:28 [INFO] Abrindo interface: Dashboard (http://127.0.0.1:8000/index.html)
+2026-07-27 16:46:30 [INFO] Fluxo concluido com sucesso.
+2026-07-27 16:46:30 [INFO] ============================================================
+2026-07-27 17:09:35 [INFO] ============================================================
+2026-07-27 17:09:35 [INFO] Iniciando Mesa do Mestre Multissistema v12.3.5 (Julho 2026)
+2026-07-27 17:09:35 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+2026-07-27 17:09:35 [INFO] Node.js nao disponivel ou start_node_server.bat ausente. Caindo para backend PowerShell resiliente.
+2026-07-27 17:09:35 [INFO] ============================================================
+2026-07-27 17:09:35 [INFO] Iniciando Mesa do Mestre Multissistema v12.3.5 (Julho 2026)
+2026-07-27 17:09:36 [INFO] Base path: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos
+2026-07-27 17:09:36 [INFO] PowerShell disponivel no sistema.
+2026-07-27 17:09:36 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+2026-07-27 17:09:36 [INFO] Node.js nao disponivel ou start_node_server.bat ausente. Caindo para backend PowerShell resiliente.
+2026-07-27 17:09:36 [INFO] PowerShell disponivel no sistema.
+2026-07-27 17:09:36 [INFO] Batch script localizado: C:\Users\02751132138\Documents\Nova pasta\RPGPsigologos\scripts\start_server.bat
+2026-07-27 17:09:37 [INFO] Porta 8000 liberada/livre com sucesso.
+2026-07-27 17:09:37 [INFO] Usando porta definitiva: 8000
+2026-07-27 17:09:37 [INFO] Lancando servidor na porta 8000...
+2026-07-27 17:09:37 [INFO] Aguardando health-check do servidor...
+2026-07-27 17:09:37 [INFO] Health-check OK na tentativa 1/20 (300ms)
+2026-07-27 17:09:37 [INFO] Servidor pronto em 2s
+2026-07-27 17:09:37 [INFO] Porta 8000 liberada/livre com sucesso.
+2026-07-27 17:09:37 [INFO] Usando porta definitiva: 8000
+2026-07-27 17:09:37 [INFO] Lancando servidor na porta 8000...
+2026-07-27 17:09:37 [INFO] Aguardando health-check do servidor...
+2026-07-27 17:09:37 [INFO] Health-check OK na tentativa 1/20 (300ms)
+2026-07-27 17:09:37 [INFO] Servidor pronto em 1,9s
+2026-07-27 17:09:39 [INFO] Abrindo interface: Dashboard (http://127.0.0.1:8000/index.html)
+2026-07-27 17:09:44 [INFO] Fluxo concluido com sucesso.
+2026-07-27 17:09:44 [INFO] ============================================================
+2026-07-27 17:09:47 [INFO] Abrindo interface: Dashboard (http://127.0.0.1:8000/index.html)
+2026-07-27 17:09:53 [INFO] Fluxo concluido com sucesso.
+2026-07-27 17:09:53 [INFO] ============================================================

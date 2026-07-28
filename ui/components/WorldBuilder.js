@@ -6,7 +6,7 @@ import { Toast } from '../components/Toast.js';
  * DM SHIELD v1.0
  * AI-assisted tools for scene description and worldbuilding.
  */
-export class WorldBuilder extends Component {
+export class DMShield extends Component {
     constructor(opts) {
         super(opts);
         this._lastDescription = "";
@@ -15,24 +15,22 @@ export class WorldBuilder extends Component {
 
     template() {
         return `
-            <div class="page" style="max-width:1000px; margin:0 auto; padding:20px;">
-                <div class="section-header" style="margin-bottom:30px;">
+            <div class="page" style="max-width:900px; margin:0 auto;">
+                <div class="section-header">
                     <div>
-                        <h2 class="section-title" style="font-family:'Cinzel', serif;">🏛️ Construtor de Mundos</h2>
-                        <p class="section-subtitle">Inteligência Artificial para narração e ambientação instantânea.</p>
+                        <h2 class="section-title">🏛️ Construtor de Mundos</h2>
+                        <p class="section-subtitle">Use a IA para descrever cenas e locais instantaneamente.</p>
                     </div>
                 </div>
 
-                <div class="grid grid-2" style="gap:30px; align-items: stretch;">
+                <div class="grid grid-2" style="gap:20px;">
                     <!-- Controls -->
-                    <div class="card glass-accent" style="padding:25px; display:flex; flex-direction:column; gap:20px;">
-                        <h3 style="font-size:1rem; color:var(--accent); font-family:'Cinzel';">Gerar Descrição</h3>
-                        
+                    <div class="card glass-accent" style="padding:20px;">
+                        <h3 style="font-size:1rem; margin-bottom:15px;">Gerar Descrição de Cena</h3>
                         <div class="form-group">
                             <label class="form-label">O que os heróis veem?</label>
-                            <textarea id="scene-input" class="form-input" placeholder="Ex: Uma cripta antiga com cheiro de mofo e estátuas de deuses esquecidos..." style="min-height:100px; padding:12px;"></textarea>
+                            <input type="text" id="scene-input" class="form-input" placeholder="Ex: Uma cripta antiga, uma taverna cheia...">
                         </div>
-
                         <div class="form-group">
                             <label class="form-label">Tom da Narração</label>
                             <select id="tone-select" class="form-select">
@@ -40,27 +38,22 @@ export class WorldBuilder extends Component {
                                 <option value="epic">Épico & Majestoso</option>
                                 <option value="horror">Horror & Agonizante</option>
                                 <option value="peaceful">Calmo & Sereno</option>
-                                <option value="technical">Tático & Objetivo</option>
                             </select>
                         </div>
-
-                        <button class="btn btn-primary btn-block btn-lg" data-action="generateScene" style="margin-top:auto;">
+                        <button class="btn btn-primary btn-block" data-action="generateScene" style="margin-top:10px;">
                             <i class="fa-solid fa-wand-sparkles"></i> DESCREVER CENA
                         </button>
                     </div>
 
                     <!-- Result -->
-                    <div class="card" style="padding:25px; display:flex; flex-direction:column; min-height:450px; background:var(--bg-darker); border:1px solid var(--border-color);">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                            <h3 style="font-size:0.75rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px;">Box Text (Narração)</h3>
-                            <button class="btn btn-ghost btn-sm" data-action="copyToJournal" ${!this._lastDescription ? 'disabled' : ''}>
-                                <i class="fa-solid fa-book"></i> SALVAR
-                            </button>
+                    <div class="card" style="padding:20px; display:flex; flex-direction:column; min-height:300px;">
+                        <h3 style="font-size:0.8rem; color:var(--accent); text-transform:uppercase; margin-bottom:10px;">Box Text (Narração)</h3>
+                        <div id="description-result" style="flex:1; font-family: 'Crimson Text', serif; font-size:1.1rem; line-height:1.6; font-style:italic; color:var(--text-dim); overflow-y:auto; padding:15px; background:rgba(0,0,0,0.2); border-radius:8px;">
+                            ${this._lastDescription || 'Aguardando inspiração...'}
                         </div>
-                        
-                        <div id="description-result" style="flex:1; font-family: 'Crimson Text', serif; font-size:1.2rem; line-height:1.7; font-style:italic; color:var(--text-bright); overflow-y:auto; padding:20px; background:rgba(0,0,0,0.3); border-radius:8px; border-left:3px solid var(--accent);">
-                            ${this._lastDescription || '<span style="opacity:0.3;">Aguardando inspiração do mestre...</span>'}
-                        </div>
+                        <button class="btn btn-ghost btn-sm" style="margin-top:10px;" data-action="copyToJournal" ${!this._lastDescription ? 'disabled' : ''}>
+                            <i class="fa-solid fa-book"></i> Copiar para o Diário
+                        </button>
                     </div>
                 </div>
             </div>

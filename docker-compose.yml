@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: rpg_postgres_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: rpg_user
+      POSTGRES_PASSWORD: rpg_password
+      POSTGRES_DB: rpg_vtt
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  rpg-vtt:
+    build: .
+    container_name: rpg_mesa_mestre
+    restart: unless-stopped
+    depends_on:
+      - db
+    ports:
+      - "8000:8000"
+    volumes:
+      # Persiste a base de dados de mesas/campanhas no host local
+      - ./data:/usr/src/app/data
+      # Persiste as mídias carregadas
+      - ./public/uploads:/usr/src/app/public/uploads
+    environment:
+      - NODE_ENV=production
+      - PORT=8000
+      - DATABASE_URL=postgres://rpg_user:rpg_password@db:5432/rpg_vtt
+      - JWT_SECRET=tome_secret_rpg_2026_prod
+
+volumes:
+  pgdata:

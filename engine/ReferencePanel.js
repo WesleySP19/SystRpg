@@ -7,6 +7,7 @@
 import { Component } from '../ui/core/Component.js';
 import { TOME } from '../core/Registry.js';
 import { Toast } from '../ui/components/Toast.js';
+import { PersistenceService } from '../services/PersistenceService.js';
 
 export class ReferencePanel extends Component {
     constructor(opts) {
@@ -105,7 +106,11 @@ export class ReferencePanel extends Component {
         if (!isNaN(idx)) {
             this._activeIdx = idx;
             this._sync();
-            this.render();
+            if (this.store.state.referenceBroadcast) {
+                this.broadcastActive();
+            } else {
+                this.render();
+            }
         }
     }
 
@@ -142,7 +147,26 @@ export class ReferencePanel extends Component {
         this._images.splice(this._activeIdx, 1);
         this._activeIdx = Math.max(0, this._activeIdx - 1);
         this._sync();
-        this.render();
+        if (this.store.state.referenceBroadcast) {
+            if (this._images.length > 0) {
+                this.broadcastActive();
+            } else {
+                TOME.store.update(s => {
+                    s.referenceBroadcast = false;
+                    s.referenceCurrentImg = null;
+                });
+                if (this._channel) {
+                    this._channel.postMessage({
+                        type: 'REFERENCE_IMAGE',
+                        data: null,
+                        name: ''
+                    });
+                }
+                this.render();
+            }
+        } else {
+            this.render();
+        }
     }
 
     deleteImage(e, el) {
@@ -152,7 +176,26 @@ export class ReferencePanel extends Component {
             this._images.splice(idx, 1);
             if (this._activeIdx >= this._images.length) this._activeIdx = Math.max(0, this._images.length - 1);
             this._sync();
-            this.render();
+            if (this.store.state.referenceBroadcast) {
+                if (this._images.length > 0) {
+                    this.broadcastActive();
+                } else {
+                    TOME.store.update(s => {
+                        s.referenceBroadcast = false;
+                        s.referenceCurrentImg = null;
+                    });
+                    if (this._channel) {
+                        this._channel.postMessage({
+                            type: 'REFERENCE_IMAGE',
+                            data: null,
+                            name: ''
+                        });
+                    }
+                    this.render();
+                }
+            } else {
+                this.render();
+            }
         }
     }
 
@@ -165,6 +208,13 @@ export class ReferencePanel extends Component {
             s.referenceBroadcast = false;
             s.referenceCurrentImg = null;
         });
+        if (this._channel) {
+            this._channel.postMessage({
+                type: 'REFERENCE_IMAGE',
+                data: null,
+                name: ''
+            });
+        }
         this._sync();
         this.render();
     }
@@ -176,6 +226,39 @@ export class ReferencePanel extends Component {
         });
     }
 
+    _compressImage(base64Str, maxWidth = 1000, maxHeight = 1000, quality = 0.8) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+
+                if (width > height) {
+                    if (width > maxWidth) {
+                        height = Math.round((height * maxWidth) / width);
+                        width = maxWidth;
+                    }
+                } else {
+                    if (height > maxHeight) {
+                        width = Math.round((width * maxHeight) / height);
+                        height = maxHeight;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                const compressed = canvas.toDataURL('image/webp', quality);
+                resolve(compressed);
+            };
+            img.onerror = () => resolve(base64Str);
+            img.src = base64Str;
+        });
+    }
+
     onMount() {
         const upload = this.$('#ref-upload');
         if (upload) {
@@ -183,11 +266,21 @@ export class ReferencePanel extends Component {
                 const files = [...e.target.files];
                 files.forEach(file => {
                     const reader = new FileReader();
-                    reader.onload = (re) => {
-                        this._images.push({ name: file.name.replace(/\.[^.]+$/, ''), data: re.target.result });
+                    reader.onload = async (re) => {
+                        const raw = re.target.result;
+                        const compressed = await this._compressImage(raw);
+                        const cleanName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+                        const fileName = `ref_${Date.now()}_${cleanName}`;
+                        const finalUrl = await PersistenceService.uploadImage(fileName, compressed);
+                        
+                        this._images.push({ name: file.name.replace(/\.[^.]+$/, ''), data: finalUrl });
                         this._activeIdx = this._images.length - 1;
                         this._sync();
-                        this.render();
+                        if (this.store.state.referenceBroadcast) {
+                            this.broadcastActive();
+                        } else {
+                            this.render();
+                        }
                         this.onMount(); // Re-bind file input
                     };
                     reader.readAsDataURL(file);

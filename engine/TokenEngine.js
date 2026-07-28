@@ -5,6 +5,8 @@
  * Does NOT touch the DOM directly — the MapManager renders.
  */
 
+import { MonsterArt } from '../services/MonsterArt.js';
+
 export const CONDITIONS = {
     poisoned:    { label: 'Envenenado',  icon: '☠️',  color: '#22c55e' },
     blinded:     { label: 'Cego',        icon: '👁️',  color: '#6b7280' },
@@ -61,7 +63,7 @@ export class TokenEngine {
             entityId: entity.id,
             name:     entity.name,
             type:     isMonster ? 'monster' : 'player',
-            img:      entity.img || entity.portraitData || null,
+            img:      entity.img || entity.portraitData || (isMonster ? MonsterArt.getImage(entity) : null),
             emoji:    entity.emoji || null,
             x, y,
             // D&D stats
@@ -69,7 +71,9 @@ export class TokenEngine {
             ac:       entity.ac || 10,
             speed:    entity.speed || 30,
             initiative: entity.initiative || 0,
-            visionRange: entity.visionRange || 60,
+            visionRange: entity.visionRange !== undefined ? entity.visionRange : 60,
+            darkvision: entity.darkvision || 0,
+            lightRadius: entity.lightRadius || 0,
             size:     TOKEN_SIZES[size] ? size : 'medium',
             // State
             conditions: [],

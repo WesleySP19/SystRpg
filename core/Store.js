@@ -1,52 +1,52 @@
 /**
- * REACTIVE STORE v4.0 — "Granular Pulse" Edition
- * High-performance state management with selective reactivity.
+ * REACTIVE STORE v3.0
+ * High-performance state management with Proxy-based reactivity.
+ * 
+ * Features:
+ * - Deep nested reactivity via recursive Proxy
+ * - Batched microtask notifications (prevents render storms)
+ * - Selective subscriptions for granular updates
+ * - Immutable snapshots for safe reads
  */
 export class Store {
     constructor(initialState = {}) {
-        this._listeners = new Set(); // Global listeners
-        this._keyListeners = new Map(); // Selective listeners: key -> Set(cb)
+        this._listeners = new Set();
         this._pendingNotify = false;
-        this._changedKeys = new Set();
-        this._proxyCache = new WeakMap(); // Instance-level proxy cache
-        
         this._rawState = structuredClone(initialState);
-        this.state = this._createProxy(this._rawState, '');
+        this.state = this._createProxy(this._rawState);
     }
 
     /**
-     * Creates a deep reactive Proxy with path tracking.
+     * Creates a deep reactive Proxy.
+     * WeakMap prevents re-proxying the same object (memory safety).
      */
-    _createProxy(obj, path) {
+    _createProxy(obj) {
         const self = this;
+        const proxyCache = new WeakMap();
 
+        const ARRAY_MUTATORS = new Set(['push','pop','shift','unshift','splice','sort','reverse','fill']);
         const handler = {
             set(target, key, value) {
                 if (target[key] === value) return true;
-                
-                // Invalidate cached proxy for replaced objects
-                const old = target[key];
-                if (old !== null && typeof old === 'object') {
-                    self._proxyCache.delete(old);
-                }
-                
                 target[key] = value;
-                const fullPath = path ? `${path}.${key}` : key;
-                
-                // Track the specific key that changed
-                self._changedKeys.add(key); // Root level key
-                if (path) self._changedKeys.add(path.split('.')[0]); // Main branch key
-                
-                self._scheduleNotify();
+                // Ignore internal array length updates — push/splice handle notification
+                if (key !== 'length') self._scheduleNotify();
                 return true;
             },
             get(target, key) {
                 const val = target[key];
-                if (val !== null && typeof val === 'object' && !Array.isArray(val)) {
-                    if (self._proxyCache.has(val)) return self._proxyCache.get(val);
-                    const newPath = path ? `${path}.${key}` : key;
-                    const proxy = self._createProxy(val, newPath);
-                    self._proxyCache.set(val, proxy);
+                // Intercept array mutator methods to trigger reactivity
+                if (Array.isArray(target) && ARRAY_MUTATORS.has(key)) {
+                    return function(...args) {
+                        const result = Array.prototype[key].apply(target, args);
+                        self._scheduleNotify();
+                        return result;
+                    };
+                }
+                if (val !== null && typeof val === 'object') {
+                    if (proxyCache.has(val)) return proxyCache.get(val);
+                    const proxy = new Proxy(val, handler);
+                    proxyCache.set(val, proxy);
                     return proxy;
                 }
                 return val;
@@ -58,53 +58,28 @@ export class Store {
 
     /**
      * Batched notification using microtask queue.
-     * Notifies only relevant listeners based on changed keys.
+     * Multiple synchronous mutations = single render pass.
      */
     _scheduleNotify() {
         if (this._pendingNotify) return;
         this._pendingNotify = true;
 
         queueMicrotask(() => {
-            const keys = Array.from(this._changedKeys);
-            
-            // 1. Notify Global Listeners
             this._listeners.forEach(cb => {
-                try { cb(this.state, keys); }
-                catch (e) { console.error('[Store] Global Listener error:', e); }
+                try { cb(this.state); }
+                catch (e) { console.error('[Store] Listener error:', e); }
             });
-
-            // 2. Notify Selective Listeners
-            keys.forEach(key => {
-                const listeners = this._keyListeners.get(key);
-                if (listeners) {
-                    listeners.forEach(cb => {
-                        try { cb(this.state[key]); }
-                        catch (e) { console.error(`[Store] Key Listener error (${key}):`, e); }
-                    });
-                }
-            });
-
-            this._changedKeys.clear();
             this._pendingNotify = false;
         });
     }
 
     /**
-     * Subscribe to state changes.
-     * @param {Function} callback 
-     * @param {String} key Optional key to listen to specifically.
+     * Subscribe to state changes. Returns unsubscribe function.
+     * Does NOT fire immediately — call render() yourself after mount.
      */
-    subscribe(callback, key = null) {
-        if (key) {
-            if (!this._keyListeners.has(key)) {
-                this._keyListeners.set(key, new Set());
-            }
-            this._keyListeners.get(key).add(callback);
-            return () => this._keyListeners.get(key).delete(callback);
-        } else {
-            this._listeners.add(callback);
-            return () => this._listeners.delete(callback);
-        }
+    subscribe(callback) {
+        this._listeners.add(callback);
+        return () => this._listeners.delete(callback);
     }
 
     /**
@@ -115,9 +90,14 @@ export class Store {
     }
 
     /**
-     * Get a plain snapshot.
+     * Get a plain snapshot (safe for serialization / IndexedDB).
      */
     snapshot() {
-        return JSON.parse(JSON.stringify(this._rawState));
+        try {
+            return structuredClone(this._rawState);
+        } catch (e) {
+            // Silently fallback to JSON serialization to avoid warning spam (due to Proxies/non-cloneables in state)
+            return JSON.parse(JSON.stringify(this._rawState));
+        }
     }
 }

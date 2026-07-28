@@ -1,0 +1,28 @@
+{
+  "name": "rpg-mesa-do-mestre",
+  "version": "12.0.0",
+  "description": "Premium VTT Server & Dashboard for RPG Psicologos",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "seed:5e": "node scripts/seedSystemDND5e.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.14.0",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.6.2",
+    "pg": "^8.11.5",
+    "socket.io": "^4.7.5"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "prisma": "^5.14.0",
+    "vite": "^5.2.11"
+  }
+}

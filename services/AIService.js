@@ -49,18 +49,6 @@ export class AIService {
     }
 
     /**
-     * Generic AI prompt (used by NPCHelper, WorldBuilder, etc.)
-     */
-    async ask(prompt) {
-        try {
-            const data = await this._fetch('/ai/ask', { prompt });
-            return data.response;
-        } catch {
-            throw new Error('AI offline');
-        }
-    }
-
-    /**
      * Generate a localized rumor based on current campaign state.
      */
     async generateRumor(context) {
@@ -96,5 +84,43 @@ export class AIService {
             return 'Predador de Elite: Usa sopro/área sempre que disponível. Mantém distância voando.';
 
         return 'Instinto de Combate: Ataca quem estiver mais perto. Troca de alvo se receber golpe crítico.';
+    }
+
+    /**
+     * Generic ask(): tenta backend; se falhar, gera fallback heuristico em JSON quando o prompt pede.
+     * Usado por NPCHelper e outros geradores.
+     */
+    async ask(prompt) {
+        try {
+            const data = await this._fetch('/ai/ask', { prompt });
+            if (data && (data.text || data.response)) return data.text || data.response;
+        } catch (_) { /* fallback abaixo */ }
+        return this._localAsk(prompt);
+    }
+
+    _localAsk(prompt) {
+        const p = String(prompt || '').toLowerCase();
+        // Fallback NPC: detecta pedido de JSON e gera um NPC plausivel.
+        if (p.includes('npc') && p.includes('json')) {
+            const races = ['Humano','Elfo','Anão','Halfling','Meio-Orc','Tiefling','Draconato'];
+            const jobs = ['Taverneiro','Mercador','Guarda','Ferreiro','Sacerdote','Caçador','Escriba'];
+            const adjs = ['enigmatico','sereno','irritadiço','melancolico','arrogante','generoso','tímido'];
+            const looks = ['cicatriz no rosto','olhos heterocromaticos','barba grisalha','tatuagens tribais','manto puido'];
+            const motives = ['proteger a familia','vingar uma traição','encontrar um artefato perdido','quitar uma dívida antiga'];
+            const secrets = ['é um espião disfarçado','possui um item amaldiçoado','tem um irmão gemeo criminoso','viu algo que não devia'];
+            const pick = arr => arr[Math.floor(Math.random()*arr.length)];
+            const npc = {
+                name: pick(['Aldric','Mira','Oren','Sela','Bran','Ysolde','Dorin','Kaelen']) + ' ' + pick(['de Pedravale','Sangre-de-Lua','o Velho','Pés-de-Vento','Coração de Aço']),
+                race: pick(races),
+                job: pick(jobs),
+                personality: 'Trato ' + pick(adjs) + ', fala devagar e observa muito.',
+                appearance: pick(looks) + ', estatura mediana, vestes simples.',
+                motivation: pick(motives) + '.',
+                secret: pick(secrets) + '.'
+            };
+            return JSON.stringify(npc);
+        }
+        // Fallback narrativo curto.
+        return 'O destino sussurra, mas as palavras se perdem na brisa antes que possamos ouvi-las claramente.';
     }
 }

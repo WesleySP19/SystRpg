@@ -1,0 +1,55 @@
+﻿{
+    "activeView":  "home",
+    "activeTab":  "campaign",
+    "players":  [
+
+                ],
+    "monsters":  [
+
+                 ],
+    "savedNPCs":  [
+
+                  ],
+    "initiativeOrder":  [
+
+                        ],
+    "concentration":  [
+
+                      ],
+    "combatRound":  0,
+    "combatActive":  false,
+    "journalEntries":  [
+
+                       ],
+    "sessionNotes":  "",
+    "sessionTitle":  "Aventura de 26/05/2026",
+    "campaigns":  [
+
+                  ],
+    "activeCampaignId":  null,
+    "quests":  [
+
+               ],
+    "tacticalMap":  {
+                        "fog":  null,
+                        "mapUrl":  null,
+                        "tokens":  [
+
+                                   ]
+                    },
+    "lastLoot":  null,
+    "audioMuted":  false,
+    "currentTheme":  "default",
+    "currentEnvironment":  "default",
+    "resources":  {
+                      "potions":  0,
+                      "scrolls":  0
+                  },
+    "schemaVersion":  5,
+    "sessionNumber":  1,
+    "sessionsHistory":  [
+
+                        ],
+    "xpDistributed":  0,
+    "sessionLoot":  ""
+}

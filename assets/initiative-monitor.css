@@ -1,0 +1,647 @@
+/* ================================================================
+   MONITOR DE INICIATIVA — "Ordem de Batalha" v1.0
+   Sistema visual de rastreamento de turnos para D&D 5e
+   ================================================================ */
+
+/* ── LAYOUT ROOT ────────────────────────────────────────────────── */
+.im-root {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    gap: 0;
+    font-family: 'Outfit', sans-serif;
+    position: relative;
+    overflow: hidden;
+}
+
+/* ── HEADER BAR ─────────────────────────────────────────────────── */
+.im-header {
+    background: linear-gradient(135deg, rgba(15,17,21,0.98) 0%, rgba(26,29,35,0.98) 100%);
+    border-bottom: 1px solid rgba(197,160,89,0.2);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+}
+
+.im-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(197,160,89,0.5), transparent);
+}
+
+.im-title {
+    font-family: 'Cinzel', serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 2px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+}
+
+.im-round-badge {
+    background: rgba(197,160,89,0.1);
+    border: 1px solid rgba(197,160,89,0.3);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: var(--accent-bright);
+    letter-spacing: 1px;
+}
+
+.im-header-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+/* ── ACTIVE COMBATANT HERO SPOTLIGHT ────────────────────────────── */
+.im-spotlight {
+    background: linear-gradient(135deg, rgba(15,17,21,0.95), rgba(197,160,89,0.04));
+    border-bottom: 1px solid rgba(197,160,89,0.15);
+    padding: 20px 28px;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.im-spotlight::before {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: radial-gradient(ellipse at 30% 50%, rgba(197,160,89,0.04) 0%, transparent 60%);
+    pointer-events: none;
+}
+
+.im-spotlight-inner {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    position: relative;
+    z-index: 1;
+}
+
+.im-spotlight-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: 2.5px solid var(--accent);
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Cinzel', serif;
+    font-weight: 800;
+    font-size: 1.4rem;
+    color: var(--accent);
+    background-color: rgba(197,160,89,0.06);
+    flex-shrink: 0;
+    box-shadow: 0 0 20px rgba(197,160,89,0.25), 0 4px 15px rgba(0,0,0,0.5);
+    animation: im-avatar-pulse 3s ease-in-out infinite;
+}
+
+@keyframes im-avatar-pulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(197,160,89,0.25), 0 4px 15px rgba(0,0,0,0.5); }
+    50%       { box-shadow: 0 0 35px rgba(197,160,89,0.5),  0 4px 15px rgba(0,0,0,0.5); }
+}
+
+.im-spotlight-avatar.enemy {
+    border-color: var(--danger);
+    animation: im-avatar-pulse-enemy 2.5s ease-in-out infinite;
+}
+
+@keyframes im-avatar-pulse-enemy {
+    0%, 100% { box-shadow: 0 0 20px rgba(239,68,68,0.25), 0 4px 15px rgba(0,0,0,0.5); }
+    50%       { box-shadow: 0 0 35px rgba(239,68,68,0.5),  0 4px 15px rgba(0,0,0,0.5); }
+}
+
+.im-spotlight-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.im-spotlight-label {
+    font-size: 0.55rem;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 4px;
+}
+
+.im-spotlight-name {
+    font-family: 'Cinzel', serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.im-spotlight-name.enemy-name {
+    color: var(--danger);
+    text-shadow: 0 0 15px rgba(239,68,68,0.3);
+}
+
+.im-spotlight-meta {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+}
+
+/* ── HP BAR ─────────────────────────────────────────────────────── */
+.im-hp-block {
+    min-width: 120px;
+}
+
+.im-hp-label {
+    font-size: 0.55rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+    letter-spacing: 1px;
+}
+
+.im-hp-values {
+    font-size: 1.05rem;
+    font-weight: 800;
+    margin-bottom: 5px;
+}
+
+.im-hp-bar-track {
+    height: 8px;
+    background: rgba(0,0,0,0.4);
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+}
+
+.im-hp-bar-fill {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.5s cubic-bezier(0.4,0,0.2,1), background-color 0.3s;
+    position: relative;
+}
+
+.im-hp-bar-fill::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 40%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.2), transparent);
+    border-radius: 6px 6px 0 0;
+}
+
+/* ── ACTION ECONOMY BADGES ──────────────────────────────────────── */
+.im-economy {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.im-econ-badge {
+    font-size: 0.6rem;
+    font-weight: 800;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+    transition: all 0.2s;
+    cursor: pointer;
+    user-select: none;
+}
+
+.im-econ-badge.available {
+    border: 1px solid currentColor;
+    opacity: 1;
+}
+
+.im-econ-badge.spent {
+    opacity: 0.3;
+    text-decoration: line-through;
+    border: 1px dashed rgba(255,255,255,0.1);
+    background: transparent !important;
+    color: var(--text-dim) !important;
+}
+
+/* ── TURN QUEUE TIMELINE ────────────────────────────────────────── */
+.im-queue-section {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(197,160,89,0.3) transparent;
+}
+
+.im-queue-header {
+    font-size: 0.6rem;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* ── COMBATANT CARD (Timeline Item) ────────────────────────────── */
+.im-combatant {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    position: relative;
+    transition: all 0.25s cubic-bezier(0.16,1,0.3,1);
+    cursor: pointer;
+    margin-bottom: 4px;
+}
+
+.im-combatant:hover {
+    background: rgba(255,255,255,0.03);
+    border-color: rgba(255,255,255,0.06);
+    transform: translateX(3px);
+}
+
+.im-combatant.im-active {
+    background: rgba(197,160,89,0.07);
+    border-color: rgba(197,160,89,0.4);
+    animation: im-card-glow 2.5s ease-in-out infinite;
+    transform: translateX(5px);
+}
+
+@keyframes im-card-glow {
+    0%, 100% { box-shadow: 0 0 8px rgba(197,160,89,0.15); }
+    50%       { box-shadow: 0 0 20px rgba(197,160,89,0.35); }
+}
+
+.im-combatant.im-targeted {
+    background: rgba(239,68,68,0.07);
+    border-color: rgba(239,68,68,0.35);
+    border-style: dashed;
+    animation: im-card-glow-danger 2s ease-in-out infinite;
+}
+
+@keyframes im-card-glow-danger {
+    0%, 100% { box-shadow: 0 0 8px rgba(239,68,68,0.15); }
+    50%       { box-shadow: 0 0 20px rgba(239,68,68,0.35); }
+}
+
+.im-combatant.im-dead {
+    opacity: 0.35;
+    filter: grayscale(0.8);
+}
+
+.im-combatant.im-upcoming {
+    opacity: 0.6;
+}
+
+/* Turn order connector line */
+.im-combatant:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 28px; bottom: -4px;
+    width: 2px;
+    height: 4px;
+    background: linear-gradient(180deg, rgba(197,160,89,0.2), transparent);
+}
+
+.im-turn-pos {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    font-weight: 800;
+    color: var(--text-dim);
+    flex-shrink: 0;
+    font-family: 'Cinzel', serif;
+}
+
+.im-turn-pos.pos-active {
+    background: rgba(197,160,89,0.2);
+    border-color: var(--accent);
+    color: var(--accent-bright);
+}
+
+.im-combatant-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background-size: cover;
+    background-position: center;
+    background-color: rgba(255,255,255,0.04);
+    border: 2px solid rgba(255,255,255,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.8rem;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.im-combatant-avatar.type-player {
+    border-color: rgba(96,165,250,0.5);
+}
+
+.im-combatant-avatar.type-enemy {
+    border-color: rgba(239,68,68,0.45);
+}
+
+.im-combatant-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.im-combatant-name {
+    font-weight: 700;
+    font-size: 0.82rem;
+    color: #fff;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.im-combatant.im-active .im-combatant-name {
+    color: var(--accent-bright);
+}
+
+.im-combatant-sub {
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    margin-top: 2px;
+    display: flex;
+    gap: 6px;
+}
+
+.im-combatant-hp-mini {
+    margin-top: 5px;
+}
+
+.im-hp-mini-track {
+    height: 3px;
+    background: rgba(0,0,0,0.4);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.im-hp-mini-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.4s ease;
+}
+
+.im-combatant-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.im-init-score {
+    font-family: 'Cinzel', serif;
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--accent);
+    line-height: 1;
+}
+
+.im-conditions-mini {
+    display: flex;
+    gap: 2px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    max-width: 80px;
+}
+
+.im-cond-pip {
+    font-size: 0.75rem;
+    line-height: 1;
+}
+
+/* ── BOTTOM ACTION BAR ──────────────────────────────────────────── */
+.im-actions-bar {
+    background: rgba(15,17,21,0.97);
+    border-top: 1px solid rgba(255,255,255,0.05);
+    padding: 12px 20px;
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.im-actions-bar::before {
+    content: '';
+    position: absolute;
+    left: 0; right: 0;
+    top: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(197,160,89,0.3), transparent);
+}
+
+/* ── DAMAGE / HEAL QUICK INPUT ──────────────────────────────────── */
+.im-dmg-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex: 1;
+}
+
+.im-dmg-input {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    border-radius: 8px;
+    padding: 7px 12px !important;
+    color: var(--text-main) !important;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.8rem !important;
+    width: 100px;
+    transition: border-color 0.2s;
+}
+
+.im-dmg-input:focus {
+    border-color: rgba(197,160,89,0.4) !important;
+    outline: none;
+    box-shadow: 0 0 8px rgba(197,160,89,0.1);
+}
+
+/* ── QUICK ADD FORM ─────────────────────────────────────────────── */
+.im-quick-add {
+    background: rgba(15,17,21,0.98);
+    border-top: 1px solid rgba(255,255,255,0.04);
+    padding: 14px 20px;
+    flex-shrink: 0;
+}
+
+.im-quick-add-row {
+    display: grid;
+    grid-template-columns: 1fr 60px 60px auto;
+    gap: 6px;
+    align-items: end;
+}
+
+/* ── CONDITION PILLS ────────────────────────────────────────────── */
+.im-cond-list {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+}
+
+.im-cond-tag {
+    font-size: 0.55rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 2px 7px;
+    border-radius: 10px;
+    border: 1px solid rgba(239,68,68,0.35);
+    background: rgba(239,68,68,0.1);
+    color: #fca5a5;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.im-cond-tag:hover {
+    background: rgba(239,68,68,0.25);
+}
+
+/* ── EMPTY STATE ────────────────────────────────────────────────── */
+.im-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    gap: 16px;
+    padding: 40px;
+    text-align: center;
+    color: var(--text-dim);
+}
+
+.im-empty-icon {
+    font-size: 3.5rem;
+    opacity: 0.3;
+    animation: im-float 3s ease-in-out infinite;
+}
+
+@keyframes im-float {
+    0%, 100% { transform: translateY(0); }
+    50%       { transform: translateY(-8px); }
+}
+
+.im-empty-title {
+    font-family: 'Cinzel', serif;
+    font-size: 1.2rem;
+    color: var(--accent);
+    opacity: 0.7;
+}
+
+.im-empty-sub {
+    font-size: 0.8rem;
+    max-width: 280px;
+    line-height: 1.5;
+    opacity: 0.5;
+}
+
+/* ── ANIMATED ROUND CHANGE ──────────────────────────────────────── */
+@keyframes im-round-flash {
+    0%   { opacity: 0; transform: scale(1.5); }
+    30%  { opacity: 1; transform: scale(1);   }
+    80%  { opacity: 1; }
+    100% { opacity: 0; transform: scale(0.8); }
+}
+
+.im-round-announce {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.7);
+    z-index: 100;
+    pointer-events: none;
+    animation: im-round-flash 1.8s ease forwards;
+}
+
+.im-round-announce-text {
+    font-family: 'Cinzel', serif;
+    font-size: 3rem;
+    font-weight: 900;
+    color: var(--accent);
+    text-shadow: 0 0 40px rgba(197,160,89,0.8), 0 0 80px rgba(197,160,89,0.4);
+    letter-spacing: 4px;
+}
+
+/* ── TURN TRANSITION OVERLAY ────────────────────────────────────── */
+@keyframes im-turn-slide {
+    0%   { transform: translateX(-100%); opacity: 0; }
+    20%  { transform: translateX(0);     opacity: 1; }
+    80%  { transform: translateX(0);     opacity: 1; }
+    100% { transform: translateX(100%);  opacity: 0; }
+}
+
+.im-turn-announce {
+    position: absolute;
+    top: 120px; left: 0; right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    pointer-events: none;
+    z-index: 50;
+    animation: im-turn-slide 2s cubic-bezier(0.16,1,0.3,1) forwards;
+}
+
+.im-turn-announce-inner {
+    background: rgba(15,17,21,0.95);
+    border: 1px solid rgba(197,160,89,0.35);
+    border-radius: 12px;
+    padding: 10px 28px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: 'Cinzel', serif;
+    color: var(--accent-bright);
+    font-size: 0.85rem;
+    font-weight: 700;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.7);
+}
+
+/* ── SCROLLBAR ──────────────────────────────────────────────────── */
+.im-queue-section::-webkit-scrollbar { width: 4px; }
+.im-queue-section::-webkit-scrollbar-track { background: transparent; }
+.im-queue-section::-webkit-scrollbar-thumb { background: rgba(197,160,89,0.3); border-radius: 4px; }
+
+/* ── RESPONSIVE ─────────────────────────────────────────────────── */
+@media (max-width: 1200px) {
+    .im-spotlight-name { font-size: 1.3rem; }
+    .im-quick-add-row { grid-template-columns: 1fr 55px 55px auto; }
+}

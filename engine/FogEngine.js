@@ -146,10 +146,10 @@ export class FogEngine {
     /* ── Vision Integration ─────────────────────────────────────── */
 
     /**
-     * Update visibility from token positions + their visionRange.
-     * Called each frame when tokens move.
+     * Update visibility from token positions + their visionRange and darkvision.
+     * Uses VisionEngine to calculate true Line of Sight if provided.
      */
-    updateFromTokens(tokens, gridEngine) {
+    updateFromTokens(tokens, gridEngine, visionEngine = null) {
         // Mark currently visible cells as explored
         this.resetToHidden();
 
@@ -157,8 +157,17 @@ export class FogEngine {
             if (token.type === 'player' || token.isDM) {
                 const cellX = Math.floor(token.x / gridEngine.cellSize);
                 const cellY = Math.floor(token.y / gridEngine.cellSize);
-                const radiusCells = Math.ceil(token.visionRange / gridEngine.feetPerCell);
-                this.revealCircle(cellX, cellY, radiusCells);
+                
+                // Effective vision is the maximum of standard vision, darkvision, or light emitted
+                const effectiveRange = Math.max(token.visionRange || 0, token.darkvision || 0, token.lightRadius || 0);
+                const radiusCells = Math.ceil(effectiveRange / gridEngine.feetPerCell);
+                
+                if (visionEngine) {
+                    const visibleCells = visionEngine.getVisibleCells(token.x, token.y, effectiveRange);
+                    visibleCells.forEach(c => this.reveal(c.col, c.row));
+                } else {
+                    this.revealCircle(cellX, cellY, radiusCells);
+                }
             }
         });
     }

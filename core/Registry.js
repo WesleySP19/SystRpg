@@ -8,39 +8,45 @@ import { events } from './EventBus.js';
 class Registry {
     constructor() {
         this.store = new Store({
+            // Navigation
             activeView: 'home',
             activeTab: 'dashboard',
+
+            // Party
             players: [],
             monsters: [],
-            logs: [],
-            audioMuted: false,
-            currentTheme: 'default',
-            resources: { potions: 0, scrolls: 0 },
+            savedNPCs: [],
+
+            // Combat
             initiativeOrder: [],
             concentration: [],
             combatRound: 0,
             combatActive: false,
-            lastLoot: null,
-            currentEnvironment: 'default',
-            quests: [],
+
+            // Journal & Timeline
             journalEntries: [],
-            tacticalMap: null,
-            currentMap: '',
-            selectedMonsterId: null,
-            playerMapData: null,
-            showPartyHUD: true,
-            campaignData: {
-                title: 'Nova Campanha',
-                location: 'Desconhecido',
-                day: 1,
-                groupGold: 0,
-                rations: 0,
-                water: 0,
-                factions: [
-                    { name: 'Guarda da Cidade', status: 'Amigável' },
-                    { name: 'Sindicato do Crime', status: 'Hostil' }
-                ]
-            }
+            sessionNotes: '',
+            sessionTitle: '',
+
+            // Campaign
+            campaigns: [],
+            activeCampaignId: null,
+            quests: [],
+
+            // Map
+            tacticalMap: { fog: null, mapUrl: null, tokens: [] },
+
+            // Loot
+            lastLoot: null,
+
+            // Audio & Preferences
+            audioMuted: false,
+            currentTheme: 'default',
+            currentEnvironment: 'default',
+            resources: { potions: 0, scrolls: 0 },
+
+            // Meta
+            schemaVersion: 5
         });
 
         this.events = events;

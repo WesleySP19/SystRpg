@@ -1,0 +1,1234 @@
+﻿{
+    "activeView":  "home",
+    "activeTab":  "dashboard",
+    "players":  [
+                    {
+                        "id":  "rosa_selvagem_149493",
+                        "name":  "Rosa Selvagem",
+                        "race":  "Humana",
+                        "class":  "Druida",
+                        "subclass":  "",
+                        "level":  2,
+                        "background":  "Andarilha",
+                        "playerName":  "Paloma",
+                        "alignment":  "Caotico bom ",
+                        "xp":  300,
+                        "portraitData":  null,
+                        "portraitSettings":  {
+                                                 "x":  0,
+                                                 "y":  0,
+                                                 "scale":  1
+                                             },
+                        "hp":  {
+                                   "current":  10,
+                                   "max":  10,
+                                   "temp":  0
+                               },
+                        "ac":  14,
+                        "speed":  9,
+                        "initiative":  2,
+                        "proficiencyBonus":  2,
+                        "inspiration":  false,
+                        "hitDice":  {
+                                        "total":  "2d8",
+                                        "remaining":  "2d8"
+                                    },
+                        "stats":  {
+                                      "str":  9,
+                                      "dex":  14,
+                                      "con":  15,
+                                      "int":  13,
+                                      "wis":  16,
+                                      "cha":  11
+                                  },
+                        "savingThrows":  {
+                                             "str":  true,
+                                             "dex":  false,
+                                             "con":  false,
+                                             "int":  false,
+                                             "wis":  false,
+                                             "cha":  false
+                                         },
+                        "skills":  [
+                                       "athletics",
+                                       "history",
+                                       "investigation",
+                                       "nature",
+                                       "religion"
+                                   ],
+                        "attacks":  [
+                                        {
+                                            "name":  "Cimitarra",
+                                            "bonus":  "",
+                                            "damage":  ""
+                                        },
+                                        {
+                                            "name":  "Produzir Chama",
+                                            "bonus":  "",
+                                            "damage":  ""
+                                        },
+                                        {
+                                            "name":  "Chicote de Espinhos",
+                                            "bonus":  "",
+                                            "damage":  ""
+                                        }
+                                    ],
+                        "features":  [
+
+                                     ],
+                        "spells":  {
+                                       "lvl0":  "Emaranhar",
+                                       "lvl1":  "Fogo Fátuo",
+                                       "lvl2":  "Bombalha",
+                                       "lvl3":  "Falar com Animais",
+                                       "lvl4":  "",
+                                       "lvl5":  "",
+                                       "lvl6":  "",
+                                       "lvl7":  "",
+                                       "lvl8":  "",
+                                       "lvl9":  ""
+                                   },
+                        "spellSlots":  {
+                                           "1":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "2":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "3":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "4":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "5":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "6":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "7":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "8":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "9":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 }
+                                       },
+                        "spellcasting":  {
+                                             "ability":  "",
+                                             "dc":  0,
+                                             "attackBonus":  0
+                                         },
+                        "currency":  {
+                                         "pp":  0,
+                                         "gp":  0,
+                                         "ep":  0,
+                                         "sp":  0,
+                                         "cp":  0
+                                     },
+                        "equipment":  {
+                                          "items":  [
+                                                        {
+                                                            "name":  "Armadura de Couro",
+                                                            "qty":  1,
+                                                            "weight":  0
+                                                        },
+                                                        {
+                                                            "name":  "Escudo de Madeira",
+                                                            "qty":  1,
+                                                            "weight":  0
+                                                        },
+                                                        {
+                                                            "name":  "Cimitarra",
+                                                            "qty":  1,
+                                                            "weight":  0
+                                                        },
+                                                        {
+                                                            "name":  "Bordão",
+                                                            "qty":  1,
+                                                            "weight":  0
+                                                        },
+                                                        {
+                                                            "name":  "Ramo de Visco (Foco Arcano)",
+                                                            "qty":  1,
+                                                            "weight":  0
+                                                        },
+                                                        {
+                                                            "name":  "Kit de Herbalismo",
+                                                            "qty":  1,
+                                                            "weight":  0
+                                                        },
+                                                        {
+                                                            "name":  "Mochila",
+                                                            "qty":  1,
+                                                            "weight":  0
+                                                        },
+                                                        {
+                                                            "name":  "Saco de Dormir",
+                                                            "qty":  1,
+                                                            "weight":  0
+                                                        },
+                                                        {
+                                                            "name":  "Kit de Refeição",
+                                                            "qty":  1,
+                                                            "weight":  0
+                                                        },
+                                                        {
+                                                            "name":  "Caixa de Fogo",
+                                                            "qty":  1,
+                                                            "weight":  0
+                                                        },
+                                                        {
+                                                            "name":  "10 Tochas",
+                                                            "qty":  1,
+                                                            "weight":  0
+                                                        },
+                                                        {
+                                                            "name":  "10 dias de Rações",
+                                                            "qty":  1,
+                                                            "weight":  0
+                                                        },
+                                                        {
+                                                            "name":  "Odre de água",
+                                                            "qty":  1,
+                                                            "weight":  0
+                                                        },
+                                                        {
+                                                            "name":  "Corda de cânhamo (15m)",
+                                                            "qty":  1,
+                                                            "weight":  0
+                                                        },
+                                                        {
+                                                            "name":  "Armadilha de caça",
+                                                            "qty":  1,
+                                                            "weight":  0
+                                                        },
+                                                        {
+                                                            "name":  "Troféu de animal abatido",
+                                                            "qty":  1,
+                                                            "weight":  0
+                                                        },
+                                                        {
+                                                            "name":  "Roupas de Viajante.",
+                                                            "qty":  1,
+                                                            "weight":  0
+                                                        }
+                                                    ],
+                                          "notes":  "Armadura de Couro, Escudo de Madeira, Cimitarra, Bordão, Ramo de Visco (Foco Arcano), Kit de Herbalismo, Mochila, Saco de Dormir, Kit de Refeição, Caixa de Fogo, 10 Tochas, 10 dias de Rações, Odre de água, Corda de cânhamo (15m), Armadilha de caça, Troféu de animal abatido, Roupas de Viajante."
+                                      },
+                        "roleplay":  {
+                                         "traits":  "Eu me sinto muito mais confortável perto de animais do que de pessoas, e prefiro dormir sob as estrelas do que em uma cama de estalagem.",
+                                         "ideals":  "Natureza: O mundo natural é muito mais importante que as construções feitas pelos homens.",
+                                         "bonds":  "",
+                                         "flaws":  "Eu sou desconfiada com as intenções de pessoas da cidade e posso parecer ríspida ou selvagem demais em conversas formais."
+                                     },
+                        "proficiencies":  {
+                                              "languages":  "",
+                                              "tools":  ""
+                                          },
+                        "otherProfs":  "Idiomas:\nComum (Idioma padrão dos humanos)\nDialeto Druídico (Idioma secreto da classe Druida)\nÉlfico (Sua escolha bônus como humana, perfeito já que ela foi criada pela Tribo Silvanar!)\nProficiências com Armaduras e Escudos:\nArmaduras Leves, Armaduras Médias e Escudos.\n(Nota Importante: Druidas não vestem armaduras nem usam escudos feitos de metal).\nProficiências com Armas:\nClava, Adaga, Dardo, Azagaia, Maça, Bordão, Cimitarra, Foice, Funda e Lança.\nProficiências com Ferrametas:\nKit de Herbalismo (Para criar remédios e poções com as plantas que conhece).\nFlauta de Bambu (Seu instrumento musical ganho pelo antecedente Andarilho).",
+                        "bio":  "1",
+                        "allies":  "",
+                        "conditions":  [
+
+                                       ],
+                        "deathSaves":  {
+                                           "successes":  [
+                                                             false,
+                                                             false,
+                                                             false
+                                                         ],
+                                           "failures":  [
+                                                            false,
+                                                            false,
+                                                            false
+                                                        ]
+                                       },
+                        "createdAt":  "2026-05-26T16:49:09.493Z",
+                        "attackNotes":  ""
+                    },
+                    {
+                        "id":  "romeu_eritros_162295",
+                        "name":  "Nilah",
+                        "race":  "Tiefling",
+                        "class":  "Monge 2º",
+                        "subclass":  "",
+                        "level":  2,
+                        "background":  "Artesão de Guilda",
+                        "playerName":  "Manu",
+                        "alignment":  "Neutra Boa",
+                        "xp":  0,
+                        "portraitData":  null,
+                        "portraitSettings":  {
+                                                 "x":  0,
+                                                 "y":  0,
+                                                 "scale":  1
+                                             },
+                        "hp":  {
+                                   "current":  16,
+                                   "max":  16,
+                                   "temp":  0
+                               },
+                        "ac":  14,
+                        "speed":  12,
+                        "initiative":  2,
+                        "proficiencyBonus":  2,
+                        "inspiration":  false,
+                        "hitDice":  {
+                                        "total":  "2d8",
+                                        "remaining":  "2"
+                                    },
+                        "stats":  {
+                                      "str":  10,
+                                      "dex":  10,
+                                      "con":  10,
+                                      "int":  10,
+                                      "wis":  10,
+                                      "cha":  10
+                                  },
+                        "savingThrows":  {
+                                             "str":  false,
+                                             "dex":  false,
+                                             "con":  false,
+                                             "int":  false,
+                                             "wis":  false,
+                                             "cha":  false
+                                         },
+                        "skills":  [
+                                       "acrobatics",
+                                       "investigation",
+                                       "religion",
+                                       "insight"
+                                   ],
+                        "attacks":  [
+
+                                    ],
+                        "features":  [
+
+                                     ],
+                        "spells":  {
+                                       "lvl0":  "Taumaturgia",
+                                       "lvl1":  "Taumaturgia",
+                                       "lvl2":  "Monge\nCarisma",
+                                       "lvl3":  "",
+                                       "lvl4":  "Taumaturgia",
+                                       "lvl5":  "",
+                                       "lvl6":  "",
+                                       "lvl7":  "",
+                                       "lvl8":  "",
+                                       "lvl9":  ""
+                                   },
+                        "spellSlots":  {
+                                           "0":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "1":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "2":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "3":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "4":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "5":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "6":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "7":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "8":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "9":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 }
+                                       },
+                        "spellcasting":  {
+                                             "ability":  "",
+                                             "dc":  0,
+                                             "attackBonus":  0
+                                         },
+                        "currency":  {
+                                         "pp":  0,
+                                         "gp":  25,
+                                         "ep":  1,
+                                         "sp":  12,
+                                         "cp":  0
+                                     },
+                        "equipment":  {
+                                          "items":  [
+                                                        {
+                                                            "name":  "- 10 Dardos",
+                                                            "qty":  1,
+                                                            "weight":  0
+                                                        },
+                                                        {
+                                                            "name":  "- Ferramentas de Pintor",
+                                                            "qty":  1,
+                                                            "weight":  0
+                                                        },
+                                                        {
+                                                            "name":  "- Pacote de Explorador",
+                                                            "qty":  1,
+                                                            "weight":  0
+                                                        }
+                                                    ],
+                                          "notes":  "- 10 Dardos\r\n- Ferramentas de Pintor\r\n- Pacote de Explorador"
+                                      },
+                        "roleplay":  {
+                                         "traits":  "“Eu sempre quero aprender como as coisas funcionam e o que deixa as pessoas motivadas.”",
+                                         "ideals":  "“Criatividade. O mundo precisa de novas ideias e ações ousadas.",
+                                         "bonds":  "“Eu tenho uma grande dívida para com minha guilda por fazer de mim a pessoa que sou hoje.”",
+                                         "flaws":  "“Eu sou terrivelmente invejoso com qualquer um que possa ofuscar meu ofício. Todo lugar que eu vou, estou cercado de rivais.”"
+                                     },
+                        "proficiencies":  {
+                                              "languages":  "",
+                                              "tools":  ""
+                                          },
+                        "otherProfs":  "",
+                        "bio":  "",
+                        "allies":  "",
+                        "conditions":  [
+
+                                       ],
+                        "deathSaves":  {
+                                           "successes":  [
+                                                             false,
+                                                             false,
+                                                             false
+                                                         ],
+                                           "failures":  [
+                                                            false,
+                                                            false,
+                                                            false
+                                                        ]
+                                       },
+                        "createdAt":  "2026-05-26T16:49:22.296Z",
+                        "attackNotes":  ""
+                    },
+                    {
+                        "id":  "lixo_187558",
+                        "name":  "Lixo",
+                        "race":  "Povo-Lagarto",
+                        "class":  "Ladino 2º",
+                        "subclass":  "",
+                        "level":  2,
+                        "background":  "Forasteiro",
+                        "playerName":  "Guime",
+                        "alignment":  "Caótico Neutro",
+                        "xp":  0,
+                        "portraitData":  null,
+                        "portraitSettings":  {
+                                                 "x":  0,
+                                                 "y":  0,
+                                                 "scale":  1
+                                             },
+                        "hp":  {
+                                   "current":  13,
+                                   "max":  13,
+                                   "temp":  0
+                               },
+                        "ac":  15,
+                        "speed":  9,
+                        "initiative":  2,
+                        "proficiencyBonus":  2,
+                        "inspiration":  false,
+                        "hitDice":  {
+                                        "total":  "2d8",
+                                        "remaining":  "2"
+                                    },
+                        "stats":  {
+                                      "str":  10,
+                                      "dex":  10,
+                                      "con":  10,
+                                      "int":  10,
+                                      "wis":  10,
+                                      "cha":  10
+                                  },
+                        "savingThrows":  {
+                                             "str":  false,
+                                             "dex":  false,
+                                             "con":  false,
+                                             "int":  false,
+                                             "wis":  false,
+                                             "cha":  false
+                                         },
+                        "skills":  [
+                                       "acrobatics",
+                                       "sleightOfHand",
+                                       "arcana",
+                                       "history",
+                                       "investigation",
+                                       "medicine",
+                                       "survival",
+                                       "persuasion"
+                                   ],
+                        "attacks":  [
+                                        {
+                                            "name":  "",
+                                            "bonus":  "",
+                                            "damage":  ""
+                                        }
+                                    ],
+                        "features":  [
+
+                                     ],
+                        "spells":  {
+                                       "lvl0":  "",
+                                       "lvl1":  "",
+                                       "lvl2":  "",
+                                       "lvl3":  "",
+                                       "lvl4":  "",
+                                       "lvl5":  "",
+                                       "lvl6":  "",
+                                       "lvl7":  "",
+                                       "lvl8":  "",
+                                       "lvl9":  ""
+                                   },
+                        "spellSlots":  {
+                                           "1":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "2":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "3":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "4":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "5":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "6":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "7":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "8":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "9":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 }
+                                       },
+                        "spellcasting":  {
+                                             "ability":  "",
+                                             "dc":  0,
+                                             "attackBonus":  0
+                                         },
+                        "currency":  {
+                                         "pp":  0,
+                                         "gp":  0,
+                                         "ep":  -1,
+                                         "sp":  9,
+                                         "cp":  0
+                                     },
+                        "equipment":  {
+                                          "items":  [
+                                                        {
+                                                            "name":  "",
+                                                            "qty":  1,
+                                                            "weight":  0
+                                                        }
+                                                    ],
+                                          "notes":  ""
+                                      },
+                        "roleplay":  {
+                                         "traits":  "Eu fui, de fato, criado por lobos.",
+                                         "ideals":  "O mundo natural é mais importante que as construções da civilização.",
+                                         "bonds":  "Sofro de visões horríveis em meus descansos.",
+                                         "flaws":  "A violência é a resposta para qualquer conflito."
+                                     },
+                        "proficiencies":  {
+                                              "languages":  "",
+                                              "tools":  ""
+                                          },
+                        "otherProfs":  "",
+                        "bio":  "Um pequeno homem-lagarto que foi abandonado pelo seu clã por ser pequeno demais, visto como possivelmente frágil e um estorvo, a criatura se rastejou até a região mais escura das florestas. Encontrado por um bando de lobos, a criatura sobreviveu aprendendo a caçar, rastrear e criar armas feitas de ossos e couro dos animais que ela abateu, além de aprender a transformar qualquer coisa em comida. \n  O tempo passou e o lagarto naturalmente se interessou em se aproximar das comunidades menores, como vilas e fazendas, roubando comidas e ferramentas para entender melhor como os seres inteligentes viviam, já que ele procurava entender o conceito de grupos e clãs além da alcateia que lhe serviu como família. Aprendendo sobre as coisas que as comunidades jogam fora, o lagarto adotou como nome para si \"Lixo\", por gostar das coisas encontradas entre o descarte da civilização. \n\n  Um dia, Lixo retornou para o interior da floresta à procura de sua alcateia, apenas para encontrar os lobos mortos por flechas e virotes de caçadores que acampavam próximos. Usando os próprios ossos dos lobos de sua alcateia, Lixo criou armas e caçou de volta tais indivíduos, se banhando em sangue naquela mesma noite.\n\n  Desde então, Lixo adentra e se arrisca cada vez mais nos becos escuros e favelas das cidades e vilas do reino, aprendendo a ler, escrever, compreender sistemas e fechaduras, armadilhas e afins. Mais inteligente do que a maioria dos lagartos de sua espécie, Lixo encontrou seu lugar no maior clã que existe: A civilização.",
+                        "allies":  "",
+                        "conditions":  [
+
+                                       ],
+                        "deathSaves":  {
+                                           "successes":  [
+                                                             false,
+                                                             false,
+                                                             false
+                                                         ],
+                                           "failures":  [
+                                                            false,
+                                                            false,
+                                                            false
+                                                        ]
+                                       },
+                        "createdAt":  "2026-05-26T16:49:47.558Z",
+                        "attackNotes":  ""
+                    },
+                    {
+                        "id":  "naerys_236611",
+                        "name":  "Naerys",
+                        "race":  "Elfo- da floresta",
+                        "class":  "Bruxo arquifada 2",
+                        "subclass":  "",
+                        "level":  2,
+                        "background":  "Forasteiro",
+                        "playerName":  "Renatha",
+                        "alignment":  "Leal e mau",
+                        "xp":  0,
+                        "portraitData":  null,
+                        "portraitSettings":  {
+                                                 "x":  0,
+                                                 "y":  0,
+                                                 "scale":  1
+                                             },
+                        "hp":  {
+                                   "current":  17,
+                                   "max":  17,
+                                   "temp":  0
+                               },
+                        "ac":  13,
+                        "speed":  105,
+                        "initiative":  2,
+                        "proficiencyBonus":  2,
+                        "inspiration":  false,
+                        "hitDice":  {
+                                        "total":  "2d8",
+                                        "remaining":  "2"
+                                    },
+                        "stats":  {
+                                      "str":  8,
+                                      "dex":  14,
+                                      "con":  14,
+                                      "int":  10,
+                                      "wis":  14,
+                                      "cha":  15
+                                  },
+                        "savingThrows":  {
+                                             "str":  false,
+                                             "dex":  false,
+                                             "con":  false,
+                                             "int":  false,
+                                             "wis":  false,
+                                             "cha":  false
+                                         },
+                        "skills":  [
+                                       "arcana",
+                                       "survival",
+                                       "animalHandling",
+                                       "deception",
+                                       "intimidation",
+                                       "persuasion"
+                                   ],
+                        "attacks":  [
+                                        {
+                                            "name":  "",
+                                            "bonus":  "",
+                                            "damage":  ""
+                                        }
+                                    ],
+                        "features":  [
+
+                                     ],
+                        "spells":  {
+                                       "lvl0":  "- ilusão menor\ncausar medo\n- mãos mágicas\nenfeitiçar pessoa\nrepreensão diabolica\nperdição",
+                                       "lvl1":  "- ilusão menor\ncausar medo\n- mãos mágicas\nenfeitiçar pessoa\nrepreensão diabolica\nperdição",
+                                       "lvl2":  "Bruxo - arquifada 2\ncarisma\nenfeitiçar pessoa\nrepreensão diabolica\nperdição",
+                                       "lvl3":  "enfeitiçar pessoa",
+                                       "lvl4":  "- ilusão menor\nrepreensão diabolica",
+                                       "lvl5":  "causar medo\nperdição",
+                                       "lvl6":  "- mãos mágicas",
+                                       "lvl7":  "",
+                                       "lvl8":  "",
+                                       "lvl9":  ""
+                                   },
+                        "spellSlots":  {
+                                           "1":  {
+                                                     "total":  2,
+                                                     "used":  0
+                                                 },
+                                           "2":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "3":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "4":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "5":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "6":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "7":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "8":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "9":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 }
+                                       },
+                        "spellcasting":  {
+                                             "ability":  "",
+                                             "dc":  0,
+                                             "attackBonus":  0
+                                         },
+                        "currency":  {
+                                         "pp":  0,
+                                         "gp":  0,
+                                         "ep":  4,
+                                         "sp":  105,
+                                         "cp":  0
+                                     },
+                        "equipment":  {
+                                          "items":  [
+                                                        {
+                                                            "name":  "- besta leve",
+                                                            "qty":  1,
+                                                            "weight":  0
+                                                        },
+                                                        {
+                                                            "name":  "- foco arcana: Colar com simbolo elfico",
+                                                            "qty":  1,
+                                                            "weight":  0
+                                                        },
+                                                        {
+                                                            "name":  "- armadura de couro e 2 adagas",
+                                                            "qty":  1,
+                                                            "weight":  0
+                                                        },
+                                                        {
+                                                            "name":  "- Arco curto.",
+                                                            "qty":  1,
+                                                            "weight":  0
+                                                        }
+                                                    ],
+                                          "notes":  "- besta leve\n- foco arcana: Colar com simbolo elfico\n- armadura de couro e 2 adagas;\n- Arco curto."
+                                      },
+                        "roleplay":  {
+                                         "traits":  "Reservada e observadora, costuma analisar todos antes de confiar.",
+                                         "ideals":  "Poder e controle são necessários.",
+                                         "bonds":  "Carrega um antigo símbolo élfico herdado de sua",
+                                         "flaws":  "Dificilmente confia nos outros e tende a manipular"
+                                     },
+                        "proficiencies":  {
+                                              "languages":  "",
+                                              "tools":  ""
+                                          },
+                        "otherProfs":  "",
+                        "bio":  "Sob uma lua violeta, nas florestas ancestrais de Velkhar, nasceu Naerys uma elfa criada entre um povo que tratava emoções como fraquezas capazes de corromper a magia. Filha de uma curandeira respeitada e de um comandante desaparecido nas guerras contra o Subterrâneo, cresceu aprendendo que confiança era apenas outra forma de morrer lentamente.\nEnquanto os demais treinavam espadas e diplomacia, Naerys observava pessoas. Descobriu cedo que medo, culpa e desejo eram armas muito mais perigosas que aço. Fascinada pelos sussurros vindos das ruínas proibidas abaixo de Velkhar, desceu até os templos esquecidos de Nytheris e realizou um pacto por vontade própria: em troca de conhecimento sobre os segredos da alma mortal, deveria coletar verdades ocultas pelo mundo.\nDesde então, sombras violetas passaram a envolver sua magia, seus olhos revelavam mentiras e sua presença fazia até a floresta silenciar. Mas o preço foi cruel: quanto mais compreendia os outros, menos confiava em si mesma.\nQuando descobriu que a corte élfica sacrificava inocentes ao Subterrâneo em troca de poder, Naerys eliminou cada conspirador silenciosamente. Foi chamada de monstro. Ela chamou aquilo de justiça. Agora vaga entre reinos decadentes como uma lenda sombria — temida como a Bruxa de Nytheris, uma protetora brutal que carrega dentro de si um vazio que nem o conhecimento proibido conseguiu preencher.",
+                        "allies":  "Familia Velkhar",
+                        "conditions":  [
+
+                                       ],
+                        "deathSaves":  {
+                                           "successes":  [
+                                                             false,
+                                                             false,
+                                                             false
+                                                         ],
+                                           "failures":  [
+                                                            false,
+                                                            false,
+                                                            false
+                                                        ]
+                                       },
+                        "createdAt":  "2026-05-26T16:50:36.611Z",
+                        "attackNotes":  ""
+                    },
+                    {
+                        "id":  "romeu_eritros_254631",
+                        "name":  "Romeu Eritros",
+                        "race":  "Humano Variante",
+                        "class":  "Clerigo da Luz /",
+                        "subclass":  "",
+                        "level":  2,
+                        "background":  "Acólito",
+                        "playerName":  "Yuller",
+                        "alignment":  "Bom / Chaotico",
+                        "xp":  0,
+                        "portraitData":  null,
+                        "portraitSettings":  {
+                                                 "x":  0,
+                                                 "y":  0,
+                                                 "scale":  1
+                                             },
+                        "hp":  {
+                                   "current":  10,
+                                   "max":  10,
+                                   "temp":  0
+                               },
+                        "ac":  12,
+                        "speed":  9,
+                        "initiative":  1,
+                        "proficiencyBonus":  2,
+                        "inspiration":  false,
+                        "hitDice":  {
+                                        "total":  "2d8",
+                                        "remaining":  "2"
+                                    },
+                        "stats":  {
+                                      "str":  8,
+                                      "dex":  12,
+                                      "con":  13,
+                                      "int":  10,
+                                      "wis":  16,
+                                      "cha":  15
+                                  },
+                        "savingThrows":  {
+                                             "str":  false,
+                                             "dex":  false,
+                                             "con":  false,
+                                             "int":  false,
+                                             "wis":  false,
+                                             "cha":  false
+                                         },
+                        "skills":  [
+                                       "acrobatics",
+                                       "sleightOfHand",
+                                       "stealth"
+                                   ],
+                        "attacks":  [
+                                        {
+                                            "name":  "Maça",
+                                            "bonus":  "",
+                                            "damage":  ""
+                                        },
+                                        {
+                                            "name":  "Besta Leve",
+                                            "bonus":  "",
+                                            "damage":  ""
+                                        },
+                                        {
+                                            "name":  "Mãos Flamejantes",
+                                            "bonus":  "",
+                                            "damage":  ""
+                                        }
+                                    ],
+                        "features":  [
+
+                                     ],
+                        "spells":  {
+                                       "lvl0":  "Healing Word (V)",
+                                       "lvl1":  "Cure Wounds (V/S)",
+                                       "lvl2":  "Sanctuary (V/S/M)",
+                                       "lvl3":  "Detect Magic (V/S) *R+C",
+                                       "lvl4":  "Bless (V/S/M) *C",
+                                       "lvl5":  "Burning Hands (V/S)",
+                                       "lvl6":  "Faerie Fire (V) *C",
+                                       "lvl7":  "",
+                                       "lvl8":  "",
+                                       "lvl9":  ""
+                                   },
+                        "spellSlots":  {
+                                           "1":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "2":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "3":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "4":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "5":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "6":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "7":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "8":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "9":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 }
+                                       },
+                        "spellcasting":  {
+                                             "ability":  "",
+                                             "dc":  0,
+                                             "attackBonus":  0
+                                         },
+                        "currency":  {
+                                         "pp":  0,
+                                         "gp":  0,
+                                         "ep":  0,
+                                         "sp":  0,
+                                         "cp":  0
+                                     },
+                        "equipment":  {
+                                          "items":  [
+                                                        {
+                                                            "name":  "*1 Priest\u0027s Pack:",
+                                                            "qty":  1,
+                                                            "weight":  0
+                                                        },
+                                                        {
+                                                            "name":  "2 Vestmentas (clerigo/formal)  1 Tinderbo Suprimentos 2 bloco de incensos 1 Bolsa de Cinto 1 Cantil 10 Velas 5 Varetas de Incenso",
+                                                            "qty":  2,
+                                                            "weight":  0
+                                                        },
+                                                        {
+                                                            "name":  "1 Caixa de Esmolas 1 Cobertor 1 incensário",
+                                                            "qty":  1,
+                                                            "weight":  0
+                                                        },
+                                                        {
+                                                            "name":  "*1 Mochila",
+                                                            "qty":  1,
+                                                            "weight":  0
+                                                        },
+                                                        {
+                                                            "name":  "*1 Roupa Comun",
+                                                            "qty":  1,
+                                                            "weight":  0
+                                                        },
+                                                        {
+                                                            "name":  "*1 Cota de Escamas",
+                                                            "qty":  1,
+                                                            "weight":  0
+                                                        },
+                                                        {
+                                                            "name":  "*1 Escudo",
+                                                            "qty":  1,
+                                                            "weight":  0
+                                                        },
+                                                        {
+                                                            "name":  "*20 Virotes de Besta",
+                                                            "qty":  1,
+                                                            "weight":  0
+                                                        },
+                                                        {
+                                                            "name":  "*1 Besta Leve",
+                                                            "qty":  1,
+                                                            "weight":  0
+                                                        },
+                                                        {
+                                                            "name":  "*1 Livro de Orações",
+                                                            "qty":  1,
+                                                            "weight":  0
+                                                        },
+                                                        {
+                                                            "name":  "*1 Símbolo Sagrado",
+                                                            "qty":  1,
+                                                            "weight":  0
+                                                        },
+                                                        {
+                                                            "name":  "*1 Maça",
+                                                            "qty":  1,
+                                                            "weight":  0
+                                                        }
+                                                    ],
+                                          "notes":  "*1 Priest\u0027s Pack:\n2 Vestmentas (clerigo/formal)  1 Tinderbox 2 Suprimentos 2 bloco de incensos 1 Bolsa de Cinto 1 Cantil 10 Velas 5 Varetas de Incenso \n1 Caixa de Esmolas 1 Cobertor 1 incensário\n*1 Mochila\n*1 Roupa Comun\n*1 Cota de Escamas\n*1 Escudo\n*20 Virotes de Besta\n*1 Besta Leve\n*1 Livro de Orações\n*1 Símbolo Sagrado\n*1 Maça"
+                                      },
+                        "roleplay":  {
+                                         "traits":  "Eu trago beleza, alegria e maravilhas para pessoas ao meu redor usando magia e atitude positiva.\n\nTenho uma paixão pelo aspecto de fogo e na beleza que existe nas coisas momentâneas e finitas.",
+                                         "ideals":  "Procuro espalhar a beleza divina e trazer a luz brilhante para lutar contra escuridão.",
+                                         "bonds":  "",
+                                         "flaws":  "Tenho um lado piromaniaco que aparece se caso me deixar levar pela emoção. Rezo para não acabar destruindo aquilo que retem beleza unica."
+                                     },
+                        "proficiencies":  {
+                                              "languages":  "",
+                                              "tools":  ""
+                                          },
+                        "otherProfs":  "IDIOMA: Celestial, Common, Draconic,\nUndercommon\nARMADURA: Armadura Leve, Armadura Média, Escudos\nARMA: Armas Simples",
+                        "bio":  "0",
+                        "allies":  "Patrao/Divindade: *Sune*; Lady FireHair - Deusa Maior Faerûniana da Beleza, do Amor e da Paixão. Ela é uma divindade Caótica do Bem que prospera na estética, romance e na apreciação de todas as formas de beleza, sejam visuais, artísticas ou vivas. Incluindo também os aspectos mais negativos como obsessões, paixões assassinas, e as tragédias que poderiam nascer do amor, assim como a transformação da feiúra em beleza tanto externa quanto interna.\n\nIgreja de Sune.\n\nCidade de Waterdeep.",
+                        "conditions":  [
+
+                                       ],
+                        "deathSaves":  {
+                                           "successes":  [
+                                                             false,
+                                                             false,
+                                                             false
+                                                         ],
+                                           "failures":  [
+                                                            false,
+                                                            false,
+                                                            false
+                                                        ]
+                                       },
+                        "createdAt":  "2026-05-26T16:50:54.631Z",
+                        "attackNotes":  ""
+                    },
+                    {
+                        "id":  "nyx_303921",
+                        "name":  "NYX",
+                        "race":  "",
+                        "class":  "",
+                        "subclass":  "",
+                        "level":  1,
+                        "background":  "",
+                        "playerName":  "",
+                        "alignment":  "",
+                        "xp":  0,
+                        "portraitData":  null,
+                        "portraitSettings":  {
+                                                 "x":  0,
+                                                 "y":  0,
+                                                 "scale":  1
+                                             },
+                        "hp":  {
+                                   "current":  10,
+                                   "max":  10,
+                                   "temp":  0
+                               },
+                        "ac":  10,
+                        "speed":  30,
+                        "initiative":  0,
+                        "proficiencyBonus":  2,
+                        "inspiration":  false,
+                        "hitDice":  {
+                                        "total":  "",
+                                        "remaining":  ""
+                                    },
+                        "stats":  {
+                                      "str":  10,
+                                      "dex":  10,
+                                      "con":  10,
+                                      "int":  10,
+                                      "wis":  10,
+                                      "cha":  10
+                                  },
+                        "savingThrows":  {
+                                             "str":  false,
+                                             "dex":  false,
+                                             "con":  false,
+                                             "int":  false,
+                                             "wis":  false,
+                                             "cha":  false
+                                         },
+                        "skills":  [
+
+                                   ],
+                        "attacks":  [
+                                        {
+                                            "name":  "",
+                                            "bonus":  "",
+                                            "damage":  ""
+                                        }
+                                    ],
+                        "features":  [
+
+                                     ],
+                        "spells":  {
+                                       "lvl0":  "",
+                                       "lvl1":  "",
+                                       "lvl2":  "",
+                                       "lvl3":  "",
+                                       "lvl4":  "",
+                                       "lvl5":  "",
+                                       "lvl6":  "",
+                                       "lvl7":  "",
+                                       "lvl8":  "",
+                                       "lvl9":  ""
+                                   },
+                        "spellSlots":  {
+                                           "1":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "2":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "3":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "4":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "5":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "6":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "7":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "8":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 },
+                                           "9":  {
+                                                     "total":  0,
+                                                     "used":  0
+                                                 }
+                                       },
+                        "spellcasting":  {
+                                             "ability":  "",
+                                             "dc":  0,
+                                             "attackBonus":  0
+                                         },
+                        "currency":  {
+                                         "pp":  0,
+                                         "gp":  0,
+                                         "ep":  0,
+                                         "sp":  0,
+                                         "cp":  0
+                                     },
+                        "equipment":  {
+                                          "items":  [
+                                                        {
+                                                            "name":  "",
+                                                            "qty":  1,
+                                                            "weight":  0
+                                                        }
+                                                    ],
+                                          "notes":  ""
+                                      },
+                        "roleplay":  {
+                                         "traits":  "",
+                                         "ideals":  "",
+                                         "bonds":  "",
+                                         "flaws":  ""
+                                     },
+                        "proficiencies":  {
+                                              "languages":  "",
+                                              "tools":  ""
+                                          },
+                        "otherProfs":  "",
+                        "bio":  "",
+                        "allies":  "",
+                        "conditions":  [
+
+                                       ],
+                        "deathSaves":  {
+                                           "successes":  [
+                                                             false,
+                                                             false,
+                                                             false
+                                                         ],
+                                           "failures":  [
+                                                            false,
+                                                            false,
+                                                            false
+                                                        ]
+                                       },
+                        "createdAt":  "2026-05-26T16:51:43.921Z",
+                        "attackNotes":  ""
+                    }
+                ],
+    "monsters":  [
+
+                 ],
+    "savedNPCs":  [
+
+                  ],
+    "initiativeOrder":  [
+
+                        ],
+    "concentration":  [
+
+                      ],
+    "combatRound":  0,
+    "combatActive":  false,
+    "journalEntries":  [
+
+                       ],
+    "sessionNotes":  "",
+    "sessionTitle":  "Próxima sessão",
+    "campaigns":  [
+
+                  ],
+    "activeCampaignId":  null,
+    "quests":  [
+
+               ],
+    "tacticalMap":  {
+                        "fog":  null,
+                        "mapUrl":  null,
+                        "tokens":  [
+
+                                   ]
+                    },
+    "lastLoot":  null,
+    "audioMuted":  false,
+    "currentTheme":  "default",
+    "currentEnvironment":  "default",
+    "resources":  {
+                      "potions":  0,
+                      "scrolls":  0
+                  },
+    "schemaVersion":  5,
+    "xpDistributed":  0,
+    "sessionNumber":  1,
+    "sessionLoot":  "",
+    "editingHeroId":  null,
+    "initiativeIndex":  0,
+    "combatMusicUrl":  "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+    "explorationMusicUrl":  "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"
+}

@@ -1,18 +1,53 @@
 import { Component } from '../core/Component.js';
 import { TOME } from '../../core/Registry.js';
 import { Toast } from '../components/Toast.js';
-import { Modal } from '../components/Modal.js';
 import { MonsterData } from '../../data/MonsterData.js';
 
 /**
- * BESTIARY & MONSTER FORM v7.0 — "Intelligent Grimoire"
- * Structured actions and individual attribute management.
+ * BESTIARY & MONSTER FORM v6.5 — "Legacy Grimoire" Edition
+ * Redesigned to match the Parchment & Ink aesthetic.
  */
 export class MonsterForm extends Component {
     constructor(opts) {
         super(opts);
         this._view = 'library';
         this._selectedCR = 'Nível 1';
+    }
+
+    onMount() {
+        const f = this.$('#monster-form');
+        if (f) {
+            f.onsubmit = (e) => {
+                e.preventDefault();
+                const fd = new FormData(f);
+                const notes = fd.get('notes') || '';
+                const monster = {
+                    id: 'm-' + Date.now(),
+                    name: fd.get('name') || 'Nova Ameaça',
+                    type: 'Monster',
+                    cr: fd.get('cr') || '1',
+                    ac: parseInt(fd.get('ac')) || 10,
+                    hp: { current: parseInt(fd.get('hp_max')) || 10, max: parseInt(fd.get('hp_max')) || 10 },
+                    stats: {
+                        str: parseInt(fd.get('stat_str')) || 10,
+                        dex: parseInt(fd.get('stat_dex')) || 10,
+                        con: parseInt(fd.get('stat_con')) || 10,
+                        int: parseInt(fd.get('stat_int')) || 10,
+                        wis: parseInt(fd.get('stat_wis')) || 10,
+                        cha: parseInt(fd.get('stat_cha')) || 10
+                    },
+                    notes: notes,
+                    actions: this._parseActionsFromNotes(notes)
+                };
+
+                TOME.store.update(s => {
+                    s.monsters = [...(s.monsters || []), monster];
+                });
+                Toast.show(`✅ ${monster.name} registrado no Bestiário!`, 'success');
+                this._view = 'library';
+                this.render();
+            };
+        }
     }
 
     template() {
@@ -28,10 +63,26 @@ export class MonsterForm extends Component {
                     <div style="display:flex; gap:10px;">
                         <button class="sheet-tab-btn ${this._view === 'library' ? 'active' : ''}" data-action="setView" data-mode="library">BIBLIOTECA</button>
                         <button class="sheet-tab-btn ${this._view === 'creator' ? 'active' : ''}" data-action="setView" data-mode="creator">CRIAR AMEAÇA</button>
+                        <button class="sheet-tab-btn" data-action="openImporter" style="background:var(--sheet-accent-blue); color:white;">📥 IMPORTAR PRO</button>
                     </div>
                 </div>
 
                 ${this._view === 'library' ? this._renderLibrary() : this._renderCreator()}
+                
+                <!-- MONSTER IMPORTER MODAL -->
+                <div id="monster-importer" class="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:3000; align-items:center; justify-content:center; padding:20px;">
+                    <div class="card glass-accent" style="max-width:700px; width:100%; padding:30px; border:1px solid var(--accent);">
+                        <h3 style="font-family:'Cinzel'; color:var(--accent); margin-bottom:10px;">🔮 Importador Arcano de Monstros</h3>
+                        <p style="font-size:0.7rem; opacity:0.7; margin-bottom:20px;">Cole o bloco de texto do monstro (SRD, PDF ou Web) abaixo.</p>
+                        
+                        <textarea id="monster-import-text" class="legacy-textarea" style="height:350px; margin-bottom:20px;" placeholder="Ex: Owlbear / Large monstrosity, unaligned / Armor Class 13 / Hit Points 59..."></textarea>
+                        
+                        <div style="display:flex; gap:10px;">
+                            <button class="btn btn-ghost btn-block" data-action="closeImporter">Cancelar</button>
+                            <button class="btn btn-primary btn-block" data-action="processMonsterImport">Processar & Criar</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         `;
     }
@@ -39,8 +90,6 @@ export class MonsterForm extends Component {
     _renderLibrary() {
         const crGroups = Object.keys(MonsterData);
         const list = MonsterData[this._selectedCR] || [];
-        const { monsters = [] } = this.store.state;
-        const customMonsters = monsters.filter(m => !m.fromSRD); // Assume new ones aren't SRD
 
         return `
             <div style="display:flex; flex-direction:column; gap:20px;">
@@ -51,55 +100,35 @@ export class MonsterForm extends Component {
                                 style="font-family:var(--sheet-font-header); font-size:0.7rem; border: var(--sheet-border-thin); background:white; padding:5px 15px; border-radius:4px; cursor:pointer; ${cr === 'BOSS' ? 'color:red; border-color:red;' : ''}"
                                 data-action="setCR" data-cr="${cr}">${cr}</button>
                     `).join('')}
-                    <button class="level-tab ${this._selectedCR === 'CUSTOM' ? 'active' : ''}" 
-                            style="font-family:var(--sheet-font-header); font-size:0.7rem; border: var(--sheet-border-thin); background:white; padding:5px 15px; border-radius:4px; cursor:pointer; color:var(--sheet-accent-blue);"
-                            data-action="setCR" data-cr="CUSTOM">AMEAÇAS CUSTOM</button>
                 </div>
 
                 <!-- Creature Grid -->
                 <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap:20px; max-height: 70vh; overflow-y: auto; padding-right:15px;">
-                    ${this._selectedCR === 'CUSTOM' ? 
-                        customMonsters.map(m => this._renderMonsterCard(m, true)).join('') :
-                        list.map(m => this._renderMonsterCard(m, false)).join('')
-                    }
-                    ${this._selectedCR === 'CUSTOM' && customMonsters.length === 0 ? '<p style="opacity:0.5; text-align:center; grid-column: 1/-1; padding:40px;">Nenhuma ameaça customizada registrada.</p>' : ''}
-                </div>
-            </div>
-        `;
-    }
-
-    _renderMonsterCard(m, isCustom) {
-        return `
-            <div class="card" style="background:white; border:var(--sheet-border-thick); border-radius:8px; padding:0; overflow:hidden; position:relative; transition: transform 0.2s;">
-                <div style="height:120px; background:var(--sheet-accent-blue); display:flex; align-items:center; justify-content:center; font-size:4rem; border-bottom:var(--sheet-border-thin);">
-                    ${m.emoji || '🐾'}
-                </div>
-                <div style="padding:15px;">
-                    <h4 style="font-family:var(--sheet-font-header); font-size:1.1rem; margin:0;">${m.name}</h4>
-                    <div style="font-size:0.7rem; color:var(--sheet-label-color); text-transform:uppercase; font-weight:700; margin-top:5px;">
-                        ${m.type} • CA ${m.ac} • HP ${m.hp?.max || m.hp}
-                    </div>
-                    <p style="font-size:0.75rem; margin-top:10px; line-height:1.4; color:#333; height:45px; overflow:hidden; text-overflow:ellipsis;">${m.notes || 'Nenhuma descrição adicional disponível no tomo.'}</p>
-                    
-                    <div style="display:flex; gap:10px; margin-top:15px;">
-                        <button class="btn btn-primary btn-sm" style="flex:2; border-radius:4px;" 
-                                data-action="addToCampaign" data-id="${m.id}" data-name="${m.name}" data-cr="${this._selectedCR}">
-                            <i class="fa-solid fa-plus"></i> ARENA
-                        </button>
-                        ${isCustom ? `
-                            <button class="btn btn-danger btn-sm" style="flex:1; border-radius:4px;" 
-                                    data-action="deleteMonster" data-id="${m.id}">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
-                        ` : ''}
-                    </div>
+                    ${list.map(m => `
+                        <div class="card" style="background:white; border:var(--sheet-border-thick); border-radius:8px; padding:0; overflow:hidden; position:relative; transition: transform 0.2s;">
+                            <div style="height:120px; background:var(--sheet-accent-blue); display:flex; align-items:center; justify-content:center; font-size:4rem; border-bottom:var(--sheet-border-thin);">
+                                ${m.emoji || '🐾'}
+                            </div>
+                            <div style="padding:15px;">
+                                <h4 style="font-family:var(--sheet-font-header); font-size:1.1rem; margin:0;">${m.name}</h4>
+                                <div style="font-size:0.7rem; color:var(--sheet-label-color); text-transform:uppercase; font-weight:700; margin-top:5px;">
+                                    ${m.type} • CA ${m.ac} • HP ${m.hp}
+                                </div>
+                                <p style="font-size:0.75rem; margin-top:10px; line-height:1.4; color:#333;">${m.notes || 'Nenhuma descrição adicional disponível no bestiário.'}</p>
+                                
+                                <button class="btn btn-primary btn-sm btn-block" style="margin-top:15px; border-radius:4px;" 
+                                        data-action="addToCampaign" data-name="${m.name}" data-cr="${this._selectedCR}">
+                                    <i class="fa-solid fa-plus"></i> ADICIONAR À ARENA
+                                </button>
+                            </div>
+                        </div>
+                    `).join('')}
                 </div>
             </div>
         `;
     }
 
     _renderCreator() {
-        const stats = ['FOR', 'DES', 'CON', 'INT', 'SAB', 'CAR'];
         return `
             <div style="max-width:800px; margin:0 auto; background:white; border:var(--sheet-border-thick); padding:30px; border-radius:10px; box-shadow:var(--shadow-sm);">
                 <form id="monster-form" style="display:flex; flex-direction:column; gap:20px;">
@@ -110,7 +139,7 @@ export class MonsterForm extends Component {
                         </div>
                         <div>
                             <label class="attr-label">NÍVEL / CR</label>
-                            <input class="legacy-input" type="text" name="cr" placeholder="5" style="width:100%;">
+                            <input class="legacy-input" type="text" name="cr" placeholder="Nível 5" style="width:100%;">
                         </div>
                     </div>
 
@@ -120,43 +149,34 @@ export class MonsterForm extends Component {
                             <input class="legacy-input" type="text" name="type" placeholder="Morto-Vivo" style="width:100%;">
                         </div>
                         <div>
-                            <label class="attr-label">CA</label>
+                            <label class="attr-label">CLASSE DE ARMADURA</label>
                             <input class="legacy-input" type="number" name="ac" value="10" style="width:100%;">
                         </div>
                         <div>
-                            <label class="attr-label">HP MÁXIMO</label>
+                            <label class="attr-label">PONTOS DE VIDA</label>
                             <input class="legacy-input" type="number" name="hp_max" value="30" style="width:100%;">
                         </div>
                     </div>
 
-                    <div style="display:grid; grid-template-columns: repeat(6, 1fr); gap:10px; background:rgba(0,0,0,0.02); padding:15px; border-radius:8px;">
-                        ${stats.map(s => `
-                            <div style="text-align:center;">
-                                <label style="font-size:0.6rem; font-weight:900; display:block; margin-bottom:5px;">${s}</label>
-                                <input class="legacy-input" type="number" name="stat_${s.toLowerCase()}" value="10" style="width:100%; text-align:center; padding:5px;">
-                            </div>
-                        `).join('')}
+                    <div>
+                        <label class="attr-label">ATRIBUTOS</label>
+                        <div style="display:grid; grid-template-columns: repeat(6, 1fr); gap:10px;">
+                            <div style="text-align:center;"><label style="font-size:0.6rem; font-weight:800;">FOR</label><input class="legacy-input" type="number" name="stat_str" value="10" style="text-align:center;"></div>
+                            <div style="text-align:center;"><label style="font-size:0.6rem; font-weight:800;">DES</label><input class="legacy-input" type="number" name="stat_dex" value="10" style="text-align:center;"></div>
+                            <div style="text-align:center;"><label style="font-size:0.6rem; font-weight:800;">CON</label><input class="legacy-input" type="number" name="stat_con" value="10" style="text-align:center;"></div>
+                            <div style="text-align:center;"><label style="font-size:0.6rem; font-weight:800;">INT</label><input class="legacy-input" type="number" name="stat_int" value="10" style="text-align:center;"></div>
+                            <div style="text-align:center;"><label style="font-size:0.6rem; font-weight:800;">SAB</label><input class="legacy-input" type="number" name="stat_wis" value="10" style="text-align:center;"></div>
+                            <div style="text-align:center;"><label style="font-size:0.6rem; font-weight:800;">CAR</label><input class="legacy-input" type="number" name="stat_cha" value="10" style="text-align:center;"></div>
+                        </div>
                     </div>
 
                     <div>
-                        <label class="attr-label">AÇÕES DE COMBATE</label>
-                        <div id="actions-list" style="display:flex; flex-direction:column; gap:10px; margin-bottom:10px;">
-                            <div class="action-row glass" style="display:grid; grid-template-columns: 2fr 1fr 1fr 1fr 40px; gap:8px; padding:10px;">
-                                <input class="legacy-input" type="text" name="action_name[]" placeholder="Nome do Ataque">
-                                <input class="legacy-input" type="text" name="action_bonus[]" placeholder="+Bônus">
-                                <input class="legacy-input" type="text" name="action_dmg[]" placeholder="Dano (1d6)">
-                                <select class="legacy-input" name="action_type[]">
-                                    <option value="single">Único</option>
-                                    <option value="area">Área</option>
-                                </select>
-                                <button type="button" class="btn btn-ghost btn-sm" onclick="this.closest('.action-row').remove()">×</button>
-                            </div>
-                        </div>
-                        <button type="button" class="btn btn-ghost btn-sm" data-action="addActionRow">+ ADICIONAR AÇÃO</button>
+                        <label class="attr-label">HABILIDADES E ATAQUES</label>
+                        <textarea class="legacy-textarea" name="notes" rows="6" placeholder="Descreva os ataques e habilidades especiais..."></textarea>
                     </div>
 
-                    <button type="submit" class="btn btn-primary" style="padding:15px; font-family:var(--sheet-font-header); font-size:1.1rem; margin-top:20px;">
-                        <i class="fa-solid fa-dragon"></i> REGISTRAR NO TOMO
+                    <button type="submit" class="btn btn-primary" style="padding:15px; font-family:var(--sheet-font-header); font-size:1.1rem;">
+                        <i class="fa-solid fa-dragon"></i> REGISTRAR AMEAÇA NO BESTIÁRIO
                     </button>
                 </form>
             </div>
@@ -167,121 +187,83 @@ export class MonsterForm extends Component {
     setCR(e, el) { this._selectedCR = el.dataset.cr; this.render(); }
 
     addToCampaign(e, el) {
-        const id = el.dataset.id;
         const name = el.dataset.name;
         const cr = el.dataset.cr;
-        
-        let monster;
-        if (cr === 'CUSTOM') {
-            monster = this.store.state.monsters.find(m => m.id === id);
-        } else {
-            monster = MonsterData[cr].find(m => m.name === name);
-        }
-
+        const monster = MonsterData[cr].find(m => m.name === name);
         if (monster) {
             TOME.store.update(s => {
-                const newInstance = {
+                const newMonster = {
                     ...monster,
-                    id: 'inst-' + Date.now(),
-                    instanceOf: monster.id || name,
-                    hp: monster.hp?.max ? { ...monster.hp } : { current: monster.hp, max: monster.hp }
+                    id: 'm-' + Date.now(),
+                    type: 'Monster',
+                    cr: cr.replace('Nível ', ''),
+                    hp: { current: monster.hp, max: monster.hp },
+                    stats: monster.stats || { str:10, dex:10, con:10, int:10, wis:10, cha:10 }
                 };
-                s.initiativeOrder = [...(s.initiativeOrder || []), newInstance];
+                s.monsters = [...(s.monsters || []), newMonster];
             });
-            Toast.show(`${name} adicionado ao combate!`, 'success');
+            Toast.show(`${name} adicionado à arena!`, 'success');
         }
     }
 
-    async deleteMonster(e, el) {
-        const id = el.dataset.id;
-        const confirmed = await Modal.confirm('Excluir Ameaça', 'Deseja excluir permanentemente esta ameaça customizada do seu tomo?', 'danger');
-        if (!confirmed) return;
-        
+    openImporter() { this.$('#monster-importer').style.display = 'flex'; }
+    closeImporter() { this.$('#monster-importer').style.display = 'none'; }
+
+    async processMonsterImport() {
+        const text = this.$('#monster-import-text').value;
+        if (!text) return;
+
+        Toast.show('🔮 Decifrando grimório arcano...');
+
+        const getInt = (reg) => { const m = text.match(reg); return m ? parseInt(m[1]) : null; };
+
+        // Parsing Heurístico
+        const name = text.split('\n')[0].trim();
+        const type = text.match(/(?:Size|Tamanho)\s+\w+,\s+([^,]+)/i)?.[1] || 'Criatura';
+        const ac = getInt(/(?:Armor Class|CA|AC)\s*(\d+)/i) || 10;
+        const hp = getInt(/(?:Hit Points|HP|PV)\s*(\d+)/i) || 20;
+        const cr = text.match(/(?:Challenge|CR|ND)\s*([\d\/]+)/i)?.[1] || '1';
+
+        const stats = {
+            str: getInt(/(?:STR|FOR)\s*(\d+)/i) || 10,
+            dex: getInt(/(?:DEX|DES)\s*(\d+)/i) || 10,
+            con: getInt(/(?:CON)\s*(\d+)/i) || 10,
+            int: getInt(/(?:INT)\s*(\d+)/i) || 10,
+            wis: getInt(/(?:WIS|SAB)\s*(\d+)/i) || 10,
+            cha: getInt(/(?:CHA|CAR)\s*(\d+)/i) || 10
+        };
+
+        const actionMatch = text.match(/(?:Actions|Ações)[\s\S]+/i);
+        const notes = actionMatch ? actionMatch[0] : text;
+
         TOME.store.update(s => {
-            s.monsters = s.monsters.filter(m => m.id !== id);
+            s.monsters = [...(s.monsters || []), {
+                id: 'm-' + Date.now(),
+                name: name,
+                type: 'Monster',
+                cr: cr,
+                ac: ac,
+                hp: { current: hp, max: hp },
+                stats: stats,
+                notes: notes,
+                actions: this._parseActionsFromNotes(notes)
+            }];
         });
-        Toast.show('Ameaça removida do tomo.');
+
+        Toast.show(`✅ ${name} foi adicionado ao seu bestiário!`, 'success');
+        this.closeImporter();
+        this._view = 'library';
         this.render();
     }
 
-    async finishSession() {
-        const entries = this.store.state.journalEntries || [];
-        const today = new Date().toLocaleDateString();
-        const todayEntries = entries.filter(e => e.date === today);
-        
-        if (todayEntries.length === 0) {
-            return Toast.show('Sem entradas no diário hoje para finalizar.', 'warning');
-        }
-
-        const summary = todayEntries.map(e => e.content).join('\n');
-        const report = `📓 RESUMO DA SESSÃO (${today})\n\nEventos Principais:\n${summary}\n\nDeseja exportar o relatório final e encerrar a sessão?`;
-
-        const confirmed = await Modal.confirm('Encerrar Sessão', report, 'confirm');
-        if (confirmed) {
-            this.exportCampaign();
-            Toast.show('Relatório salvo! Sessão concluída.', 'success');
-        }
-    }
-
-    onMount() {
-        const form = this.$('#monster-form');
-        if (!form) return;
-        form.onsubmit = (e) => {
-            e.preventDefault();
-            const fd = new FormData(form);
-            const m = Object.fromEntries(fd.entries());
-            
-            // Collect structured actions
-            const actionNames = fd.getAll('action_name[]');
-            const actionBonuses = fd.getAll('action_bonus[]');
-            const actionDmgs = fd.getAll('action_dmg[]');
-            const actionTypes = fd.getAll('action_type[]');
-            
-            const actions = actionNames.map((name, i) => ({
-                name,
-                bonus: parseInt(actionBonuses[i]) || 0,
-                damage: actionDmgs[i] || '1d4',
-                type: actionTypes[i]
-            })).filter(a => a.name);
-
-            TOME.store.update(s => {
-                s.monsters = [...(s.monsters || []), {
-                    id: 'm-' + Date.now(),
-                    name: m.name,
-                    type: m.type,
-                    cr: m.cr,
-                    ac: parseInt(m.ac),
-                    hp: { current: parseInt(m.hp_max), max: parseInt(m.hp_max) },
-                    stats: {
-                        str: parseInt(m.stat_for), dex: parseInt(m.stat_des), con: parseInt(m.stat_con),
-                        int: parseInt(m.stat_int), wis: parseInt(m.stat_sab), cha: parseInt(m.stat_car)
-                    },
-                    actions: actions,
-                    fromSRD: false
-                }];
-            });
-            Toast.show('Ameaça registrada!', 'success');
-            this._view = 'library';
-            this._selectedCR = 'CUSTOM';
-            this.render();
-        };
-    }
-
-    addActionRow() {
-        const list = this.$('#actions-list');
-        const div = document.createElement('div');
-        div.className = 'action-row glass';
-        div.style = 'display:grid; grid-template-columns: 2fr 1fr 1fr 1fr 40px; gap:8px; padding:10px;';
-        div.innerHTML = `
-            <input class="legacy-input" type="text" name="action_name[]" placeholder="Nome do Ataque">
-            <input class="legacy-input" type="text" name="action_bonus[]" placeholder="+Bônus">
-            <input class="legacy-input" type="text" name="action_dmg[]" placeholder="Dano (1d6)">
-            <select class="legacy-input" name="action_type[]">
-                <option value="single">Único</option>
-                <option value="area">Área</option>
-            </select>
-            <button type="button" class="btn btn-ghost btn-sm" onclick="this.closest('.action-row').remove()">×</button>
-        `;
-        list.appendChild(div);
+    _parseActionsFromNotes(notes) {
+        // Tenta extrair ataques simples: Nome + Bônus + Dano
+        const actions = [];
+        const lines = notes.split('\n');
+        lines.forEach(l => {
+            const m = l.match(/^(.*?):\s*([+-]\d+)\s*to hit.*?\((.*?)\)/i);
+            if (m) actions.push({ name: m[1].trim(), bonus: parseInt(m[2]), damage: m[3] });
+        });
+        return actions.length ? actions : [{ name: 'Ataque Genérico', bonus: 0, damage: '1d6' }];
     }
 }

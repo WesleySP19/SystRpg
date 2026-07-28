@@ -29,10 +29,9 @@ export class Component {
         this._mounted = true;
 
         if (this.store) {
-            this._unsubscribe = this.store.subscribe(() => this.render());
+            this._unsubscribe = this.store.subscribe((state) => this.onStoreUpdate(state));
         }
 
-        this._setupDelegation();
         this.render();
     }
 
@@ -52,25 +51,39 @@ export class Component {
     }
 
     /**
-     * Memoized Render: Only touches the DOM when output changes.
+     * Store update hook. Can be overridden in subclasses for granular updates.
      */
-    render() {
+    onStoreUpdate(state) {
+        this.render();
+    }
+
+    /**
+     * Memoized Render: Only touches the DOM when output changes.
+     * Optionally accepts a subKey for targeting a specific sub-render method.
+     */
+    render(subKey) {
         if (!this.element || !this._mounted) return;
 
-        const html = this.template();
-        
-        // Fast-path memoization: compare length and boundaries before full string comparison
-        if (this._lastHTML && 
-            html.length === this._lastHTML.length && 
-            html[0] === this._lastHTML[0] && 
-            html[html.length-1] === this._lastHTML[html.length-1] &&
-            html === this._lastHTML) return;
+        if (subKey && typeof this['render_' + subKey] === 'function') {
+            requestAnimationFrame(() => {
+                if (!this._mounted) return;
+                this['render_' + subKey]();
+            });
+            return;
+        }
+
+        const html = this.template().trim();
+        if (html === this._lastHTML) return;
 
         requestAnimationFrame(() => {
             if (!this._mounted) return;
+            // Clean up previous event listeners before rendering new ones
+            this._eventCleanups.forEach(fn => fn());
+            this._eventCleanups = [];
+
             this.element.innerHTML = html;
             this._lastHTML = html;
-            // No need to call _bindDelegatedEvents here if we use root delegation
+            this._bindDelegatedEvents();
             this.onMount();
         });
     }
@@ -87,20 +100,16 @@ export class Component {
     onUnmount() {}
 
     /**
-     * Root-level event delegation: Captures all clicks and routes [data-action].
+     * Event delegation: Finds all [data-action] elements
+     * and maps them to class methods.
      */
-    _setupDelegation() {
-        this._delegateHandler = (e) => {
-            const el = e.target.closest('[data-action]');
-            if (!el) return;
-            
+    _bindDelegatedEvents() {
+        this.element.querySelectorAll('[data-action]').forEach(el => {
             const action = el.dataset.action;
             if (typeof this[action] === 'function') {
-                this[action](e, el);
+                el.onclick = (e) => this[action](e, el);
             }
-        };
-        this.element.addEventListener('click', this._delegateHandler);
-        this._eventCleanups.push(() => this.element.removeEventListener('click', this._delegateHandler));
+        });
     }
 
     /**
