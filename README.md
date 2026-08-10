@@ -34,4 +34,4 @@ Abra o seu navegador e acesse:
 -   **Armazenamento Híbrido Offline:** Casamento inteligente entre LocalStorage (estados leves) e IndexedDB (mídias pesadas em Base64), garantindo estabilidade e integridade mesmo sem conexão.
 
 ---
-*Forjado para Mestres, por Antigravity.*
+*Forjado para Mestres, por HawnkCorp.*
