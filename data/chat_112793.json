@@ -1,0 +1,19 @@
+[
+  {
+    "id": "7d4c24e4-5ef4-46c4-8410-73f6fe9fa949",
+    "sender": "Mestre",
+    "message": "/roll1d20",
+    "isSystem": false,
+    "isRoll": false,
+    "formula": "",
+    "total": null,
+    "details": "",
+    "timestamp": 1786378477896,
+    "avatar": "",
+    "tipo": "geral",
+    "nome": "Mestre",
+    "de": "Mestre",
+    "para": "todos",
+    "conteudo": "/roll1d20"
+  }
+]

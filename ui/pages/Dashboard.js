@@ -113,16 +113,16 @@ export class Dashboard extends Component {
         try {
             const moduleMap = {
                 'campaign': { path: '../components/CampaignManager.js', cls: 'CampaignManager' },
+                'dmtable': { path: '../components/DMTable.js', cls: 'DMTable' },
                 'dmshield': { path: '../components/DMShield.js', cls: 'DMShield' },
                 'worldbuilder': { path: '../components/WorldBuilder.js', cls: 'WorldBuilder' },
-                'combat': { path: '../components/CombatTracker.js', cls: 'CombatTracker' },
-                'map': { path: '../components/MapManager.js', cls: 'MapManager' },
+                'combat': { path: '../components/combat/CombatTrackerV17.js', cls: 'CombatTrackerV17' },
                 'quest': { path: '../components/QuestManager.js', cls: 'QuestManager' },
                 'chareditor': { path: '../components/DynamicCharacterBuilder.js', cls: 'DynamicCharacterBuilder' },
                 'character': { path: '../components/DynamicCharacterBuilder.js', cls: 'DynamicCharacterBuilder' },
                 'builder': { path: '../components/PlayerForm.js', cls: 'PlayerForm' },
                 'herohub': { path: '../components/HeroHub.js', cls: 'HeroHub' },
-                'herosheet': { path: '../components/HeroSheet.js', cls: 'HeroSheet' },
+                'herosheet': { path: '../components/hero/HeroSheetV14.js', cls: 'HeroSheetV14' },
                 'cardgenerator': { path: '../components/CardGenerator.js', cls: 'CardGenerator' },
                 'bestiary': { path: './Bestiary.js', cls: 'Bestiary' },
                 'journal': { path: '../components/SessionJournal.js', cls: 'SessionJournal' },
@@ -130,7 +130,8 @@ export class Dashboard extends Component {
                 'spellbook': { path: '../components/SpellBook.js', cls: 'SpellBook' },
                 'npc': { path: '../components/NPCHelper.js', cls: 'NPCHelper' },
                 'settings': { path: '../components/QuickReference.js', cls: 'QuickReference' },
-                'initiative': { path: '../components/InitiativeMonitor.js', cls: 'InitiativeMonitor' }
+                'initiative': { path: '../components/InitiativeMonitor.js', cls: 'InitiativeMonitor' },
+                'tomesinal': { path: '../components/TomeSinalPanel.js', cls: 'TomeSinalPanel' }
             };
 
             const entry = moduleMap[tab];
@@ -139,15 +140,40 @@ export class Dashboard extends Component {
                 return;
             }
 
-            const mod = await import(entry.path + '?v=' + Date.now());
+            // Skeleton Loading UI
+            target.innerHTML = `
+                <div style="height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--accent); padding: 30px; font-family: 'Cinzel', serif; animation: fadeIn 0.3s ease;">
+                    <i class="fa-solid fa-circle-notch fa-spin fa-3x" style="margin-bottom: 20px; opacity: 0.8;"></i>
+                    <h3 style="font-size: 1.2rem; margin: 0; color: var(--text-muted);">Invocando ${tab.toUpperCase()}...</h3>
+                </div>
+            `;
+
+            // Aumentado timeout para 8s para conexões lentas ou re-cache
+            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout de 8000ms excedido ao carregar módulo ' + tab)), 8000));
+            const mod = await Promise.race([import(entry.path), timeoutPromise]);
             const Cls = mod[entry.cls];
             target.innerHTML = '';
             this._activeChild = new Cls({ store: this.store, element: target });
             this._activeChild.mount();
 
         } catch (err) {
-            console.error('[Dashboard] Error:', err);
-            target.innerHTML = `<div class="legacy-sheet-container">Erro ao carregar módulo: ${err.message}</div>`;
+            console.error('[Dashboard] Error boundary caught:', err);
+            
+            target.innerHTML = `
+                <div style="height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: var(--accent); padding: 30px; font-family: 'Cinzel', serif; background: rgba(0,0,0,0.2);">
+                    <i class="fa-solid fa-triangle-exclamation fa-3x" style="margin-bottom: 20px; color: var(--danger);"></i>
+                    <h3 style="font-size: 1.4rem; margin: 0; color: #fff;">Falha ao Carregar o Módulo</h3>
+                    <p style="font-family: 'Outfit', sans-serif; color: var(--text-dim); margin-top: 10px; max-width: 500px; line-height: 1.6;">
+                        Ocorreu um erro interno ao tentar processar a interface <strong>${tab}</strong>. Isso geralmente ocorre por versões de cache conflitantes.
+                    </p>
+                    <div style="margin-top: 15px; padding: 10px; background: rgba(0,0,0,0.5); border-left: 4px solid var(--danger); text-align: left; width: 100%; max-width: 600px; font-family: monospace; font-size: 0.75rem; color: #ff8a8a; overflow-x: auto;">
+                        ${err.message || String(err)}
+                    </div>
+                    <button onclick="window.location.href='/index.html?reset=1'" class="btn btn-premium" style="margin-top: 25px; padding: 12px 24px; font-size: 0.85rem; font-weight: 800; border-radius: 10px; border: 1px solid var(--danger);">
+                        <i class="fa-solid fa-broom"></i> Limpar Cache e Reiniciar App
+                    </button>
+                </div>
+            `;
         }
     }
 
@@ -367,7 +393,7 @@ export class Dashboard extends Component {
                         <!-- MINI COMBAT MONITOR -->
                         <div class="card glass-accent" style="padding:25px; border-radius:12px; border-top:4px solid var(--accent); box-shadow:0 10px 30px rgba(0,0,0,0.5);">
                             <h3 style="font-family:'Cinzel'; text-align:center; margin-bottom:15px; color:var(--accent); letter-spacing:1px;">MONITOR DE INICIATIVA</h3>
-                            ${stats.combatActive ? this._renderCombatMiniPreview() : '<p style="text-align:center; opacity:0.5; padding:20px; color:var(--text-dim);">Nenhum combate ativo.</p>'}
+                            ${stats.combatActive ? this._renderCombatMiniPreview() : html`<p style="text-align:center; opacity:0.5; padding:20px; color:var(--text-dim);">Nenhum combate ativo.</p>`}
                             <button class="btn btn-primary btn-block" style="margin-top:20px;" data-action="quickNav" data-tab="combat">ACESSAR ARENA</button>
                         </div>
                         
@@ -400,7 +426,7 @@ export class Dashboard extends Component {
                                 </div>
                                 <button class="btn btn-ghost btn-sm" data-action="restoreSnapshot" data-id="${s.id}">Restaurar</button>
                             </div>
-                        `).join('') || '<p style="text-align:center; opacity:0.4; font-size:0.7rem; color:var(--text-dim);">Nenhum snapshot encontrado.</p>'}
+                        `).join('') || html`<p style="text-align:center; opacity:0.4; font-size:0.7rem; color:var(--text-dim);">Nenhum snapshot encontrado.</p>`}
                     </div>
 
                     <button class="btn btn-ghost btn-block" style="margin-top:20px;" data-action="closeSnapshots">Fechar</button>
@@ -476,7 +502,7 @@ export class Dashboard extends Component {
                     </header>
 
                     <motionless class="match-history-list">
-                        ${entries.length === 0 ? '<p style="text-align:center; opacity:0.5; padding:40px; color:var(--text-dim);">Nenhuma partida registrada ainda.<br><small>Crie uma nova sessão em Campanha.</small></p>' : entries.map(entry => {
+                        ${entries.length === 0 ? html`<p style="text-align:center; opacity:0.5; padding:40px; color:var(--text-dim);">Nenhuma partida registrada ainda.<br><small>Crie uma nova sessão em Campanha.</small></p>` : entries.map(entry => {
                             const isActive = entry.file === activeFile;
                             const status = entry.combatActive ? 'Em combate' : 'Exploração';
                             return `
@@ -613,7 +639,7 @@ export class Dashboard extends Component {
                                 <i class="fa-solid fa-trash-can"></i>
                             </button>
                         </div>
-                    `).join('') || '<p style="text-align:center; opacity:0.4; font-size:0.8rem; padding:20px; color:var(--text-dim);">Nenhuma criatura ativa no campo de batalha.</p>'}
+                    `).join('') || html`<p style="text-align:center; opacity:0.4; font-size:0.8rem; padding:20px; color:var(--text-dim);">Nenhuma criatura ativa no campo de batalha.</p>`}
                 </div>
 
                 <div style="margin-top:25px; display:flex; justify-content:flex-end;">
@@ -688,7 +714,7 @@ export class Dashboard extends Component {
                                 <i class="fa-solid fa-trash-can"></i>
                             </button>
                         </div>
-                    `).join('') || '<p style="text-align:center; opacity:0.4; font-size:0.8rem; padding:20px; color:var(--text-dim);">Nenhum NPC salvo nesta sessão.</p>'}
+                    `).join('') || html`<p style="text-align:center; opacity:0.4; font-size:0.8rem; padding:20px; color:var(--text-dim);">Nenhum NPC salvo nesta sessão.</p>`}
                 </div>
 
                 <div style="margin-top:25px; display:flex; justify-content:flex-end;">

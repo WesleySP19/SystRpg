@@ -1,11 +1,12 @@
-import { Component } from '../core/Component.js';
+import { ReactiveComponent } from '../core/ReactiveComponent.js';
+import { html } from 'htm/preact';
 import spellsData from '../../data/spells-5e.js';
 
 /**
  * QUICK REFERENCE v7.0 — "Dungeon Master's Grimoire"
  * Expansão massiva das regras oficiais de D&D 5e com design glassmorphic premium e interativo.
  */
-export class QuickReference extends Component {
+export class QuickReference extends ReactiveComponent {
     constructor(opts) {
         super(opts);
         this._activeSection = 'quickref';
@@ -38,7 +39,7 @@ export class QuickReference extends Component {
 
             const pinnedClass = this._popupMode === 'click' ? 'pinned' : '';
             
-            popupHTML = `
+            popupHTML = html`
                 <div class="magic-popup ${glowClass} ${pinnedClass}" 
                      style="left: ${this._popupPosition.x}px; top: ${this._popupPosition.y}px; pointer-events: ${this._popupMode === 'click' ? 'auto' : 'none'};">
                     ${this._getSpellPopupHTML(spell)}
@@ -46,14 +47,26 @@ export class QuickReference extends Component {
             `;
         }
 
-        return `
+        return html`
+            <style>
+            .tome-nav-btn:not(.active):hover { background: rgba(255,255,255,0.05) !important; color: #fff !important; }
+            .tome-nav-btn:not(.active):hover i { transform: scale(1.1); }
+            .ref-card-red { transition: all 0.3s ease; }
+            .ref-card-red:hover { background: rgba(239, 68, 68, 0.06) !important; border-color: rgba(239, 68, 68, 0.3) !important; transform: translateY(-2px); }
+            .ref-card-blue { transition: all 0.3s ease; }
+            .ref-card-blue:hover { background: rgba(59, 130, 246, 0.06) !important; border-color: rgba(59, 130, 246, 0.3) !important; transform: translateY(-2px); }
+            .ref-card-gold { transition: all 0.3s ease; }
+            .ref-card-gold:hover { background: rgba(197, 160, 89, 0.06) !important; border-color: rgba(197, 160, 89, 0.3) !important; transform: translateX(4px); }
+            .ref-card-glow { transition: all 0.3s ease; }
+            .ref-card-glow:hover { transform: translateY(-5px); border-color: rgba(197, 160, 89, 0.4) !important; box-shadow: 0 15px 35px rgba(0,0,0,0.5), inset 0 0 20px rgba(197,160,89,0.05); }
+            </style>
             <div class="page" style="max-width: 1400px; padding: 20px; animation: fadeIn 0.5s ease-out;">
                 <!-- Header Premium -->
                 <div class="section-header" style="border-bottom: 2px solid rgba(197,160,89,0.15); padding-bottom:25px; margin-bottom:30px; display: flex; justify-content: space-between; align-items: flex-end; position: relative;">
                     <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at 10% 50%, rgba(197,160,89,0.08), transparent 50%); pointer-events: none;"></div>
                     <div style="position: relative; z-index: 1;">
                         <h2 class="section-title" style="font-family:'Cinzel', serif; color:var(--accent); text-shadow:0 0 20px rgba(197,160,89,0.5); font-size: 2.2rem; margin-bottom: 8px;">
-                            <i class="fa-solid fa-book-sparkles" style="margin-right:12px; color:#ffaa00;"></i> Compêndio Arcano de Regras
+                            <i class="fa-solid fa-book-sparkles" style="margin-right:12px; color:#ffaa00;"></i> Tomo do Mestre V17
                         </h2>
                         <p class="section-subtitle" style="color:var(--text-dim); font-size: 0.95rem; letter-spacing: 0.5px; max-width: 600px;">Toda a sabedoria e mecânicas das eras compiladas em grimórios de acesso imediato.</p>
                     </div>
@@ -81,8 +94,8 @@ export class QuickReference extends Component {
                     </div>
 
                     <!-- CONTENT AREA PREMIUM -->
-                    <div class="card glass-accent animate-fadeIn" style="min-height:70vh; padding:40px; border-radius:16px; background: rgba(15, 17, 24, 0.85); border: 1px solid rgba(255,255,255,0.03); border-top: 3px solid var(--accent); box-shadow: 0 15px 40px rgba(0,0,0,0.6), inset 0 0 40px rgba(197,160,89,0.03); position: relative; overflow: hidden;">
-                        <div style="position: absolute; top: -100px; right: -100px; width: 300px; height: 300px; background: radial-gradient(circle, rgba(197,160,89,0.05) 0%, transparent 70%); border-radius: 50%; pointer-events: none;"></div>
+                    <div class="card glass-accent animate-fadeIn" style="min-height:75vh; padding:40px; border-radius:16px; background: rgba(12, 14, 20, 0.9); border: 1px solid rgba(197,160,89,0.15); border-top: 3px solid var(--accent); box-shadow: 0 25px 50px rgba(0,0,0,0.8), inset 0 0 50px rgba(197,160,89,0.05); position: relative; overflow: hidden;">
+                        <div style="position: absolute; top: -100px; right: -100px; width: 300px; height: 300px; background: radial-gradient(circle, rgba(197,160,89,0.08) 0%, transparent 70%); border-radius: 50%; pointer-events: none;"></div>
                         <div style="position: relative; z-index: 1;">
                             ${this._renderActiveContent()}
                         </div>
@@ -95,18 +108,16 @@ export class QuickReference extends Component {
 
     _renderNavButton(sectionId, iconClass, text, rgbColor) {
         const isActive = this._activeSection === sectionId;
-        const bg = isActive ? `rgba(${rgbColor}, 0.15)` : 'transparent';
-        const border = isActive ? `1px solid rgba(${rgbColor}, 0.4)` : '1px solid transparent';
+        const bg = isActive ? `rgba(${rgbColor}, 0.2)` : 'transparent';
+        const border = isActive ? `1px solid rgba(${rgbColor}, 0.5)` : '1px solid transparent';
         const textColor = isActive ? '#fff' : 'var(--text-dim)';
-        const shadow = isActive ? `0 0 15px rgba(${rgbColor}, 0.2)` : 'none';
+        const shadow = isActive ? `0 0 20px rgba(${rgbColor}, 0.3)` : 'none';
         
-        return `
-            <button class="btn btn-sm ${isActive ? 'active' : ''}" 
+        return html`
+            <button class="btn btn-sm tome-nav-btn ${isActive ? 'active' : ''}" 
                     style="justify-content:flex-start; text-align:left; border-radius:10px; padding: 12px 15px; background: ${bg}; border: ${border}; color: ${textColor}; box-shadow: ${shadow}; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden;" 
-                    onmouseover="if(!this.classList.contains('active')) { this.style.background='rgba(255,255,255,0.05)'; this.style.color='#fff'; this.querySelector('i').style.transform='scale(1.1)'; }"
-                    onmouseout="if(!this.classList.contains('active')) { this.style.background='transparent'; this.style.color='var(--text-dim)'; this.querySelector('i').style.transform='scale(1)'; }"
                     data-action="setSection" data-section="${sectionId}">
-                ${isActive ? `<div style="position:absolute; left:0; top:0; bottom:0; width:3px; background:rgb(${rgbColor}); box-shadow:0 0 10px rgb(${rgbColor});"></div>` : ''}
+                ${isActive ? html`<div style="position:absolute; left:0; top:0; bottom:0; width:3px; background:rgb(${rgbColor}); box-shadow:0 0 10px rgb(${rgbColor});"></div>` : ''}
                 <i class="fa-solid ${iconClass}" style="width:24px; text-align:center; margin-right:10px; font-size:1.1rem; color:rgb(${rgbColor}); transition:transform 0.3s; filter: ${isActive ? 'drop-shadow(0 0 5px rgb('+rgbColor+'))' : 'none'};"></i>
                 <span style="font-weight: ${isActive ? '700' : '500'}; letter-spacing: 0.5px; font-size: 0.85rem;">${text}</span>
             </button>
@@ -143,7 +154,7 @@ export class QuickReference extends Component {
             { name: 'Ensurdecido (Deafened)', icon: 'fa-ear-slash', effect: 'Falha automática em testes de audição. Não ouve comandos e está imune a efeitos mágicos baseados em som.' }
         ];
 
-        return `
+        return html`
             <div style="animation: fadeIn 0.4s ease-out;">
                 <h3 style="font-family:'Cinzel', serif; color:var(--danger); margin-bottom:15px; font-size:1.8rem; text-shadow:0 0 15px rgba(239,68,68,0.4);">
                     <i class="fa-solid fa-skull-crossbones" style="margin-right:10px;"></i> Condições de Status
@@ -153,10 +164,8 @@ export class QuickReference extends Component {
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:30px;">
                     <!-- Left: List -->
                     <div style="display:flex; flex-direction:column; gap:15px; max-height:60vh; overflow-y:auto; padding-right:15px; scrollbar-width:thin;">
-                        ${conds.map(c => `
-                            <div class="glass card-hover" style="padding:18px; border-radius:12px; border:1px solid rgba(255,255,255,0.05); border-left:4px solid var(--danger); background:rgba(0,0,0,0.3); transition:all 0.3s; position:relative; overflow:hidden;"
-                                 onmouseover="this.style.background='rgba(239,68,68,0.05)'; this.style.borderColor='rgba(239,68,68,0.2)';"
-                                 onmouseout="this.style.background='rgba(0,0,0,0.3)'; this.style.borderColor='rgba(255,255,255,0.05)';">
+                        ${conds.map(c => html`
+                            <div class="glass card-hover ref-card-red" style="padding:18px; border-radius:12px; border:1px solid rgba(255,255,255,0.05); border-left:4px solid var(--danger); background:rgba(0,0,0,0.3); position:relative; overflow:hidden;">
                                 <div style="display:flex; align-items:center; gap:12px; font-weight:800; color:#fff; font-size:1.1rem; font-family:'Cinzel', serif; margin-bottom:8px;">
                                     <div style="width:32px; height:32px; border-radius:8px; background:rgba(239,68,68,0.15); color:var(--danger); display:flex; align-items:center; justify-content:center;">
                                         <i class="fa-solid ${c.icon}" style="font-size:1rem;"></i>
@@ -165,7 +174,7 @@ export class QuickReference extends Component {
                                 </div>
                                 <p style="font-size:0.8rem; line-height:1.6; color:var(--text-dim); margin:0;">${c.effect}</p>
                             </div>
-                        `).join('')}
+                        `)}
                     </div>
                     
                     <!-- Right: Exhaustion rules (highly advanced & expanded) -->
@@ -203,7 +212,7 @@ export class QuickReference extends Component {
             { name: 'Usar Objeto', cost: 'Ação', desc: 'Interage com um segundo objeto complexo na mesma rodada (beber poção, abrir baú chaveado, etc).' }
         ];
 
-        return `
+        return html`
             <div style="animation: fadeIn 0.4s ease-out;">
                 <h3 style="font-family:'Cinzel', serif; color:var(--info); margin-bottom:15px; font-size:1.8rem; text-shadow:0 0 15px rgba(59,130,246,0.4);">
                     <i class="fa-solid fa-swords" style="margin-right:10px;"></i> Ações no Turno de Combate
@@ -211,24 +220,22 @@ export class QuickReference extends Component {
                 <p style="font-size:0.9rem; color:var(--text-dim); margin-bottom:30px; line-height:1.6;">Em um combate de D&D, seu turno tático é composto por <strong>Movimento</strong>, <strong>1 Ação</strong>, <strong>1 Reação</strong> (fora do turno) e <strong>1 Ação Bônus</strong> (se aplicável).</p>
                 
                 <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap:20px; max-height:60vh; overflow-y:auto; padding-right:15px; scrollbar-width:thin;">
-                    ${acts.map(a => `
-                        <div class="card glass-accent" style="background:rgba(0,0,0,0.4); padding:20px; border:1px solid rgba(59,130,246,0.15); border-left:4px solid var(--info); border-radius:12px; transition:all 0.3s; position:relative; overflow:hidden;"
-                             onmouseover="this.style.background='rgba(59,130,246,0.05)'; this.style.borderColor='rgba(59,130,246,0.3)'; this.style.transform='translateY(-2px)';"
-                             onmouseout="this.style.background='rgba(0,0,0,0.4)'; this.style.borderColor='rgba(59,130,246,0.15)'; this.style.transform='none';">
+                    ${acts.map(a => html`
+                        <div class="card glass-accent ref-card-blue" style="background:rgba(0,0,0,0.4); padding:20px; border:1px solid rgba(59,130,246,0.15); border-left:4px solid var(--info); border-radius:12px; position:relative; overflow:hidden;">
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
                                 <strong style="color:#fff; font-size:1.1rem; font-family:'Cinzel', serif;">${a.name}</strong>
                                 <span class="badge" style="font-size:0.65rem; padding:4px 8px; border-radius:6px; background:rgba(59,130,246,0.2); color:#93c5fd; border:1px solid rgba(59,130,246,0.3); font-weight:800; letter-spacing:0.5px;">${a.cost}</span>
                             </div>
                             <p style="font-size:0.85rem; line-height:1.5; color:var(--text-dim); margin:0;">${a.desc}</p>
                         </div>
-                    `).join('')}
+                    `)}
                 </div>
             </div>
         `;
     }
 
     _renderEnvironment() {
-        return `
+        return html`
             <div style="animation: fadeIn 0.4s ease-out;">
                 <h3 style="font-family:'Cinzel', serif; color:var(--success); margin-bottom:15px; font-size:1.8rem; text-shadow:0 0 15px rgba(16,185,129,0.4);">
                     <i class="fa-solid fa-mountain-sun" style="margin-right:10px;"></i> Ambiente, Cobertura & Movimento
@@ -237,8 +244,7 @@ export class QuickReference extends Component {
                 
                 <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:25px;">
                     <!-- Iluminação -->
-                    <div class="glass card-hover" style="padding:25px; border-radius:16px; border-top:4px solid var(--warning); background:rgba(0,0,0,0.3); transition:transform 0.3s;"
-                         onmouseover="this.style.transform='translateY(-3px)';" onmouseout="this.style.transform='none';">
+                    <div class="glass card-hover tome-hover-badge" style="padding:25px; border-radius:16px; border-top:4px solid var(--warning); background:rgba(0,0,0,0.3);">
                         <h4 style="font-family:'Cinzel', serif; color:var(--warning); margin-bottom:15px; font-size:1.2rem;"><i class="fa-solid fa-sun" style="margin-right:10px;"></i> Iluminação</h4>
                         <ul style="font-size:0.85rem; line-height:1.8; padding-left:15px; color:var(--text-dim); margin:0;">
                             <li><strong style="color:#fff;">Luz Plena:</strong> Condição padrão de visibilidade sem penalidades.</li>
@@ -248,8 +254,7 @@ export class QuickReference extends Component {
                     </div>
 
                     <!-- Cobertura -->
-                    <div class="glass card-hover" style="padding:25px; border-radius:16px; border-top:4px solid var(--success); background:rgba(0,0,0,0.3); transition:transform 0.3s;"
-                         onmouseover="this.style.transform='translateY(-3px)';" onmouseout="this.style.transform='none';">
+                    <div class="glass card-hover tome-hover-badge" style="padding:25px; border-radius:16px; border-top:4px solid var(--success); background:rgba(0,0,0,0.3);">
                         <h4 style="font-family:'Cinzel', serif; color:var(--success); margin-bottom:15px; font-size:1.2rem;"><i class="fa-solid fa-shield-halved" style="margin-right:10px;"></i> Cobertura (CA)</h4>
                         <ul style="font-size:0.85rem; line-height:1.8; padding-left:15px; color:var(--text-dim); margin:0;">
                             <li><strong style="color:#fff;">Meia Cobertura (1/2):</strong> Concede um bônus de <strong style="color:var(--success);">+2 na CA</strong> e em salvaguardas de Destreza (ex: lutar atrás de um tronco).</li>
@@ -259,8 +264,7 @@ export class QuickReference extends Component {
                     </div>
 
                     <!-- Movimento Especial -->
-                    <div class="glass card-hover" style="padding:25px; border-radius:16px; border-top:4px solid var(--info); background:rgba(0,0,0,0.3); transition:transform 0.3s;"
-                         onmouseover="this.style.transform='translateY(-3px)';" onmouseout="this.style.transform='none';">
+                    <div class="glass card-hover tome-hover-badge" style="padding:25px; border-radius:16px; border-top:4px solid var(--info); background:rgba(0,0,0,0.3);">
                         <h4 style="font-family:'Cinzel', serif; color:var(--info); margin-bottom:15px; font-size:1.2rem;"><i class="fa-solid fa-shoe-prints" style="margin-right:10px;"></i> Movimentação</h4>
                         <ul style="font-size:0.85rem; line-height:1.8; padding-left:15px; color:var(--text-dim); margin:0;">
                             <li><strong style="color:#fff;">Terreno Difícil:</strong> Cada 1,5m de movimento custa 3m (dobro do custo). Lama, gelo, entulho, escadarias longas.</li>
@@ -274,7 +278,7 @@ export class QuickReference extends Component {
     }
 
     _renderSpellcasting() {
-        return `
+        return html`
             <div style="animation: fadeIn 0.4s ease-out;">
                 <h3 style="font-family:'Cinzel', serif; color:var(--warning); margin-bottom:15px; font-size:1.8rem; text-shadow:0 0 15px rgba(245,158,11,0.4);">
                     <i class="fa-solid fa-hat-wizard" style="margin-right:10px;"></i> Arte e Conjuração da Magia
@@ -318,9 +322,9 @@ export class QuickReference extends Component {
                                 </div>
                             </div>
                             <div style="background:rgba(245,158,11,0.1); padding:15px; border-radius:8px; border:1px solid rgba(245,158,11,0.2); font-size:0.8rem; color:var(--text-dim); line-height:1.5;">
-                                <strong style="color:var(--warning);">Atributos por Classe:</strong><br>
-                                • <span style="color:#fff;">Inteligência:</span> Magos, Artífices<br>
-                                • <span style="color:#fff;">Sabedoria:</span> Clérigos, Druidas, Patrulheiros<br>
+                                <strong style="color:var(--warning);">Atributos por Classe:</strong><br />
+                                • <span style="color:#fff;">Inteligência:</span> Magos, Artífices<br />
+                                • <span style="color:#fff;">Sabedoria:</span> Clérigos, Druidas, Patrulheiros<br />
                                 • <span style="color:#fff;">Carisma:</span> Feiticeiros, Bruxos, Bardos, Paladinos
                             </div>
                         </div>
@@ -331,7 +335,7 @@ export class QuickReference extends Component {
     }
 
     _renderResting() {
-        return `
+        return html`
             <div style="animation: fadeIn 0.4s ease-out;">
                 <h3 style="font-family:'Cinzel', serif; color:#ffd700; margin-bottom:15px; font-size:1.8rem; text-shadow:0 0 15px rgba(255,215,0,0.4);">
                     <i class="fa-solid fa-campground" style="margin-right:10px;"></i> Descansos, Cura & Sobrevivência
@@ -379,7 +383,7 @@ export class QuickReference extends Component {
             { val: 30, level: 'Quase Impossível', example: 'Rastrear um assassino na lama sob tempestade torrencial.' }
         ];
 
-        return `
+        return html`
             <div style="animation: fadeIn 0.4s ease-out;">
                 <h3 style="font-family:'Cinzel', serif; color:var(--accent); margin-bottom:15px; font-size:1.8rem; text-shadow:0 0 15px rgba(197,160,89,0.4);">
                     <i class="fa-solid fa-bullseye" style="margin-right:10px;"></i> Escala de Classes de Dificuldade (CD)
@@ -387,10 +391,8 @@ export class QuickReference extends Component {
                 <p style="font-size:0.9rem; color:var(--text-dim); margin-bottom:30px; line-height:1.6;">A Classe de Dificuldade (DC) determina o quão heróico ou excepcional deve ser o esforço de um personagem para realizar um teste de atributo e ter sucesso na história.</p>
                 
                 <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap:20px; max-height:60vh; overflow-y:auto; padding-right:15px; scrollbar-width:thin;">
-                    ${dcs.map(d => `
-                        <div class="glass card-hover" style="display:flex; align-items:center; gap:25px; padding:20px; background:rgba(0,0,0,0.3); border:1px solid rgba(197,160,89,0.1); border-radius:12px; transition:all 0.3s;"
-                             onmouseover="this.style.background='rgba(197,160,89,0.05)'; this.style.borderColor='rgba(197,160,89,0.3)'; this.style.transform='translateX(5px)';" 
-                             onmouseout="this.style.background='rgba(0,0,0,0.3)'; this.style.borderColor='rgba(197,160,89,0.1)'; this.style.transform='none';">
+                    ${dcs.map(d => html`
+                        <div class="glass card-hover ref-card-gold" style="display:flex; align-items:center; gap:25px; padding:20px; background:rgba(0,0,0,0.3); border:1px solid rgba(197,160,89,0.1); border-radius:12px; position:relative;">
                             <div style="width:60px; height:60px; border-radius:12px; background:linear-gradient(135deg, rgba(197,160,89,0.2), rgba(255,170,0,0.1)); color:var(--accent); border:1px solid rgba(197,160,89,0.4); display:flex; align-items:center; justify-content:center; font-weight:900; font-family:'Cinzel', serif; font-size:1.5rem; box-shadow:0 0 15px rgba(197,160,89,0.1); flex-shrink:0;">
                                 ${d.val}
                             </div>
@@ -399,7 +401,7 @@ export class QuickReference extends Component {
                                 <div style="font-size:0.85rem; color:var(--text-dim); line-height:1.4;"><em>Ex: ${d.example}</em></div>
                             </div>
                         </div>
-                    `).join('')}
+                    `)}
                 </div>
             </div>
         `;
@@ -419,7 +421,7 @@ export class QuickReference extends Component {
             { s: 'ND / CR', m: 'Nível de Desafio. Métrica indicadora do poder relativo de monstros para equilibrar encontros de combate tático.' }
         ];
 
-        return `
+        return html`
             <div style="animation: fadeIn 0.4s ease-out;">
                 <h3 style="font-family:'Cinzel', serif; color:#fff; margin-bottom:15px; font-size:1.8rem; text-shadow:0 0 15px rgba(255,255,255,0.3);">
                     <i class="fa-solid fa-language" style="margin-right:10px;"></i> Dicionário de Termos e Siglas
@@ -427,21 +429,19 @@ export class QuickReference extends Component {
                 <p style="font-size:0.9rem; color:var(--text-dim); margin-bottom:30px; line-height:1.6;">Lista de siglas, definições rápidas e convenções mais comuns usadas pelas regras oficiais de D&D 5e e presentes nas fichas.</p>
                 
                 <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap:20px; max-height:60vh; overflow-y:auto; padding-right:15px; scrollbar-width:thin;">
-                    ${terms.map(t => `
-                        <div class="glass card-hover" style="padding:20px; border-radius:12px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.05); transition:all 0.3s;"
-                             onmouseover="this.style.background='rgba(255,255,255,0.05)'; this.style.borderColor='rgba(197,160,89,0.3)'; this.style.transform='translateY(-2px)';"
-                             onmouseout="this.style.background='rgba(0,0,0,0.3)'; this.style.borderColor='rgba(255,255,255,0.05)'; this.style.transform='none';">
+                    ${terms.map(t => html`
+                        <div class="glass card-hover ref-card-gold" style="padding:20px; border-radius:12px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.05); position:relative;">
                             <strong style="color:var(--accent); font-family:'Cinzel', serif; font-size:1.1rem; display:block; margin-bottom:8px; text-shadow:0 0 8px rgba(197,160,89,0.3);">${t.s}</strong>
                             <p style="font-size:0.85rem; color:var(--text-dim); line-height:1.6; margin:0;">${t.m}</p>
                         </div>
-                    `).join('')}
+                    `)}
                 </div>
             </div>
         `;
     }
 
     _renderQuickRef() {
-        return `
+        return html`
             <div style="display:flex; flex-direction:column; gap:15px; height:100%;">
                 <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(197,160,89,0.3); padding-bottom:12px; margin-bottom:10px;">
                     <h3 style="font-family:'Cinzel'; color:var(--accent); margin:0; font-size:1.5rem;">
@@ -834,7 +834,7 @@ export class QuickReference extends Component {
         }
 
         if (filtered.length === 0) {
-            listEl.innerHTML = `
+            listEl.innerHTML = html`
                 <div style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; text-align: center; color: var(--text-dim);">
                     <i class="fa-solid fa-book-open" style="font-size: 2.5rem; color: rgba(197,160,89,0.2); margin-bottom: 15px;"></i>
                     <p style="font-family: 'Cinzel'; font-size: 1rem; color: #fff;">Nenhum termo encontrado</p>
@@ -844,10 +844,8 @@ export class QuickReference extends Component {
             return;
         }
 
-        listEl.innerHTML = filtered.map(t => `
-            <div class="card glass-accent" style="background: rgba(0,0,0,0.4); padding: 25px; border: 1px solid rgba(197, 160, 89, 0.15); border-top: 4px solid ${t.badgeColor}; border-radius: 16px; display: flex; flex-direction: column; justify-content: space-between; gap: 15px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); min-height: 200px; position:relative; overflow:hidden;"
-                 onmouseover="this.style.transform='translateY(-5px)'; this.style.borderColor='rgba(197,160,89,0.4)'; this.style.boxShadow='0 15px 35px rgba(0,0,0,0.5), inset 0 0 20px rgba(197,160,89,0.05)';"
-                 onmouseout="this.style.transform='none'; this.style.borderColor='rgba(197,160,89,0.15)'; this.style.boxShadow='none';">
+        listEl.innerHTML = filtered.map(t => html`
+            <div class="card glass-accent ref-card-glow" style="background: rgba(0,0,0,0.4); padding: 25px; border: 1px solid rgba(197, 160, 89, 0.15); border-top: 4px solid ${t.badgeColor}; border-radius: 16px; display: flex; flex-direction: column; justify-content: space-between; gap: 15px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); min-height: 200px; position:relative; overflow:hidden;">
                 <div style="position:absolute; top:0; right:0; width:100px; height:100px; background:radial-gradient(circle at top right, ${t.badgeColor}22, transparent 70%); pointer-events:none;"></div>
                 <div style="position:relative; z-index:1;">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 12px;">
@@ -859,17 +857,16 @@ export class QuickReference extends Component {
                     <p style="font-size: 0.85rem; line-height: 1.6; color: var(--text-dim); margin: 0;">${t.desc}</p>
                 </div>
                 <div style="display: flex; justify-content: flex-end; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 12px; margin-top: auto; position:relative; z-index:1;">
-                    <a href="${t.link}" target="_blank" style="font-size: 0.75rem; color: var(--accent); text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-weight: 700; opacity: 0.8; transition: all 0.2s;"
-                       onmouseover="this.style.opacity='1'; this.style.color='#ffaa00'; this.style.textShadow='0 0 8px rgba(255,170,0,0.5)';" onmouseout="this.style.opacity='0.8'; this.style.color='var(--accent)'; this.style.textShadow='none';">
+                    <a href="${t.link}" target="_blank" class="tome-hover-glow" style="font-size: 0.75rem; color: var(--accent); text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-weight: 700; opacity: 0.8;">
                         Ver no D&D Beyond [BR-2024] <i class="fa-solid fa-up-right-from-square"></i>
                     </a>
                 </div>
             </div>
-        `).join('');
+        `);
     }
 
     _renderGlossary2024() {
-        return `
+        return html`
             <div style="display:flex; flex-direction:column; gap:20px; height:100%; animation: fadeIn 0.4s ease-out;">
                 <div style="display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2px solid rgba(197,160,89,0.15); padding-bottom:15px; margin-bottom:5px;">
                     <div>
@@ -893,9 +890,8 @@ export class QuickReference extends Component {
                             <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--accent); font-size: 1rem;"></i>
                             <input type="text" id="glossary-search-input" placeholder="Buscar regras e termos (ex: Agarrado, Vantagem...)" 
                                    value="${this._glossarySearch}"
-                                   style="width: 100%; padding: 14px 14px 14px 45px; border-radius: 10px; border: 1.5px solid rgba(197,160,89,0.3); background: rgba(8, 8, 10, 0.7); color: #fff; font-size: 0.9rem; outline: none; transition: all 0.3s;"
-                                   onfocus="this.style.borderColor='var(--accent)'; this.style.boxShadow='0 0 15px rgba(197,160,89,0.2)';"
-                                   onblur="this.style.borderColor='rgba(197,160,89,0.3)'; this.style.boxShadow='none';">
+                                   class="tome-input-focus"
+                                   style="width: 100%; padding: 14px 14px 14px 45px; border-radius: 10px; border: 1.5px solid rgba(197,160,89,0.3); background: rgba(8, 8, 10, 0.7); color: #fff; font-size: 0.9rem; outline: none; transition: all 0.3s;" />
                         </div>
                         <!-- Category Filters -->
                         <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="glossary-filter-container">
@@ -923,7 +919,7 @@ export class QuickReference extends Component {
     }
 
     _renderGlossaryFilterBtn(category, text, isActive) {
-        return `
+        return html`
             <button class="btn btn-sm ${isActive ? 'active' : ''}" 
                     style="border-radius: 8px; padding: 8px 14px; font-size: 0.8rem; font-weight: 700; background: ${isActive ? 'rgba(197,160,89,0.2)' : 'rgba(0,0,0,0.4)'}; border: 1px solid ${isActive ? 'var(--accent)' : 'rgba(255,255,255,0.1)'}; color: ${isActive ? '#fff' : 'var(--text-dim)'}; transition: all 0.2s;" 
                     data-action="setGlossaryFilter" data-category="${category}">
@@ -980,7 +976,7 @@ export class QuickReference extends Component {
             ? 'Consulta rápida e completa de truques (nível 0) D&D 5e.' 
             : 'Consulta de magias arcanas, divinas e naturais de 1º a 5º círculo.';
 
-        return `
+        return html`
             <div style="display:flex; flex-direction:column; gap:20px; height:100%; animation: fadeIn 0.4s ease-out;">
                 <!-- Header com Abas Premium -->
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom:2px solid rgba(168,85,247,0.15); padding-bottom:15px; margin-bottom:5px; flex-wrap: wrap; gap: 15px;">
@@ -1014,23 +1010,20 @@ export class QuickReference extends Component {
                             <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #a855f7; font-size: 1rem;"></i>
                             <input type="text" id="magic-search-input" placeholder="Buscar magia ou truque (ex: Bola de Fogo, Rajada...)" 
                                    value="${this._magicSearch}"
-                                   style="width: 100%; padding: 14px 14px 14px 45px; border-radius: 10px; border: 1.5px solid rgba(168,85,247,0.3); background: rgba(8, 8, 10, 0.7); color: #fff; font-size: 0.9rem; outline: none; transition: all 0.3s;"
-                                   onfocus="this.style.borderColor='#a855f7'; this.style.boxShadow='0 0 15px rgba(168,85,247,0.2)';"
-                                   onblur="this.style.borderColor='rgba(168,85,247,0.3)'; this.style.boxShadow='none';">
+                                   class="tome-input-focus"
+                                   style="width: 100%; padding: 14px 14px 14px 45px; border-radius: 10px; border: 1.5px solid rgba(168,85,247,0.3); background: rgba(8, 8, 10, 0.7); color: #fff; font-size: 0.9rem; outline: none; transition: all 0.3s;" />
                         </div>
                         
                         <!-- Class Filter -->
                         <div style="min-width: 160px;">
-                            <select id="magic-class-filter" style="width:100%; padding: 14px; border-radius: 10px; border: 1.5px solid rgba(168,85,247,0.3); background: rgba(8, 8, 10, 0.7); color: #fff; font-size: 0.9rem; cursor:pointer; outline:none; transition: all 0.3s;"
-                                    onfocus="this.style.borderColor='#a855f7'; this.style.boxShadow='0 0 15px rgba(168,85,247,0.2)';"
-                                    onblur="this.style.borderColor='rgba(168,85,247,0.3)'; this.style.boxShadow='none';">
+                            <select id="magic-class-filter" class="tome-input-focus" style="width:100%; padding: 14px; border-radius: 10px; border: 1.5px solid rgba(168,85,247,0.3); background: rgba(8, 8, 10, 0.7); color: #fff; font-size: 0.9rem; cursor:pointer; outline:none; transition: all 0.3s;">
                                 <option value="all">Todas as Classes</option>
-                                ${classes.map(c => `<option value="${c}" ${this._magicFilterClass === c ? 'selected' : ''}>${c}</option>`).join('')}
+                                ${classes.map(c => html`<option value="${c}" ${this._magicFilterClass === c ? 'selected' : ''}>${c}</option>`)}
                             </select>
                         </div>
 
                         <!-- Level Filters (Apenas na aba de Magias) -->
-                        ${this._activeMagicTab === 'spells' ? `
+                        ${this._activeMagicTab === 'spells' ? html`
                         <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="magic-level-filter-container">
                             ${this._renderMagicFilterBtn('all', '✨ Tudo', this._magicFilterLevel === 'all')}
                             ${this._renderMagicFilterBtn('1', '1º Círculo', this._magicFilterLevel === '1')}
@@ -1058,7 +1051,7 @@ export class QuickReference extends Component {
     }
 
     _renderMagicFilterBtn(level, text, isActive) {
-        return `
+        return html`
             <button class="btn btn-sm ${isActive ? 'active' : ''}" 
                     style="border-radius: 8px; padding: 8px 14px; font-size: 0.8rem; font-weight: 700; background: ${isActive ? 'rgba(168,85,247,0.2)' : 'rgba(0,0,0,0.4)'}; border: 1px solid ${isActive ? '#a855f7' : 'rgba(255,255,255,0.1)'}; color: ${isActive ? '#fff' : 'var(--text-dim)'}; transition: all 0.2s;" 
                     data-action="setMagicLevelFilter" data-level="${level}">
@@ -1097,7 +1090,7 @@ export class QuickReference extends Component {
         if (countEl) countEl.innerText = filtered.length;
 
         if (filtered.length === 0) {
-            listEl.innerHTML = `
+            listEl.innerHTML = html`
                 <div style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; text-align: center; color: var(--text-dim);">
                     <i class="fa-solid fa-wand-magic-sparkles" style="font-size: 2.5rem; color: rgba(197,160,89,0.2); margin-bottom: 15px;"></i>
                     <p style="font-family: 'Cinzel'; font-size: 1rem; color: #fff;">Nenhuma magia ou truque encontrado</p>
@@ -1107,7 +1100,7 @@ export class QuickReference extends Component {
             return;
         }
 
-        listEl.innerHTML = filtered.map(s => this._renderMagicCard(s)).join('');
+        listEl.innerHTML = filtered.map(s => this._renderMagicCard(s));
         this._bindMagicCardEvents();
     }
 
@@ -1136,19 +1129,19 @@ export class QuickReference extends Component {
         });
 
         if (matchingPlayers.length === 0) {
-            return `
+            return html`
                 <div style="font-size: 0.68rem; color: var(--text-dim); padding: 6px 10px; background: rgba(255,255,255,0.01); border-radius: 6px; border: 1px dashed rgba(168, 85, 247, 0.2); text-align: center; width: 100%;">
                     Nenhum jogador possui registrado na ficha.
                 </div>
             `;
         }
 
-        return `
+        return html`
             <div style="display: flex; flex-wrap: wrap; gap: 6px; width: 100%;">
                 ${matchingPlayers.map(p => {
                     const avatarStyle = p.portraitData ? `background-image: url('${p.portraitData}')` : 'background-color: var(--accent)';
-                    const avatarInner = p.portraitData ? '' : `<span style="font-size: 0.58rem; font-weight: bold; color: #000;">${p.name.substring(0, 2).toUpperCase()}</span>`;
-                    return `
+                    const avatarInner = p.portraitData ? '' : html`<span style="font-size: 0.58rem; font-weight: bold; color: #000;">${p.name.substring(0, 2).toUpperCase()}</span>`;
+                    return html`
                         <div class="player-pill" style="display: flex; align-items: center; gap: 6px; background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.25); padding: 3px 8px; border-radius: 12px; font-size: 0.72rem; color: #fff;">
                             <div style="width: 14px; height: 14px; border-radius: 50%; ${avatarStyle}; background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.15);">
                                 ${avatarInner}
@@ -1156,7 +1149,7 @@ export class QuickReference extends Component {
                             <span style="font-weight: 500; font-size: 0.68rem;">${p.name}</span>
                         </div>
                     `;
-                }).join('')}
+                })}
             </div>
         `;
     }
@@ -1185,21 +1178,20 @@ export class QuickReference extends Component {
         });
 
         if (matchingPlayers.length === 0) {
-            return `<span style="font-size: 0.65rem; color: var(--text-dim); font-style: italic;">Nenhum</span>`;
+            return html`<span style="font-size: 0.65rem; color: var(--text-dim); font-style: italic;">Nenhum</span>`;
         }
 
-        return `
+        return html`
             <div style="display: flex; gap: -4px; flex-wrap: wrap; justify-content: flex-end;">
                 ${matchingPlayers.map(p => {
                     const avatarStyle = p.portraitData ? `background-image: url('${p.portraitData}')` : 'background-color: var(--accent)';
-                    const avatarInner = p.portraitData ? '' : `<span style="font-size: 0.5rem; font-weight: 800; color: #000;">${p.name.substring(0, 2).toUpperCase()}</span>`;
-                    return `
-                        <div title="${p.name}" style="width: 18px; height: 18px; border-radius: 50%; ${avatarStyle}; background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.25); box-shadow: 0 2px 4px rgba(0,0,0,0.3); margin-left: -4px; transition: transform 0.2s;" class="player-mini-avatar"
-                             onmouseover="this.style.transform='scale(1.25)'; this.style.zIndex='10';" onmouseout="this.style.transform='none'; this.style.zIndex='auto';">
+                    const avatarInner = p.portraitData ? '' : html`<span style="font-size: 0.5rem; font-weight: 800; color: #000;">${p.name.substring(0, 2).toUpperCase()}</span>`;
+                    return html`
+                        <div title="${p.name}" class="player-mini-avatar" style="width: 18px; height: 18px; border-radius: 50%; ${avatarStyle}; background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.25); box-shadow: 0 2px 4px rgba(0,0,0,0.3); margin-left: -4px;">
                             ${avatarInner}
                         </div>
                     `;
-                }).join('')}
+                })}
             </div>
         `;
     }
@@ -1215,11 +1207,9 @@ export class QuickReference extends Component {
         else if (isAttack) borderGlowColor = '239, 68, 68';
         else borderGlowColor = '168, 85, 247';
 
-        return `
-            <div class="card spell-card" 
-                 style="padding: 18px; border-radius: 14px; border: 1.5px solid rgba(${borderGlowColor}, 0.2); cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); background: rgba(10,12,16,0.7); display:flex; flex-direction:column; justify-content:space-between; min-height:190px; position:relative; overflow:hidden;"
-                 onmouseover="this.style.borderColor='rgba(${borderGlowColor}, 0.6)'; this.style.transform='translateY(-4px)'; this.style.boxShadow='0 10px 25px rgba(0,0,0,0.5), inset 0 0 20px rgba(${borderGlowColor}, 0.1)';"
-                 onmouseout="this.style.borderColor='rgba(${borderGlowColor}, 0.2)'; this.style.transform='none'; this.style.boxShadow='none';"
+        return html`
+            <div class="card spell-card tome-hover-card" 
+                 style="padding: 18px; border-radius: 14px; border: 1.5px solid rgba(${borderGlowColor}, 0.2); cursor: pointer; background: rgba(10,12,16,0.7); display:flex; flex-direction:column; justify-content:space-between; min-height:190px; position:relative; overflow:hidden;"
                  data-action="toggleMagicPopup"
                  data-spell-id="${spell.id}">
                 <div style="position:absolute; top:0; left:0; right:0; height:4px; background:linear-gradient(90deg, transparent, rgba(${borderGlowColor}, 0.5), transparent);"></div>
@@ -1442,7 +1432,7 @@ export class QuickReference extends Component {
         if (spell.savingThrow) {
             const saveMap = { 'DEX': 'Destreza', 'WIS': 'Sabedoria', 'CON': 'Constituição', 'INT': 'Inteligência', 'STR': 'Força', 'CHA': 'Carisma' };
             const saveName = saveMap[spell.savingThrow] || spell.savingThrow;
-            testBoxHTML = `
+            testBoxHTML = html`
                 <div style="font-size: 0.72rem; line-height: 1.4; color: var(--text-main);">
                     <div style="font-weight: 700; color: var(--accent); margin-bottom: 2px; font-family: 'Cinzel', serif;">SALVAGUARDA (Inimigo Rola)</div>
                     <div style="color: var(--text-dim); margin-bottom: 3px;">CD da Magia contra o alvo:</div>
@@ -1450,13 +1440,13 @@ export class QuickReference extends Component {
                         CD = 8 + Bônus Proficiência + Mod. ${modifierName}
                     </div>
                     <div style="font-size: 0.68rem; color: var(--text-dim); margin-top: 4px;">
-                        • Oponente rola salvaguarda de <strong>${saveName}</strong><br>
+                        • Oponente rola salvaguarda de <strong>${saveName}</strong><br />
                         • Sucesso parcial: Metade do dano ou anula o efeito.
                     </div>
                 </div>
             `;
         } else if (spell.baseDamage || spell.type === 'dano') {
-            testBoxHTML = `
+            testBoxHTML = html`
                 <div style="font-size: 0.72rem; line-height: 1.4; color: var(--text-main);">
                     <div style="font-weight: 700; color: var(--accent); margin-bottom: 2px; font-family: 'Cinzel', serif;">ATAQUE MÁGICO (Você Rola)</div>
                     <div style="color: var(--text-dim); margin-bottom: 3px;">Jogada de ataque com d20:</div>
@@ -1464,17 +1454,17 @@ export class QuickReference extends Component {
                         Mod. de Ataque = Bônus Proficiência + Mod. ${modifierName}
                     </div>
                     <div style="font-size: 0.68rem; color: var(--text-dim); margin-top: 4px;">
-                        • Role 1d20 + Modificador de Ataque.<br>
+                        • Role 1d20 + Modificador de Ataque.<br />
                         • O ataque atinge se o total for <strong>&ge; CA</strong> do alvo.
                     </div>
                 </div>
             `;
         } else {
-            testBoxHTML = `
+            testBoxHTML = html`
                 <div style="font-size: 0.72rem; line-height: 1.4; color: var(--text-main);">
                     <div style="font-weight: 700; color: var(--accent); margin-bottom: 2px; font-family: 'Cinzel', serif;">EFEITO AUTOMÁTICO</div>
                     <div style="font-size: 0.68rem; color: var(--text-dim); margin-top: 4px;">
-                        • Não requer jogada de ataque ou teste de salvaguarda do oponente.<br>
+                        • Não requer jogada de ataque ou teste de salvaguarda do oponente.<br />
                         • O efeito ou cura ocorre instantaneamente no alvo ou área selecionada.
                     </div>
                 </div>
@@ -1485,14 +1475,14 @@ export class QuickReference extends Component {
         
         let damageOrEffect = '';
         if (spell.baseDamage) {
-            damageOrEffect = `<span style="font-size: 1.1rem; font-weight: 800; color: #fff; font-family: 'Cinzel', serif;">${spell.baseDamage}</span> <span style="font-size: 0.8rem; font-weight: 600; color: ${typeColor};">${spell.damageType || ''}</span>`;
+            damageOrEffect = html`<span style="font-size: 1.1rem; font-weight: 800; color: #fff; font-family: 'Cinzel', serif;">${spell.baseDamage}</span> <span style="font-size: 0.8rem; font-weight: 600; color: ${typeColor};">${spell.damageType || ''}</span>`;
             if (spell.scaling && !isCantrip) {
-                damageOrEffect += ` <span style="font-size: 0.65rem; color: var(--text-dim); display: block; margin-top: 2px;">(+1d6 por nível de slot acima)</span>`;
+                damageOrEffect += html` <span style="font-size: 0.65rem; color: var(--text-dim); display: block; margin-top: 2px;">(+1d6 por nível de slot acima)</span>`;
             } else if (spell.scaling && isCantrip) {
-                damageOrEffect += ` <span style="font-size: 0.65rem; color: var(--text-dim); display: block; margin-top: 2px;">(dano aumenta nos níveis 5, 11 e 17)</span>`;
+                damageOrEffect += html` <span style="font-size: 0.65rem; color: var(--text-dim); display: block; margin-top: 2px;">(dano aumenta nos níveis 5, 11 e 17)</span>`;
             }
         } else {
-            damageOrEffect = `<span style="font-size: 0.75rem; color: var(--text-main); font-weight: 500;">${spell.effect || 'Efeito imediato benéfico ou utilitário.'}</span>`;
+            damageOrEffect = html`<span style="font-size: 0.75rem; color: var(--text-main); font-weight: 500;">${spell.effect || 'Efeito imediato benéfico ou utilitário.'}</span>`;
         }
 
         let shortNarrative = narrative;
@@ -1500,7 +1490,7 @@ export class QuickReference extends Component {
             shortNarrative = shortNarrative.substring(0, 177) + '...';
         }
 
-        return `
+        return html`
             <div style="display: flex; flex-direction: column; gap: 12px; position: relative;">
                 <!-- Header Title -->
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1.5px solid rgba(255,255,255,0.08); padding-bottom: 8px;">
@@ -1571,7 +1561,7 @@ export class QuickReference extends Component {
                 </div>
             </div>
             
-            ${this._popupMode === 'click' ? `
+            ${this._popupMode === 'click' ? html`
                 <button class="btn btn-ghost" style="position: absolute; top: 12px; right: 12px; padding: 2px 6px; font-size: 0.65rem; border-radius: 4px; z-index: 10; border: none; background: transparent; color: var(--text-dim); cursor: pointer;" data-action="closeMagicPopup">✕</button>
                 <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; border-top: 1.5px solid rgba(255, 255, 255, 0.08); padding-top: 10px;">
                     <button class="btn btn-ghost" style="padding: 5px 12px; font-size: 0.68rem; border-radius: 6px; border: 1px solid rgba(197, 160, 89, 0.35); color: var(--accent); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; background: rgba(197,160,89,0.05);" data-action="viewFullSpell" data-spell-id="${spell.id}" data-spell-name="${spell.name}">
@@ -1582,3 +1572,4 @@ export class QuickReference extends Component {
         `;
     }
 }
+

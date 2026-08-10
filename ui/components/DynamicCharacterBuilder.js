@@ -1,4 +1,5 @@
 import { Component } from '../core/Component.js';
+import { CRDTManager } from '../core/CRDTManager.js';
 
 export class DynamicCharacterBuilder extends Component {
     constructor(opts) {
@@ -183,11 +184,12 @@ export class DynamicCharacterBuilder extends Component {
                         details: details
                     };
 
-                    this.store.update(s => {
-                        if (!s.chatLog) s.chatLog = [];
-                        s.chatLog.push(newEntry);
-                        if (s.chatLog.length > 50) s.chatLog.shift();
-                    });
+                    if (CRDTManager && CRDTManager.chatHistory) {
+                        CRDTManager.chatHistory.push([newEntry]);
+                        if (CRDTManager.chatHistory.length > 100) {
+                            CRDTManager.chatHistory.delete(0, CRDTManager.chatHistory.length - 100);
+                        }
+                    }
                 } catch (err) {
                     console.error("Erro ao rolar:", err);
                 }

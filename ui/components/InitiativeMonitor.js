@@ -4,6 +4,7 @@ import { Dice } from '../../utils/Dice.js';
 import { Toast } from '../components/Toast.js';
 import { RulesEngine } from '../../core/RulesEngine.js';
 import { MonsterArt } from '../../services/MonsterArt.js';
+import { FXEngine } from '../../services/FXEngine.js';
 
 /**
  * MONITOR DE INICIATIVA v1.0 — "Ordem de Batalha"
@@ -68,6 +69,10 @@ export class InitiativeMonitor extends Component {
             this._broadcast = new BroadcastChannel('tome_map');
         }
 
+        // Listener dinâmico de invocação
+        this._handleSummon = this._handleSummon || this._onMonsterInvoked.bind(this);
+        TOME.events.on('MONSTER_INVOKED', this._handleSummon);
+
         // Mantém foco no input de dano
         const dmgEl = this.$('#im-dmg-val');
         if (dmgEl && this._dmgInput) {
@@ -91,6 +96,35 @@ export class InitiativeMonitor extends Component {
             this._broadcast.close();
             this._broadcast = null;
         }
+        if (this._handleSummon) {
+            TOME.events.off('MONSTER_INVOKED', this._handleSummon);
+        }
+    }
+
+    _onMonsterInvoked(entity) {
+        let initRoll = Dice.roll(20).total;
+        const combatant = {
+            id: entity.id || 'm-' + Date.now(),
+            name: entity.name,
+            initiative: initRoll,
+            hp: { current: entity.hp_max, max: entity.hp_max },
+            ac: entity.ac || 10,
+            type: entity.type || 'Enemy',
+            emoji: entity.emoji || '👹',
+            img: entity.img || '',
+            conditions: []
+        };
+        
+        this.store.update(s => {
+            if (!s.initiativeOrder) s.initiativeOrder = [];
+            s.initiativeOrder.push(combatant);
+            if (s.combatActive) {
+                 s.initiativeOrder.sort((a, b) => b.initiative - a.initiative);
+            }
+        });
+        
+        Toast.show(`🧙 Invocação: ${entity.name} (Iniciativa: ${initRoll})`, 'success');
+        this.render();
     }
 
     _scrollToActive() {
@@ -155,7 +189,7 @@ export class InitiativeMonitor extends Component {
         const isEmpty = !combatActive || order.length === 0;
 
         return `
-            <link rel="stylesheet" href="assets/initiative-monitor.css">
+
 
             <div class="im-root" style="height:100%; position:relative;">
 
@@ -320,7 +354,7 @@ export class InitiativeMonitor extends Component {
                     <span style="color: var(--accent);">${order.length} COMBATENTES</span>
                 </div>
 
-                <div style="display: flex; flex-direction: column; gap: 6px;">
+                <div style="display: flex; flex-direction: column; gap: 10px;">
                     ${order.map((c, i) => this._renderCombatantCard(c, i, idx)).join('')}
                 </div>
             </div>
@@ -364,7 +398,7 @@ export class InitiativeMonitor extends Component {
         }).join('');
 
         return `
-            <div class="im-combatant" style="background: ${cardBg}; border: ${cardBorder}; ${cardGlow} border-radius: 8px; padding: 10px 16px; display: flex; align-items: center; gap: 16px; cursor: pointer; transition: all 0.2s ease; opacity: ${isDead ? 0.5 : 1}; position: relative; overflow: hidden;"
+            <div class="im-combatant" style="background: ${cardBg}; border: ${cardBorder}; ${cardGlow} border-radius: 12px; padding: 14px 20px; display: flex; align-items: center; gap: 20px; cursor: pointer; transition: all 0.2s ease; opacity: ${isDead ? 0.5 : 1}; position: relative; overflow: hidden; min-height: 60px;"
                  data-action="selectFocus" data-id="${c.id}"
                  title="${isActive ? 'Turno Atual' : 'Clique para focar ações'}">
                  
@@ -438,11 +472,11 @@ export class InitiativeMonitor extends Component {
                         : ''}
                 </div>
 
-                <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;">
+                <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end; justify-content: flex-start; margin-bottom: 8px;">
                     <!-- Dano / Cura Group -->
-                    <div style="display: flex; gap: 8px; align-items: center; background: rgba(0,0,0,0.4); padding: 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                    <div style="display: flex; gap: 10px; align-items: center; background: rgba(0,0,0,0.5); padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08);">
                         <input type="number" id="im-dmg-val" class="form-input"
-                               placeholder="Valor" min="0" style="width: 80px; font-size: 0.85rem; padding: 6px 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #fff;" data-action="dmgInputChange">
+                               placeholder="Valor" min="0" style="width: 90px; font-size: 0.9rem; padding: 8px 12px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #fff;" data-action="dmgInputChange">
                         <button class="btn" style="background: rgba(239,68,68,0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); font-size: 0.75rem; padding: 6px 14px; border-radius: 6px; font-weight: 700; transition: all 0.2s;" data-action="applyDamage">
                             <i class="fa-solid fa-heart-crack" style="margin-right: 4px;"></i> Dano
                         </button>
@@ -455,8 +489,8 @@ export class InitiativeMonitor extends Component {
                     </div>
 
                     <!-- Condições Group -->
-                    <div style="display: flex; gap: 8px; align-items: center; background: rgba(0,0,0,0.4); padding: 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); flex: 1; min-width: 250px;">
-                        <select class="form-select" id="im-cond-select" style="font-size: 0.75rem; padding: 6px 10px; border-radius: 6px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; flex: 1;" data-action="condSelectChange">
+                    <div style="display: flex; gap: 10px; align-items: center; background: rgba(0,0,0,0.5); padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); flex: 1; min-width: 280px;">
+                        <select class="form-select" id="im-cond-select" style="font-size: 0.85rem; padding: 8px 12px; border-radius: 8px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; flex: 1;" data-action="condSelectChange">
                             ${Object.entries(InitiativeMonitor.CONDITIONS).map(([k, v]) =>
                                 `<option value="${k}" ${this._selectedCond === k ? 'selected' : ''}>${v.emoji} ${v.label}</option>`
                             ).join('')}
@@ -593,7 +627,8 @@ export class InitiativeMonitor extends Component {
 
     /** Inicia combate rolando iniciativa para todos */
     startCombat() {
-        const { players, monsters } = this.store.state;
+        const state = JSON.parse(JSON.stringify(this.store.state));
+        const { players, monsters } = state;
         const allCombatants = [
             ...(players || []).map(p => ({
                 ...p,
@@ -749,28 +784,44 @@ export class InitiativeMonitor extends Component {
             return;
         }
 
+        let killedNow = false;
+        let actorType = 'Enemy';
         this.store.update(s => {
             const actor = (s.initiativeOrder || []).find(c => c.id === target.id);
             if (!actor) return;
 
+            actorType = actor.type || 'Enemy';
+            const oldHp = RulesEngine.getHP(actor).current;
+
             // Suporte a HP dinâmico (players vs monsters)
             if ('hp_current' in actor) {
                 actor.hp_current = Math.max(0, (actor.hp_current ?? actor.hp_max) - val);
+                if (actor.hp_current === 0 && oldHp > 0) killedNow = true;
             } else if (actor._tempHP !== undefined) {
                 const tempDmg = Math.min(actor._tempHP || 0, val);
                 actor._tempHP = (actor._tempHP || 0) - tempDmg;
                 const remaining = val - tempDmg;
                 if (actor.combat) {
                     actor.combat.hp_current = Math.max(0, (actor.combat.hp_current ?? 0) - remaining);
+                    if (actor.combat.hp_current === 0 && oldHp > 0) killedNow = true;
                 }
             } else if (actor.combat) {
                 actor.combat.hp_current = Math.max(0, (actor.combat.hp_current ?? actor.combat.hp_max ?? 10) - val);
+                if (actor.combat.hp_current === 0 && oldHp > 0) killedNow = true;
             }
         });
 
         this._broadcastState();
         Toast.show(`💥 ${val} de dano aplicado a ${target.name}`, 'danger');
         if (this.$('#im-dmg-val')) this.$('#im-dmg-val').value = '';
+
+        if (killedNow) {
+            if (actorType === 'Player' || target.type === 'Player') {
+                FXEngine.trigger('HERO_FALLEN', target.name, target.id);
+            } else {
+                FXEngine.trigger('ENTITY_SLAIN', target.name, target.id);
+            }
+        }
     }
 
     /** Aplica cura ao alvo */

@@ -1,10 +1,10 @@
-﻿{
-    "name":  "Hawnk",
-    "phone":  "(61) 99454-7380",
-    "masterId":  "HAWNK-61994547380",
-    "internalId":  "DGH-MST-D52C89",
-    "tables":  [
-
-               ],
-    "createdAt":  1785183003389
-}
+[
+  {
+    "name": "Hawnk",
+    "phone": "(61) 99454-7380",
+    "masterId": "HAWNK-61994547380",
+    "internalId": "DGH-MST-3DDB6D",
+    "tables": [],
+    "createdAt": 1786026152707
+  }
+]

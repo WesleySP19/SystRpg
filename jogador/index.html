@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0b0c10">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Elo Arcano | Portal do Jogador</title>
+    <link rel="manifest" href="/jogador/manifest.json">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/jogador/css/theme.css">
+    <script type="importmap">
+    {
+      "imports": {
+        "@preact/signals": "https://esm.sh/@preact/signals@1.2.2?external=preact",
+        "preact": "https://esm.sh/preact@10.19.3",
+        "preact/hooks": "https://esm.sh/preact@10.19.3/hooks",
+        "htm/preact": "https://esm.sh/htm@3.1.1/preact?external=preact"
+      }
+    }
+    </script>
+</head>
+<body>
+
+    <header>
+        <h1>Elo <span style="color:var(--text-light)">Arcano</span></h1>
+        <div id="status-indicator" class="status-dot"></div>
+    </header>
+
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen" style="display: flex; flex-direction: column; justify-content: center; align-items: center; flex: 1; padding: 24px; text-align: center;">
+        <div class="glass-panel" style="padding: 30px 20px; width: 100%; max-width: 340px;">
+            <h2 style="font-family:'Cinzel',serif; color:var(--primary-color); font-size:1.5rem; margin-bottom:5px;">Sintonizar</h2>
+            <p style="font-size:0.9rem; color:var(--text-dim); margin-bottom: 30px;">Conecte-se à frequência do Mestre.</p>
+            
+            <div style="margin-bottom: 20px;">
+                <input type="text" id="tableId" placeholder="ID da Mesa (Ex: 123456)">
+            </div>
+            <div style="margin-bottom: 24px;">
+                <input type="text" id="playerName" placeholder="Nome do Personagem">
+            </div>
+            <button id="btn-connect" class="btn-primary">
+                <i class="fa-solid fa-satellite-dish"></i> CONECTAR
+            </button>
+        </div>
+    </div>
+
+    <!-- MAIN APPLICATION WORKSPACE (CHAT & FICHA DO JOGADOR) -->
+    <div id="main-app" style="display: none; flex-direction: column; flex: 1; overflow: hidden; position: relative;">
+        
+        <!-- TELA DE CHAT (MENSAGERIA CRDT + FALLBACK) -->
+        <div id="chat-screen" style="display: flex; flex-direction: column; flex: 1; overflow: hidden;">
+            <div id="messages-container"></div>
+            
+            <!-- BARRA DE MACROS ARCANOS E ROLAGENS RÁPIDAS (V3.0) -->
+            <div id="macros-bar" style="display: flex; gap: 6px; padding: 8px 12px; background: rgba(13, 10, 18, 0.95); border-top: 1px solid rgba(197, 160, 89, 0.25); overflow-x: auto; white-space: nowrap; scrollbar-width: none;">
+                <span style="color: #a855f7; font-size: 0.75rem; font-weight: bold; align-self: center; margin-right: 4px;"><i class="fa-solid fa-bolt"></i> MACROS:</span>
+                <button class="macro-btn" data-formula="1d20" data-label="Teste de D20" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; cursor: pointer; font-weight: bold;">🎲 D20</button>
+                <button class="macro-btn" data-formula="2d20h1" data-label="Vantagem" style="background: rgba(16,185,129,0.15); border: 1px solid #34d399; color: #34d399; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; cursor: pointer; font-weight: bold;">✨ Vantagem</button>
+                <button class="macro-btn" data-formula="2d20l1" data-label="Desvantagem" style="background: rgba(239,68,68,0.15); border: 1px solid #ef4444; color: #fca5a5; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; cursor: pointer; font-weight: bold;">⚠️ Desvantagem</button>
+                <button class="macro-btn" data-formula="1d20+5" data-label="Ataque Principal" style="background: rgba(217,119,6,0.15); border: 1px solid #f59e0b; color: #fbbf24; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; cursor: pointer; font-weight: bold;">⚔️ Ataque (+5)</button>
+                <button class="macro-btn" data-formula="2d6+3" data-label="Dano de Arma" style="background: rgba(185,28,28,0.2); border: 1px solid #f87171; color: #ef4444; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; cursor: pointer; font-weight: bold;">💥 Dano 2d6+3</button>
+                <button class="macro-btn" data-formula="8d6" data-label="Bola de Fogo" style="background: rgba(168,85,247,0.2); border: 1px solid #a855f7; color: #d8b4fe; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; cursor: pointer; font-weight: bold;">🔥 Magia (8d6)</button>
+            </div>
+            
+            <div id="input-area">
+                <input type="text" id="chat-input" placeholder="Transmita sua mensagem...">
+                <button id="send-btn"><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
+        </div>
+
+        <!-- TELA DA FICHA DO HÉROI COM AVATAR / FOTO DO PERSONAGEM -->
+        <div id="profile-screen" style="display: none;">
+            <input type="file" id="avatar-upload-input" accept="image/*" style="display: none;">
+            
+            <div class="portrait-frame" id="btn-change-avatar" title="Toque para mudar sua foto de personagem">
+                <img class="portrait-img" id="hero-avatar-display" src="data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%23c5a059\'><path d=\'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z\'/></svg>" alt="Avatar">
+                <div class="portrait-badge"><i class="fa-solid fa-camera"></i></div>
+            </div>
+            
+            <span style="font-size: 0.8rem; color: var(--text-dim); margin-top: -10px;">Toque na moldura para atualizar o Retrato</span>
+
+            <div class="hero-header-card">
+                <div class="hero-name" id="hero-name-display">Aventureiro</div>
+                <div class="hero-class" id="hero-class-display">Sintonizado no TOME</div>
+                
+                <div class="hero-stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-val">100%</div>
+                        <div class="stat-label">Vínculo</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-val" id="stat-mesa">LAN</div>
+                        <div class="stat-label">Canal</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-val">Ativo</div>
+                        <div class="stat-label">Sinal</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-panel" style="width: 100%; max-width: 400px; padding: 16px; font-size: 0.85rem; color: var(--text-dim); line-height: 1.5; text-align: center;">
+                <i class="fa-solid fa-shield-halved" style="color: var(--secondary-color); font-size: 1.2rem; margin-bottom: 8px;"></i>
+                <p>Seu personagem está vinculado à mesa em tempo real. Modificações na foto e mensagens aparecem diretamente na tela principal do Mestre e no Telão Espectador da sala!</p>
+            </div>
+        </div>
+
+        <!-- TELA DE DECK (CARDS) -->
+        <div id="deck-screen" style="display: none; flex-direction: column; flex: 1; overflow-y: auto; padding: 20px;">
+            <div class="glass-panel" style="padding:15px; margin-bottom:15px; text-align:center;">
+                <h3 style="font-family:'Cinzel'; color:var(--primary-color); margin:0;">Meu Deck</h3>
+                <p style="font-size:0.8rem; color:var(--text-dim); margin-top:5px;">Suas magias e habilidades (Nível Limitado).</p>
+            </div>
+            <div id="deck-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px;">
+                <!-- Cards will be populated here -->
+                <div style="grid-column: 1 / -1; text-align: center; opacity: 0.5; padding: 20px;">
+                    <i class="fa-solid fa-layer-group fa-2x" style="margin-bottom:10px;"></i>
+                    <p>O mestre ainda não sincronizou suas cartas.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TELA DO TOMO (REGRAS) -->
+        <div id="tomo-screen" style="display: none; flex-direction: column; flex: 1; overflow-y: auto; padding: 20px;">
+            <div class="glass-panel" style="padding:15px; margin-bottom:15px; text-align:center;">
+                <h3 style="font-family:'Cinzel'; color:var(--primary-color); margin:0;">Tomo de Regras</h3>
+                <p style="font-size:0.8rem; color:var(--text-dim); margin-top:5px;">Glossário e referências da mesa.</p>
+            </div>
+            <div id="tomo-container" style="display: flex; flex-direction: column; gap: 15px;">
+                <!-- Rules will be populated here -->
+                <div class="glass-panel" style="padding: 15px;">
+                    <h4 style="color:var(--accent); font-family:'Cinzel'; margin:0 0 10px 0;">Ações de Combate</h4>
+                    <ul style="font-size:0.85rem; color:var(--text-light); padding-left:20px; margin:0; line-height:1.6;">
+                        <li><strong>Ação Padrão:</strong> Atacar, Conjurar Magia, Usar Objeto.</li>
+                        <li><strong>Ação Bônus:</strong> Magias rápidas, Ataque com segunda arma.</li>
+                        <li><strong>Reação:</strong> Ataque de oportunidade, Magia de escudo.</li>
+                        <li><strong>Movimento:</strong> Andar até o seu deslocamento total.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- BARRA DE NA VEGAÇÃO INFERIOR POR ABAS -->
+        <nav id="tab-bar">
+            <button class="tab-btn active" id="tab-chat">
+                <i class="fa-solid fa-comment-dots"></i>
+                <span>Transmissões</span>
+            </button>
+            <button class="tab-btn" id="tab-profile">
+                <i class="fa-solid fa-user-shield"></i>
+                <span>Ficha</span>
+            </button>
+            <button class="tab-btn" id="tab-deck">
+                <i class="fa-solid fa-layer-group"></i>
+                <span>Deck</span>
+            </button>
+            <button class="tab-btn" id="tab-tomo">
+                <i class="fa-solid fa-book-journal-whills"></i>
+                <span>Tomo</span>
+            </button>
+        </nav>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script type="module">
+        import { UI } from '/jogador/js/UI.js';
+        import { Engine } from '/jogador/js/Engine.js';
+
+        const ui = new UI();
+        const engine = new Engine(ui);
+
+        const sendAction = () => {
+            const txt = ui.chatInput.value.trim();
+            if (txt) {
+                engine.sendMessage(txt);
+                ui.chatInput.value = '';
+            }
+        };
+
+        document.getElementById('send-btn').addEventListener('click', sendAction);
+        ui.chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendAction();
+        });
+
+        document.querySelectorAll('.macro-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                engine.rollMacro(btn.getAttribute('data-formula'), btn.getAttribute('data-label'));
+            });
+        });
+
+        const pathParts = window.location.pathname.split('/');
+        // Se estivermos em /jogador (que significa que fomos redirecionados com o cookie setado)
+        if (pathParts.length >= 2 && pathParts[1] === 'jogador') {
+            engine.connectWithToken(); // O servidor lerá o token via cookie
+        } else {
+            document.getElementById('btn-connect').addEventListener('click', () => engine.connect());
+        }
+
+        // Registro do Service Worker exclusivo PWA (App do Jogador)
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            // Poderíamos exibir um botão de "Instalar App" aqui
+            console.log('[Elo Arcano] Pronto para instalar PWA!');
+        });
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/jogador/sw.js', { scope: '/jogador/' })
+                    .then(reg => console.log('[Elo Arcano PWA] SW Registrado:', reg.scope))
+                    .catch(err => console.warn('[Elo Arcano PWA] Falha no SW:', err));
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,4 +1,5 @@
-import { Component } from '../core/Component.js';
+import { ReactiveComponent } from '../core/ReactiveComponent.js';
+import { html } from 'htm/preact';
 import spellsData from '../../data/spells-5e.js';
 
 /**
@@ -6,7 +7,7 @@ import spellsData from '../../data/spells-5e.js';
  * Referência completa de magias e truques D&D 5e com busca e filtros.
  * Otimizado para o Mestre: Abas separadas de Truques e Magias, vinculo de jogadores, reatividade instantânea.
  */
-export class SpellBook extends Component {
+export class SpellBook extends ReactiveComponent {
     constructor(opts) {
         super(opts);
         this._searchQuery = '';
@@ -296,19 +297,19 @@ export class SpellBook extends Component {
         });
 
         if (matchingPlayers.length === 0) {
-            return `
+            return html`
                 <div style="font-size: 0.72rem; color: var(--text-dim); padding: 8px 12px; background: rgba(255,255,255,0.01); border-radius: 6px; border: 1px dashed rgba(197, 160, 89, 0.15); text-align: center;">
                     Nenhum jogador possui registrado na ficha.
                 </div>
             `;
         }
 
-        return `
+        return html`
             <div style="display: flex; flex-wrap: wrap; gap: 6px;">
                 ${matchingPlayers.map(p => {
                     const avatarStyle = p.portraitData ? `background-image: url('${p.portraitData}')` : 'background-color: var(--accent)';
-                    const avatarInner = p.portraitData ? '' : `<span style="font-size: 0.6rem; font-weight: bold; color: #000;">${p.name.substring(0, 2).toUpperCase()}</span>`;
-                    return `
+                    const avatarInner = p.portraitData ? '' : html`<span style="font-size: 0.6rem; font-weight: bold; color: #000;">${p.name.substring(0, 2).toUpperCase()}</span>`;
+                    return html`
                         <div class="player-pill" style="display: flex; align-items: center; gap: 6px; background: rgba(197, 160, 89, 0.08); border: 1px solid rgba(197, 160, 89, 0.2); padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; color: #fff;">
                             <div style="width: 16px; height: 16px; border-radius: 50%; ${avatarStyle}; background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1);">
                                 ${avatarInner}
@@ -316,9 +317,16 @@ export class SpellBook extends Component {
                             <span style="font-weight: 500; font-size: 0.72rem;">${p.name}</span>
                         </div>
                     `;
-                }).join('')}
+                })}
             </div>
         `;
+    }
+
+    close() {
+        this.unmount();
+        if (this.element && this.element.parentNode) {
+            this.element.parentNode.removeChild(this.element);
+        }
     }
 
     template() {
@@ -350,7 +358,7 @@ export class SpellBook extends Component {
 
             const pinnedClass = this._popupMode === 'click' ? 'pinned' : '';
             
-            popupHTML = `
+            popupHTML = html`
                 <div class="magic-popup ${glowClass} ${pinnedClass}" 
                      style="left: ${this._popupPosition.x}px; top: ${this._popupPosition.y}px;">
                     ${this._getSpellPopupHTML(spell)}
@@ -363,8 +371,10 @@ export class SpellBook extends Component {
             ? 'Lista completa de truques e magias de nível 0.' 
             : 'Filtro e referência de magias dos círculos de 1º a 5º nível.';
 
-        return `
-            <div class="page" style="max-width: 1400px; padding: 20px; animation: fadeIn 0.4s ease-out;">
+        return html`
+        <div class="modal-overlay animate-fadeIn spell-book-modal" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.85); z-index:99999; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(8px);">
+            <div class="card glass-accent animate-scaleIn" style="max-width:1400px; width:95%; height:90vh; padding:30px; border:2px solid var(--accent); overflow-y:auto; background:rgba(15,12,16,0.95); position:relative;">
+                <button class="btn btn-ghost" onclick="this.closest('.spell-book-modal').__component.close()" style="position:absolute; top:20px; right:20px; border-radius:50%; width:36px; height:36px; padding:0; z-index:10;"><i class="fa-solid fa-times"></i></button>
                 <!-- HEADER DA PÁGINA COM SELETOR DE ABAS PREMIUM -->
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1.5px solid rgba(197,160,89,0.25); padding-bottom: 15px; margin-bottom: 25px; flex-wrap: wrap; gap: 15px;">
                     <div>
@@ -403,13 +413,15 @@ export class SpellBook extends Component {
                         ${this._renderFilterPanel(stats)}
                     </div>
                 </div>
+                </div>
             </div>
             ${popupHTML}
+        </div>
         `;
     }
 
     _renderSearchBar() {
-        return `
+        return html`
             <div class="card glass-accent" style="padding: 16px; border-radius: 12px; border: 1px solid rgba(197,160,89,0.2);">
                 <div style="display: flex; gap: 12px; align-items: center;">
                     <i class="fa-solid fa-magnifying-glass" style="color: var(--accent); font-size: 1.1rem;"></i>
@@ -417,14 +429,14 @@ export class SpellBook extends Component {
                            placeholder="Buscar pelo nome, efeito ou equivalente em inglês..."
                            style="flex: 1; background: rgba(0,0,0,0.4); border: 1px solid rgba(197,160,89,0.15); padding: 10px 14px; border-radius: 8px; color: var(--text-main); font-size: 0.9rem; outline: none;"
                            value="${this._searchQuery}"
-                           data-action="search">
+                           data-action="search" />
                 </div>
             </div>
         `;
     }
 
     _renderFilterPanel(stats) {
-        return `
+        return html`
             <div class="card glass-accent" style="padding: 18px; border-radius: 12px; border: 1px solid rgba(197,160,89,0.15); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
                 <div style="font-family: 'Cinzel'; color: var(--accent); font-size: 0.85rem; letter-spacing: 1px; margin-bottom: 15px; text-transform: uppercase; border-bottom: 1px solid rgba(197,160,89,0.15); padding-bottom: 6px;">Filtros</div>
 
@@ -434,7 +446,7 @@ export class SpellBook extends Component {
                         <label style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; display: block; margin-bottom: 6px; font-weight: 700;">Classe</label>
                         <select data-action="filterClass" style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(197,160,89,0.25); padding: 8px 12px; border-radius: 6px; color: var(--text-main); font-size: 0.82rem; outline: none;">
                             <option value="all" ${this._filterClass === 'all' ? 'selected' : ''}>Todas</option>
-                            ${stats.classes.map(cls => `<option value="${cls}" ${this._filterClass === cls ? 'selected' : ''}>${cls}</option>`).join('')}
+                            ${stats.classes.map(cls => html`<option value="${cls}" ${this._filterClass === cls ? 'selected' : ''}>${cls}</option>`)}
                         </select>
                     </div>
 
@@ -443,17 +455,17 @@ export class SpellBook extends Component {
                         <label style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; display: block; margin-bottom: 6px; font-weight: 700;">Tipo</label>
                         <select data-action="filterType" style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(197,160,89,0.25); padding: 8px 12px; border-radius: 6px; color: var(--text-main); font-size: 0.82rem; outline: none;">
                             <option value="all" ${this._filterType === 'all' ? 'selected' : ''}>Todos</option>
-                            ${stats.types.map(t => `<option value="${t}" ${this._filterType === t ? 'selected' : ''}>${t.charAt(0).toUpperCase() + t.slice(1)}</option>`).join('')}
+                            ${stats.types.map(t => html`<option value="${t}" ${this._filterType === t ? 'selected' : ''}>${t.charAt(0).toUpperCase() + t.slice(1)}</option>`)}
                         </select>
                     </div>
 
                     <!-- Nível (Apenas se aba de Magias) -->
-                    ${this._activeSpellTab === 'spells' ? `
+                    ${this._activeSpellTab === 'spells' ? html`
                     <div>
                         <label style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; display: block; margin-bottom: 6px; font-weight: 700;">Círculo / Nível</label>
                         <select data-action="filterLevel" style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(197,160,89,0.25); padding: 8px 12px; border-radius: 6px; color: var(--text-main); font-size: 0.82rem; outline: none;">
                             <option value="all" ${this._filterLevel === 'all' ? 'selected' : ''}>Todos</option>
-                            ${stats.levels.map(l => `<option value="${l}" ${this._filterLevel === l.toString() ? 'selected' : ''}>${l}º Nível</option>`).join('')}
+                            ${stats.levels.map(l => html`<option value="${l}" ${this._filterLevel === l.toString() ? 'selected' : ''}>${l}º Nível</option>`)}
                         </select>
                     </div>
                     ` : ''}
@@ -474,7 +486,7 @@ export class SpellBook extends Component {
 
     _renderSpellGrid(stats) {
         if (this._filtered.length === 0) {
-            return `
+            return html`
                 <div class="card glass-accent empty-state" style="padding: 60px; border-radius: 12px; text-align: center; border: 1px dashed rgba(197,160,89,0.25);">
                     <i class="fa-solid fa-scroll fa-3x" style="color: var(--accent); margin-bottom: 15px; opacity: 0.4;"></i>
                     <h4 style="font-family: 'Cinzel'; margin: 0; color: var(--text-dim);">Nenhum item encontrado</h4>
@@ -488,17 +500,17 @@ export class SpellBook extends Component {
             .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
             .map(([level, spells]) => {
                 const levelLabel = level === '0' ? '🧙 TRUQUES (Cantrips)' : `✨ Magias de ${level}º Círculo / Nível`;
-                return `
+                return html`
                     <div style="margin-bottom: 25px;">
                         <div style="font-family: 'Cinzel'; font-size: 0.95rem; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; padding-bottom: 8px; border-bottom: 1.5px solid rgba(197,160,89,0.2); margin-bottom: 12px; font-weight: bold;">
                             ${levelLabel}
                         </div>
                         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px;">
-                            ${spells.map(spell => this._renderSpellCard(spell)).join('')}
+                            ${spells.map(spell => this._renderSpellCard(spell))}
                         </div>
                     </div>
                 `;
-            }).join('');
+            });
     }
 
     _renderSpellCard(spell) {
@@ -513,7 +525,7 @@ export class SpellBook extends Component {
         const isCantrip = spell.level === 0;
         const colorBorder = isCantrip ? 'rgba(34, 197, 94, 0.2)' : 'rgba(197, 160, 89, 0.2)';
 
-        return `
+        return html`
             <div class="card glass-accent spell-card" 
                  style="padding: 16px; border-radius: 10px; border: 1px solid ${colorBorder}; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); background: rgba(197, 160, 89, 0.015);"
                  onmouseover="this.style.borderColor='var(--accent)'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 20px rgba(0,0,0,0.4)';"
@@ -525,11 +537,11 @@ export class SpellBook extends Component {
                         <h4 style="margin: 0; font-size: 0.9rem; font-weight: 800; color: #fff; font-family: 'Cinzel'; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${icon} ${spell.name}</h4>
                         <div style="font-size: 0.68rem; color: var(--text-dim); margin-top: 1px; font-style: italic;">${spell.englishName}</div>
                     </div>
-                    ${spell.level ? `<div style="background: var(--accent); color: #000; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 800; margin-left: 8px;">${spell.level}º</div>` : ''}
+                    ${spell.level ? html`<div style="background: var(--accent); color: #000; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 800; margin-left: 8px;">${spell.level}º</div>` : ''}
                 </div>
                 <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px;">
-                    ${(spell.classes || []).slice(0, 2).map(cls => `<span style="background: rgba(197,160,89,0.12); color: var(--accent); font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; font-weight: 700;">${cls}</span>`).join('')}
-                    ${spell.concentration ? `<span style="background: rgba(239,68,68,0.1); color: var(--danger); font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; font-weight: 700;">⚠️ Conc.</span>` : ''}
+                    ${(spell.classes || []).slice(0, 2).map(cls => html`<span style="background: rgba(197,160,89,0.12); color: var(--accent); font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; font-weight: 700;">${cls}</span>`)}
+                    ${spell.concentration ? html`<span style="background: rgba(239,68,68,0.1); color: var(--danger); font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; font-weight: 700;">⚠️ Conc.</span>` : ''}
                 </div>
                 <p style="font-size: 0.78rem; color: var(--text-main); margin: 0; line-height: 1.35; min-height: 2.7em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; opacity: 0.9;">
                     ${spell.challenge || spell.effect || ''}
@@ -544,10 +556,10 @@ export class SpellBook extends Component {
 
     _renderSpellDetail() {
         const spell = this._selectedSpell;
-        const damageInfo = spell.baseDamage ? `<strong>${spell.baseDamage}</strong> ${spell.damageType}` : 'N/A';
+        const damageInfo = spell.baseDamage ? html`<strong>${spell.baseDamage}</strong> ${spell.damageType}` : 'N/A';
         const isCantrip = spell.level === 0;
 
-        return `
+        return html`
             <div class="card glass-accent" style="padding: 24px; border-radius: 12px; border: 2px solid var(--accent); animation: fadeIn 0.3s ease-out; box-shadow: 0 10px 40px rgba(0,0,0,0.65);">
                 <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px; border-bottom: 1.5px solid rgba(197,160,89,0.2); padding-bottom: 10px;">
                     <div>
@@ -592,13 +604,13 @@ export class SpellBook extends Component {
                     <p style="font-size: 0.85rem; color: var(--text-main); line-height: 1.45; margin: 0; opacity: 0.95;">${spell.effect || 'N/A'}</p>
                 </div>
 
-                ${spell.baseDamage ? `
+                ${spell.baseDamage ? html`
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
                         <div class="card glass-accent" style="padding: 12px; border-radius: 8px; background: rgba(139, 0, 0, 0.1); border: 1px solid rgba(197, 160, 89, 0.2);">
                             <div style="font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; margin-bottom: 4px;">Dano / Efeito Base</div>
                             <div style="font-size: 1.15rem; font-weight: 900; color: #ff6b6b; font-family: 'Cinzel';">${damageInfo}</div>
                         </div>
-                        ${spell.savingThrow ? `
+                        ${spell.savingThrow ? html`
                             <div class="card glass-accent" style="padding: 12px; border-radius: 8px; background: rgba(100, 150, 200, 0.08); border: 1px solid rgba(197, 160, 89, 0.2);">
                                 <div style="font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; margin-bottom: 4px;">Salvaguarda (Oponente)</div>
                                 <div style="font-size: 0.95rem; font-weight: 800; color: #6eb3ff;">Rola CD contra: ${spell.savingThrow}</div>
@@ -616,9 +628,9 @@ export class SpellBook extends Component {
                 </div>
 
                 <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.06); display: flex; gap: 8px; flex-wrap: wrap;">
-                    ${(spell.classes || []).map(cls => `<span style="background: rgba(197,160,89,0.12); color: var(--accent); font-size: 0.7rem; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; font-weight: 700;">${cls}</span>`).join('')}
-                    ${spell.components ? `<span style="background: rgba(100,150,200,0.12); color: #6eb3ff; font-size: 0.7rem; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; font-weight: 700;">Comp: ${spell.components.join(', ')}</span>` : ''}
-                    ${spell.concentration ? `<span style="background: rgba(220,150,50,0.12); color: #ffb347; font-size: 0.7rem; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; font-weight: 700;">⚠️ Concentração</span>` : ''}
+                    ${(spell.classes || []).map(cls => html`<span style="background: rgba(197,160,89,0.12); color: var(--accent); font-size: 0.7rem; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; font-weight: 700;">${cls}</span>`)}
+                    ${spell.components ? html`<span style="background: rgba(100,150,200,0.12); color: #6eb3ff; font-size: 0.7rem; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; font-weight: 700;">Comp: ${spell.components.join(', ')}</span>` : ''}
+                    ${spell.concentration ? html`<span style="background: rgba(220,150,50,0.12); color: #ffb347; font-size: 0.7rem; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; font-weight: 700;">⚠️ Concentração</span>` : ''}
                 </div>
             </div>
         `;
@@ -757,7 +769,7 @@ export class SpellBook extends Component {
         if (spell.savingThrow) {
             const saveMap = { 'DEX': 'Destreza', 'WIS': 'Sabedoria', 'CON': 'Constituição', 'INT': 'Inteligência', 'STR': 'Força', 'CHA': 'Carisma' };
             const saveName = saveMap[spell.savingThrow] || spell.savingThrow;
-            testBoxHTML = `
+            testBoxHTML = html`
                 <div style="font-size: 0.72rem; line-height: 1.4; color: var(--text-main);">
                     <div style="font-weight: 700; color: var(--accent); margin-bottom: 2px; font-family: 'Cinzel', serif;">SALVAGUARDA (Inimigo Rola)</div>
                     <div style="color: var(--text-dim); margin-bottom: 3px;">CD da Magia contra o alvo:</div>
@@ -765,13 +777,13 @@ export class SpellBook extends Component {
                         CD = 8 + Proficiência + Mod. ${modifierName}
                     </div>
                     <div style="font-size: 0.68rem; color: var(--text-dim); margin-top: 4px;">
-                        • Oponente rola salvaguarda de <strong>${saveName}</strong><br>
+                        • Oponente rola salvaguarda de <strong>${saveName}</strong><br />
                         • Sucesso: Metade do dano ou anula o efeito.
                     </div>
                 </div>
             `;
         } else if (spell.baseDamage || spell.type === 'dano') {
-            testBoxHTML = `
+            testBoxHTML = html`
                 <div style="font-size: 0.72rem; line-height: 1.4; color: var(--text-main);">
                     <div style="font-weight: 700; color: var(--accent); margin-bottom: 2px; font-family: 'Cinzel', serif;">ATAQUE MÁGICO (Você Rola)</div>
                     <div style="color: var(--text-dim); margin-bottom: 3px;">Jogada de ataque com d20:</div>
@@ -779,17 +791,17 @@ export class SpellBook extends Component {
                         Mod. de Ataque = Proficiência + Mod. ${modifierName}
                     </div>
                     <div style="font-size: 0.68rem; color: var(--text-dim); margin-top: 4px;">
-                        • Role 1d20 + Modificador de Ataque.<br>
+                        • Role 1d20 + Modificador de Ataque.<br />
                         • O ataque atinge se o total for <strong>&ge; CA</strong> do alvo.
                     </div>
                 </div>
             `;
         } else {
-            testBoxHTML = `
+            testBoxHTML = html`
                 <div style="font-size: 0.72rem; line-height: 1.4; color: var(--text-main);">
                     <div style="font-weight: 700; color: var(--accent); margin-bottom: 2px; font-family: 'Cinzel', serif;">EFEITO AUTOMÁTICO</div>
                     <div style="font-size: 0.68rem; color: var(--text-dim); margin-top: 4px;">
-                        • Não requer jogada de ataque ou teste de salvaguarda.<br>
+                        • Não requer jogada de ataque ou teste de salvaguarda.<br />
                         • O efeito ou cura ocorre instantaneamente no alvo.
                     </div>
                 </div>
@@ -800,14 +812,14 @@ export class SpellBook extends Component {
         
         let damageOrEffect = '';
         if (spell.baseDamage) {
-            damageOrEffect = `<span style="font-size: 1.1rem; font-weight: 800; color: #fff; font-family: 'Cinzel', serif;">${spell.baseDamage}</span> <span style="font-size: 0.8rem; font-weight: 600; color: ${typeColor};">${spell.damageType || ''}</span>`;
+            damageOrEffect = html`<span style="font-size: 1.1rem; font-weight: 800; color: #fff; font-family: 'Cinzel', serif;">${spell.baseDamage}</span> <span style="font-size: 0.8rem; font-weight: 600; color: ${typeColor};">${spell.damageType || ''}</span>`;
             if (spell.scaling && !isCantrip) {
-                damageOrEffect += ` <span style="font-size: 0.65rem; color: var(--text-dim); display: block; margin-top: 2px;">(+1d6 por nível de slot acima)</span>`;
+                damageOrEffect += html` <span style="font-size: 0.65rem; color: var(--text-dim); display: block; margin-top: 2px;">(+1d6 por nível de slot acima)</span>`;
             } else if (spell.scaling && isCantrip) {
-                damageOrEffect += ` <span style="font-size: 0.65rem; color: var(--text-dim); display: block; margin-top: 2px;">(dano aumenta nos níveis 5, 11 e 17)</span>`;
+                damageOrEffect += html` <span style="font-size: 0.65rem; color: var(--text-dim); display: block; margin-top: 2px;">(dano aumenta nos níveis 5, 11 e 17)</span>`;
             }
         } else {
-            damageOrEffect = `<span style="font-size: 0.75rem; color: var(--text-main); font-weight: 500;">${spell.effect || 'Efeito imediato.'}</span>`;
+            damageOrEffect = html`<span style="font-size: 0.75rem; color: var(--text-main); font-weight: 500;">${spell.effect || 'Efeito imediato.'}</span>`;
         }
 
         let shortNarrative = narrative;
@@ -815,7 +827,7 @@ export class SpellBook extends Component {
             shortNarrative = shortNarrative.substring(0, 177) + '...';
         }
 
-        return `
+        return html`
             <div style="display: flex; flex-direction: column; gap: 12px; position: relative;">
                 <!-- Header Title -->
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1.5px solid rgba(255,255,255,0.08); padding-bottom: 8px;">
@@ -886,7 +898,7 @@ export class SpellBook extends Component {
                 </div>
             </div>
             
-            ${this._popupMode === 'click' ? `
+            ${this._popupMode === 'click' ? html`
                 <button class="btn btn-ghost" style="position: absolute; top: 12px; right: 12px; padding: 2px 6px; font-size: 0.65rem; border-radius: 4px; z-index: 10; border: none; background: transparent; color: var(--text-dim); cursor: pointer;" data-action="closeMagicPopup">✕</button>
                 <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; border-top: 1.5px solid rgba(255, 255, 255, 0.08); padding-top: 10px;">
                     <button class="btn btn-ghost" style="padding: 5px 12px; font-size: 0.68rem; border-radius: 6px; border: 1px solid rgba(197, 160, 89, 0.35); color: var(--accent); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; background: rgba(197,160,89,0.05);" data-action="viewFullSpell" data-spell-id="${spell.id}">

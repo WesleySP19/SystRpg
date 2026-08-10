@@ -1,12 +1,13 @@
 /**
- * SERVICE WORKER v3.0 — DOMÍNIO RPG VTT
- * Estratégia:
- *   - Assets estáticos (JS, CSS, HTML, fontes): Cache-First
- *   - Dados da campanha (/data/, /api/): Network-First (sempre tenta rede, cai no cache)
- *   - Recursos externos (CDN, fontes Google): StaleWhileRevalidate
+ * SERVICE WORKER v15.9 — DOMÍNIO RPG VTT
+ * Estratégia Otimizada (Auto-Update):
+ *   - HTML (app shell): Network-First
+ *   - Assets estáticos locais: Stale-While-Revalidate (sempre atualiza no background)
+ *   - Dados da campanha: Network-First
+ *   - Recursos externos: Stale-While-Revalidate
  */
 
-const CACHE_VERSION = 'tome-v24';
+const CACHE_VERSION = 'tome-v17-1-1';
 const CACHE_STATIC = `${CACHE_VERSION}-static`;
 const CACHE_DATA = `${CACHE_VERSION}-data`;
 
@@ -14,85 +15,96 @@ const CACHE_DATA = `${CACHE_VERSION}-data`;
 const STATIC_ASSETS = [
   '/',
   '/index.html',
-  '/player-view.html',
-  '/master-map.html',
-  '/ui/components/MapLauncher.js',
   '/ui/components/AuthScreen.js',
   '/manifest.json',
-  '/assets/styles.css',
-  '/assets/sheet-theme.css',
-  '/assets/tmap.css',
+  '/assets/tome-master.css',
   '/assets/logo.png',
-  '/assets/bestiary-statblock.css',
-  '/assets/match-history.css',
-  '/assets/initiative-monitor.css',
-  // Core modules
-  '/core/Registry.js',
-  '/core/Store.js',
+  
+  // Core
   '/core/EventBus.js',
+  '/core/Store.js',
+  '/ui/core/Component.js',
+  '/ui/core/ReactiveComponent.js',
   '/core/RulesEngine.js',
-  '/core/index.js',
+  '/core/Registry.js',
+
   // Services
-  '/services/AIService.js',
-  '/services/AudioService.js',
   '/services/PersistenceService.js',
+  '/ui/services/FrontendDirectoryService.js',
+  '/services/MediaService.js',
+  '/services/SessionManager.js',
   '/services/CardRenderer.js',
-  '/services/LootEngine.js',
-  '/services/IndexedDBService.js',
   '/services/TelemetryService.js',
   '/services/MatchHistoryService.js',
   '/services/MonsterArt.js',
-  // UI Core
-  '/ui/core/Component.js',
-  // UI Pages
-  '/ui/pages/Dashboard.js',
-  '/ui/pages/Bestiary.js',
-  // UI Components
-  '/ui/components/Sidebar.js',
-  '/ui/components/Toast.js',
-  '/ui/components/CombatTracker.js',
-  '/ui/components/DMShield.js',
-  '/ui/components/WorldBuilder.js',
-  '/ui/components/PlayerForm.js',
-  '/ui/components/NPCHelper.js',
-  '/ui/components/CampaignManager.js',
-  '/ui/components/LootGenerator.js',
-  '/ui/components/SpellBook.js',
-  '/ui/components/MapManager.js',
-  '/ui/components/TurnTracker.js',
-  '/ui/components/CombatArena.js',
-  '/ui/components/TokenOverlay.js',
-  '/ui/components/QuestManager.js',
-  '/ui/components/SessionJournal.js',
-  '/ui/components/QuickReference.js',
-  '/ui/components/MonsterForm.js',
-  '/ui/components/PartyStatusHUD.js',
-  // Engine
-  '/engine/GridEngine.js',
-  '/engine/TokenEngine.js',
-  '/engine/FogEngine.js',
-  '/engine/EffectEngine.js',
-  '/engine/VisionEngine.js',
-  '/engine/ReferencePanel.js',
-  '/engine/LightingEngine.js',
-  '/engine/DungeonGenerator.js',
-  // Utils & Data
+
+  // Utils
   '/utils/Dice.js',
   '/utils/combat.js',
+  '/utils/db.js',
+  '/ui/utils/imageExport.js',
+
+  // Components base
+  '/ui/components/MainPanel.js',
+  '/ui/components/PartyStatusHUD.js',
+  '/ui/components/ChatBox.js',
+  '/ui/components/HeroHub.js',
+  '/ui/components/PlayerForm.js',
+  '/ui/components/CampaignManager.js',
+  '/ui/components/combat/CombatTrackerV14.js',
+  '/ui/components/combat/CombatantList.js',
+  '/ui/components/combat/CombatControls.js',
+  '/ui/components/SessionJournal.js',
+  '/ui/components/QuestManager.js',
+  '/ui/components/LootGenerator.js',
+  '/ui/components/NPCHelper.js',
+  '/ui/components/SpellBook.js',
+  '/ui/components/DynamicCharacterBuilder.js',
+  '/ui/components/QuickReference.js',
+  '/ui/components/DMShield.js',
+  '/ui/components/WorldBuilder.js',
+  '/ui/components/InitiativeMonitor.js',
+  '/ui/components/EncounterGenerator.js',
+  '/ui/components/CardGenerator.js',
+  '/ui/components/TomeSinalPanel.js',
+
+  // Pages
+  '/ui/pages/Dashboard.js',
+  '/ui/pages/Bestiary.js',
   '/data/schemas.js',
   '/data/spells-5e.js',
   '/data/MonsterData.js',
   '/data/MonsterLibrary.js',
 ];
 
-// --- INSTALL: pré-cacheia assets estáticos ---
+// --- INSTALL: pré-cacheia assets estáticos com resiliência ---
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches
-      .open(CACHE_STATIC)
-      .then((cache) => cache.addAll(STATIC_ASSETS))
-      .then(() => self.skipWaiting())
-      .catch((err) => console.warn('[SW] Pre-cache parcial:', err)),
+    caches.open(CACHE_STATIC).then(async (cache) => {
+      console.log(`[SW] Iniciando cache iterativo para ${STATIC_ASSETS.length} assets...`);
+      let sucessos = 0;
+      let falhas = 0;
+      
+      await Promise.all(STATIC_ASSETS.map(async (url) => {
+        try {
+          const req = new Request(url, { cache: 'reload' });
+          const res = await fetch(req);
+          if (res.ok) {
+            await cache.put(req, res);
+            sucessos++;
+          } else {
+            console.warn(`[SW] Aviso: Asset não encontrado (Ignorado no cache): ${url} (Status: ${res.status})`);
+            falhas++;
+          }
+        } catch (err) {
+          console.warn(`[SW] Aviso: Falha de rede ao cachear asset: ${url}`, err);
+          falhas++;
+        }
+      }));
+      
+      console.log(`[SW] Cache finalizado! Sucessos: ${sucessos}, Falhas/Ausentes: ${falhas}`);
+      return self.skipWaiting();
+    })
   );
 });
 
@@ -149,19 +161,25 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Assets estáticos locais: Cache-First
-  event.respondWith(cacheFirst(request, CACHE_STATIC));
+  // HTML files and direct navigations: Network-First to ensure we always load the latest app shell
+  if (request.mode === 'navigate' || (request.headers.get('accept') && request.headers.get('accept').includes('text/html'))) {
+    event.respondWith(networkFirst(request, CACHE_STATIC));
+    return;
+  }
+
+  // Assets estáticos locais: Stale-While-Revalidate para garantir que atualizações ocorram no background
+  event.respondWith(staleWhileRevalidate(request, CACHE_STATIC));
 });
 
 // Cache-First: responde do cache, busca na rede só se não encontrar
 async function cacheFirst(request, cacheName) {
-  const cached = await caches.match(request);
+  const cached = await caches.match(request, { ignoreSearch: true });
   if (cached) return cached;
   try {
     const response = await fetch(request);
-    if (response.ok) {
+    if (response && response.status === 200 && request.method === 'GET' && request.url.startsWith('http') && (response.type === 'basic' || response.type === 'cors' || response.type === 'default')) {
       const cache = await caches.open(cacheName);
-      cache.put(request, response.clone());
+      try { await cache.put(request, response.clone()); } catch (e) { console.warn('[SW] Falha segura ao cachear:', e); }
     }
     return response;
   } catch {
@@ -175,29 +193,28 @@ async function cacheFirst(request, cacheName) {
 async function networkFirst(request, cacheName) {
   try {
     const response = await fetch(request);
-    if (response.ok) {
+    if (response && response.status === 200 && request.method === 'GET' && request.url.startsWith('http') && (response.type === 'basic' || response.type === 'cors' || response.type === 'default')) {
       const cache = await caches.open(cacheName);
-      cache.put(request, response.clone());
+      try { await cache.put(request, response.clone()); } catch (e) {}
     }
     return response;
   } catch {
-    const cached = await caches.match(request);
-    return (
-      cached ||
-      new Response('Offline — dados não disponíveis.', { status: 503 })
-    );
+    const cached = await caches.match(request, { ignoreSearch: true });
+    return cached || new Response('Offline — dados não disponíveis.', { status: 503 });
   }
 }
 
 // Stale-While-Revalidate: responde do cache, atualiza em background
 async function staleWhileRevalidate(request, cacheName) {
   const cache = await caches.open(cacheName);
-  const cached = await cache.match(request);
+  const cached = await cache.match(request, { ignoreSearch: true });
   const fetchPromise = fetch(request)
-    .then((response) => {
-      if (response.ok) cache.put(request, response.clone());
+    .then(async (response) => {
+      if (response && response.status === 200 && request.method === 'GET' && request.url.startsWith('http') && (response.type === 'basic' || response.type === 'cors' || response.type === 'default')) {
+          try { await cache.put(request, response.clone()); } catch (e) {}
+      }
       return response;
     })
-    .catch(() => cached);
+    .catch(() => cached || new Response('Offline', { status: 503 }));
   return cached || fetchPromise;
 }

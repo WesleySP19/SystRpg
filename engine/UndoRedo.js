@@ -10,10 +10,26 @@ export class Command {
 }
 
 export class CommandStack {
-    constructor(mapManager) {
+    constructor(mapManager, maxStackSize = 100) {
         this.map = mapManager;
+        this.maxStackSize = maxStackSize;
         this.undoStack = [];
         this.redoStack = [];
+    }
+
+    _emitSyncEvent(actionName) {
+        if (this.map && typeof this.map._sync === 'function') {
+            this.map._sync();
+        }
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('map-history-sync', { 
+                detail: { action: actionName, timestamp: Date.now() } 
+            }));
+        }
+        // Redireciona via Sockets do mapa e Telão de Transmissão se presentes no mapManager
+        if (this.map && this.map.socket && typeof this.map.socket.emit === 'function') {
+            this.map.socket.emit('state_update', this.map.getSnapshot ? this.map.getSnapshot() : { action: actionName });
+        }
     }
 
     /**
@@ -22,8 +38,11 @@ export class CommandStack {
     execute(command) {
         command.execute(this.map);
         this.undoStack.push(command);
+        if (this.undoStack.length > this.maxStackSize) {
+            this.undoStack.shift();
+        }
         this.redoStack = []; // Clear redo stack on new action
-        this.map._sync();
+        this._emitSyncEvent('execute');
     }
 
     /**
@@ -34,7 +53,7 @@ export class CommandStack {
         const command = this.undoStack.pop();
         command.undo(this.map);
         this.redoStack.push(command);
-        this.map._sync();
+        this._emitSyncEvent('undo');
         return true;
     }
 
@@ -46,7 +65,7 @@ export class CommandStack {
         const command = this.redoStack.pop();
         command.execute(this.map);
         this.undoStack.push(command);
-        this.map._sync();
+        this._emitSyncEvent('redo');
         return true;
     }
 

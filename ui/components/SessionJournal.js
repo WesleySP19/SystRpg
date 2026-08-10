@@ -1,13 +1,15 @@
-import { Component } from '../core/Component.js';
+import { ReactiveComponent } from '../core/ReactiveComponent.js';
+import { html } from 'htm/preact';
 import { TOME } from '../../core/Registry.js';
 import { Toast } from '../components/Toast.js';
 import { Modal } from './Modal.js';
+import { exportSessionSummaryPNG } from '../utils/imageExport.js';
 
 /**
  * SESSION JOURNAL v2.0 - Premium Edition
  * Live session logging, automated reports, and high-fidelity bard chronicle generator.
  */
-export class SessionJournal extends Component {
+export class SessionJournal extends ReactiveComponent {
     constructor(opts) {
         super(opts);
         this._loadingCronicle = false;
@@ -34,17 +36,8 @@ export class SessionJournal extends Component {
             }
         }
 
-        // Commit current DOM states to store to prevent losses
-        if (this._mounted) {
-            const title = this.$('#session-title-input')?.value;
-            const notes = this.$('#session-notes-textarea')?.value;
-            const loot = this.$('#session-loot-textarea')?.value;
-            TOME.store.update(s => {
-                if (title !== undefined) s.sessionTitle = title;
-                if (notes !== undefined) s.sessionNotes = notes;
-                if (loot !== undefined) s.sessionLoot = loot;
-            });
-        }
+        // Update inputs logic was removed from render() to prevent infinite cycles.
+        // The store is updated via event listeners attached in onMount() instead.
 
         if (activeId) {
             this._focusedElement = { id: activeId, start: selectionStart, end: selectionEnd };
@@ -106,7 +99,7 @@ export class SessionJournal extends Component {
     template() {
         const { players, combatRound, sessionNumber } = this.store.state;
 
-        return `
+        return html`
             <style>
                 @keyframes journalFadeIn {
                     from { opacity: 0; transform: scale(0.98) translateY(12px); }
@@ -546,10 +539,13 @@ export class SessionJournal extends Component {
                     </div>
                     <div style="display:flex; gap:12px;">
                         <button class="btn btn-magic" data-action="generateAICronicle" ${this._loadingCronicle ? 'disabled' : ''}>
-                            ${this._loadingCronicle ? '<i class="fa-solid fa-spinner fa-spin"></i> Tecendo história...' : '<i class="fa-solid fa-wand-magic-sparkles"></i> Gerar Crônica IA'}
+                            ${this._loadingCronicle ? html`<i class="fa-solid fa-spinner fa-spin"></i> Tecendo história...` : html`<i class="fa-solid fa-wand-magic-sparkles"></i> Gerar Crônica IA`}
                         </button>
                         <button class="btn btn-premium" data-action="exportReport">
                             <i class="fa-solid fa-file-export"></i> Exportar Relatório
+                        </button>
+                        <button class="btn btn-premium" style="border-color: #66fcf1; color: #66fcf1; background: rgba(102, 252, 241, 0.05);" data-action="exportSummaryPNG" title="Exportar imagem para Discord/WhatsApp">
+                            <i class="fa-solid fa-image"></i> Cartão PNG
                         </button>
                     </div>
                 </div>
@@ -565,7 +561,7 @@ export class SessionJournal extends Component {
                             
                             <div class="journal-input-group">
                                 <label class="journal-label">Título da Sessão</label>
-                                <input type="text" id="session-title-input" class="journal-input" value="${this._sessionTitle}" placeholder="Ex: O Despertar do Dragão">
+                                <input type="text" id="session-title-input" class="journal-input" value="${this._sessionTitle}" placeholder="Ex: O Despertar do Dragão" />
                             </div>
 
                             <div style="display:flex; flex-direction:column; gap:10px;">
@@ -589,23 +585,22 @@ export class SessionJournal extends Component {
                         </div>
 
                         <!-- CAPITULOS ANTERIORES -->
-                        ${this.store.state.sessionsHistory && this.store.state.sessionsHistory.length > 0 ? `
+                        ${this.store.state.sessionsHistory && this.store.state.sessionsHistory.length > 0 ? html`
                         <div class="journal-card" style="margin-top: 10px;">
                             <h3 style="font-family:'Cinzel'; color:#c5a059; font-size:1.05rem; margin: 0 0 15px 0; display:flex; align-items:center; gap:8px;">
                                 <i class="fa-solid fa-clock-rotate-left"></i> Crônicas Passadas (${this.store.state.sessionsHistory.length})
                             </h3>
                             <div style="display:flex; flex-direction:column; gap:8px; max-height:220px; overflow-y:auto; padding-right:4px;">
-                                ${this.store.state.sessionsHistory.map(hist => `
-                                    <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(197,160,89,0.15); border-radius:8px; padding:10px; font-size:0.8rem; cursor:pointer; transition:all 0.2s;" 
-                                         data-action="viewPastSession" data-id="${hist.sessionNumber}"
-                                         onmouseover="this.style.background='rgba(197,160,89,0.05)';" onmouseout="this.style.background='rgba(255,255,255,0.02)';">
+                                ${this.store.state.sessionsHistory.map(hist => html`
+                                    <div class="tome-hover-row" style="background:rgba(255,255,255,0.02); border:1px solid rgba(197,160,89,0.15); border-radius:8px; padding:10px; font-size:0.8rem; cursor:pointer;" 
+                                         data-action="viewPastSession" data-id="${hist.sessionNumber}">
                                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; width:100%;">
                                             <strong style="color:#fbbf24;">Sessão #${hist.sessionNumber}</strong>
                                             <span style="font-size:0.7rem; color:#64748b; margin-left:auto;">${new Date(hist.timestamp).toLocaleDateString('pt-BR')}</span>
                                         </div>
                                         <div style="color:#e2e8f0; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${hist.sessionTitle}</div>
                                     </div>
-                                `).join('')}
+                                `)}
                             </div>
                         </div>
                         ` : ''}
@@ -631,7 +626,7 @@ export class SessionJournal extends Component {
                         </div>
 
                         <!-- AI CRONICLE BANNER -->
-                        ${this._aiCronicle ? `
+                        ${this._aiCronicle ? html`
                             <div class="chronicle-container animate-fadeIn">
                                 <h3 class="chronicle-title">
                                     <i class="fa-solid fa-wand-magic-sparkles"></i> A Crônica do Bardo Real
@@ -652,7 +647,7 @@ export class SessionJournal extends Component {
                             </h3>
 
                             <div style="display:flex; gap:10px; margin-bottom:25px;">
-                                <input type="text" id="manual-event-input" class="journal-input" placeholder="Adicionar evento (Ex: Dia 3 - Encontro na taverna)..." style="flex:1;">
+                                <input type="text" id="manual-event-input" class="journal-input" placeholder="Adicionar evento (Ex: Dia 3 - Encontro na taverna)..." style="flex:1;" />
                                 <button class="btn btn-primary" data-action="addManualEvent" style="padding:12px 20px; border-radius:10px;"><i class="fa-solid fa-plus"></i></button>
                             </div>
 
@@ -669,7 +664,7 @@ export class SessionJournal extends Component {
                                     const badgeGlow = glows[type] || glows.info;
                                     const iconClass = icons[type] || icons.info;
                                     
-                                    return `
+                                    return html`
                                         <div class="timeline-item" style="--badge-color: ${badgeColor}; --badge-glow: ${badgeGlow};">
                                             <div class="timeline-badge">
                                                 <i class="fa-solid ${iconClass}"></i>
@@ -686,7 +681,7 @@ export class SessionJournal extends Component {
                                             </div>
                                         </div>
                                     `;
-                                }).join('') || `
+                                }).join('') || html`
                                     <div style="text-align:center; padding:40px 0; color:#64748b;">
                                         <i class="fa-solid fa-feather" style="font-size:2rem; opacity:0.3; margin-bottom:12px; display:block;"></i>
                                         <span style="font-size:0.85rem; font-style:italic;">Nenhum evento registrado nesta linha do tempo ainda...</span>
@@ -794,7 +789,7 @@ export class SessionJournal extends Component {
         const dateStr = new Date(hist.timestamp).toLocaleDateString('pt-BR');
         const notesHtml = hist.sessionNotes ? hist.sessionNotes : 'Nenhuma nota registrada.';
         const lootHtml = hist.sessionLoot ? hist.sessionLoot : 'Nenhum tesouro registrado.';
-        const eventsHtml = (hist.journalEntries || []).map(e => `
+        const eventsHtml = (hist.journalEntries || []).map(e => html`
             <div style="margin-bottom:8px; padding-bottom:8px; border-bottom:1px dashed rgba(255,255,255,0.05); font-size:0.8rem;">
                 <span style="color:#c5a059; font-weight:bold;">[${e.type.toUpperCase()}]</span> <strong>${e.title}:</strong> ${e.content}
             </div>
@@ -802,7 +797,7 @@ export class SessionJournal extends Component {
 
         Modal.show({
             title: `Sessão #${hist.sessionNumber}`,
-            content: `
+            content: html`
                 <div style="max-height:60vh; overflow-y:auto; padding-right:8px; text-align:left; font-family:'Outfit', sans-serif;">
                     <div style="text-align:center; margin-bottom:15px; border-bottom:1px solid rgba(197,160,89,0.15); padding-bottom:10px;">
                         <h3 style="font-family:'Cinzel', serif; color:#fbbf24; margin:0; font-size:1.3rem;">${hist.sessionTitle}</h3>
@@ -854,12 +849,47 @@ export class SessionJournal extends Component {
         setTimeout(() => document.body.classList.remove('print-report-mode'), 500);
     }
 
+    async exportSummaryPNG() {
+        const title = this.$('#session-title-input')?.value || this._sessionTitle;
+        const notes = this.$('#session-notes-textarea')?.value || this._sessionNotes;
+        const loot = this.$('#session-loot-textarea')?.value || this._sessionLoot;
+        const { players, sessionNumber, journalEntries } = this.store.state;
+
+        TOME.store.update(s => {
+            s.sessionTitle = title;
+            s.sessionNotes = notes;
+            s.sessionLoot = loot;
+        });
+
+        Toast.show('Renderizando cartão místico PNG da sessão...', 'info');
+
+        try {
+            const milestones = (journalEntries || []).map(e => `• [${e.title}] ${e.content}`).join('\n');
+            const chronicleText = this._aiCronicle || milestones || notes;
+
+            await exportSessionSummaryPNG({
+                title,
+                sessionNumber: sessionNumber || 1,
+                date: new Date().toLocaleDateString('pt-BR'),
+                players: players || [],
+                loot,
+                chronicle: chronicleText,
+                notes
+            });
+
+            Toast.show('Cartão PNG gerado e baixado com sucesso!', 'success');
+        } catch (err) {
+            console.error('[SessionJournal] Erro ao exportar PNG:', err);
+            Toast.show('Falha ao exportar cartão PNG. Tente novamente.', 'danger');
+        }
+    }
+
     _renderReportTemplate() {
         const { players, combatRound, journalEntries, sessionNumber } = this.store.state;
         const loot = this._sessionLoot || 'Nenhum item especial registrado.';
         const date = new Date().toLocaleDateString('pt-BR');
 
-        return `
+        return html`
             <div class="dnd-report-template" style="box-sizing:border-box; width:100%; max-width:800px; margin:0 auto; padding:40px; background:#ffffff; color:#000000; font-family:'Outfit', sans-serif;">
                 <!-- HEADER -->
                 <div style="text-align:center; border-bottom:3px double #000; padding-bottom:20px; margin-bottom:30px;">
@@ -873,7 +903,7 @@ export class SessionJournal extends Component {
                     <div style="border:1.5px solid #000; padding:15px; border-radius:8px; background:#fafafa;">
                         <strong style="display:block; border-bottom:1.5px solid #000; padding-bottom:6px; margin-bottom:10px; font-family:'Cinzel'; font-size:12px; text-transform:uppercase;">👥 Heróis Ativos</strong>
                         <ul style="margin:0; padding-left:20px; font-size:11px; line-height:1.6; color:#222;">
-                            ${(players || []).map(p => `<li><strong>${p.name}</strong> (${p.race} ${p.class} Nív ${p.level})</li>`).join('') || '<li>Nenhum herói ativo.</li>'}
+                            ${(players || []).map(p => html`<li><strong>${p.name}</strong> (${p.race} ${p.class} Nív ${p.level})</li>`).join('') || '<li>Nenhum herói ativo.</li>'}
                         </ul>
                     </div>
                     <div style="border:1.5px solid #000; padding:15px; border-radius:8px; background:#fafafa;">
@@ -887,7 +917,7 @@ export class SessionJournal extends Component {
                 </div>
 
                 <!-- CRONICA IA -->
-                ${this._aiCronicle ? `
+                ${this._aiCronicle ? html`
                     <div style="border:1.5px solid #000; padding:20px; border-radius:8px; background:#fffcf5; margin-bottom:35px; box-shadow:inset 0 0 10px rgba(0,0,0,0.02);">
                         <strong style="display:block; border-bottom:1.5px solid #000; padding-bottom:6px; margin-bottom:12px; font-family:'Cinzel'; font-size:13px; text-transform:uppercase; color:#8b1e0f;">📖 A Crônica do Bardo</strong>
                         <p style="font-size:11px; line-height:1.8; color:#111; font-style:italic; margin:0; white-space:pre-wrap;">${this._aiCronicle}</p>
@@ -904,7 +934,7 @@ export class SessionJournal extends Component {
                 <div>
                     <strong style="display:block; border-bottom:1.5px solid #000; padding-bottom:6px; margin-bottom:15px; font-family:'Cinzel'; font-size:12px; text-transform:uppercase;">⏳ Linha do Tempo dos Acontecimentos</strong>
                     <div style="display:flex; flex-direction:column; gap:10px; padding-left:10px;">
-                        ${(journalEntries || []).map(e => `
+                        ${(journalEntries || []).map(e => html`
                             <div style="border-left:2px solid #000; padding-left:12px; font-size:10.5px; line-height:1.5;">
                                 <div style="font-weight:800; color:#555; font-size:9.5px; text-transform:uppercase;">
                                     ${new Date(e.timestamp || Date.now()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - ${e.title || 'Evento'}
@@ -923,3 +953,4 @@ export class SessionJournal extends Component {
         `;
     }
 }
+

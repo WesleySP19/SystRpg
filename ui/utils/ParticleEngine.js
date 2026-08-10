@@ -1,102 +1,87 @@
-// ParticleEngine – lightweight canvas particle system for cinematic UI
+// ParticleEngine – Offscreen Canvas Web Worker architecture (v15.9)
 // Usage: const engine = new ParticleEngine(canvas, {density: 80, depthRange: [1,4]}); engine.start(); engine.stop();
 
 export default class ParticleEngine {
   /**
-   * @param {HTMLCanvasElement} canvas - Canvas element where particles are drawn
+   * @param {HTMLCanvasElement} canvas - Canvas element onde as partículas irão operar
    * @param {Object} options
-   * @param {number} options.density - Approx. number of particles on screen
-   * @param {Array<number>} options.depthRange - [minDepth, maxDepth] controls size/blur
+   * @param {number} options.density
+   * @param {Array<number>} options.depthRange
    */
   constructor(canvas, { density = 60, depthRange = [1, 3] } = {}) {
     this.canvas = canvas;
-    this.ctx = canvas.getContext('2d');
     this.density = density;
-    this.minDepth = depthRange[0];
-    this.maxDepth = depthRange[1];
-    this.particles = [];
-    this.animationId = null;
-    this.resize();
-    window.addEventListener('resize', () => this.resize());
+    this.depthRange = depthRange;
+    this.worker = null;
+    this._onResize = () => this.resize();
   }
 
-  // Initialize particle list
-  initParticles() {
-    const count = this.density;
-    const { width, height } = this.canvas;
-    this.particles = [];
-    for (let i = 0; i < count; i++) {
-      const depth = this.random(this.minDepth, this.maxDepth);
-      const size = (1 / depth) * 3 + 1; // smaller for farther particles
-      const opacity = 0.4 + (1 - depth / this.maxDepth) * 0.5;
-      this.particles.push({
-        x: Math.random() * width,
-        y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 0.3,
-        vy: (Math.random() - 0.5) * 0.3,
-        size,
-        opacity,
-        depth,
-      });
+  // Fallback silencioso sem travar se não houver suporte a Offscreen
+  start() {
+    if (this.worker) return;
+    
+    if (!('OffscreenCanvas' in window) || typeof this.canvas.transferControlToOffscreen !== 'function') {
+        console.warn('[ParticleEngine] OffscreenCanvas não suportado no seu navegador. Otimização V15.9 ignorada.');
+        return;
+    }
+
+    try {
+        if (this.canvas._transferred) return;
+        const offscreen = this.canvas.transferControlToOffscreen();
+        this.canvas._transferred = true;
+        this.worker = new Worker('/public/workers/particleWorker.js');
+        
+        const rect = this.canvas.parentElement 
+            ? this.canvas.parentElement.getBoundingClientRect() 
+            : { width: this.canvas.width || window.innerWidth, height: this.canvas.height || window.innerHeight };
+            
+        offscreen.width = rect.width;
+        offscreen.height = rect.height;
+
+        this.worker.postMessage({
+            type: 'INIT',
+            canvas: offscreen,
+            density: this.density,
+            depthRange: this.depthRange
+        }, [offscreen]);
+
+        window.addEventListener('resize', this._onResize);
+    } catch(e) {
+        console.warn('[ParticleEngine] Falha ao iniciar worker isolado:', e);
     }
   }
 
-  // Resize canvas to fill parent
   resize() {
+    if (!this.worker || !this.canvas || !this.canvas.parentElement) return;
     const rect = this.canvas.parentElement.getBoundingClientRect();
-    this.canvas.width = rect.width;
-    this.canvas.height = rect.height;
-    this.initParticles();
+    this.worker.postMessage({
+        type: 'RESIZE',
+        width: rect.width,
+        height: rect.height
+    });
   }
 
-  random(min, max) {
-    return Math.random() * (max - min) + min;
-  }
-
-  start() {
-    if (this.animationId) return;
-    this.initParticles();
-    const loop = () => {
-      this.update();
-      this.draw();
-      this.animationId = requestAnimationFrame(loop);
-    };
-    loop();
+  explosion({ x, y, color, count, speed } = {}) {
+      if (this.worker) {
+          this.worker.postMessage({
+              type: 'EXPLOSION',
+              x, y, color, count, speed
+          });
+      }
   }
 
   stop() {
-    if (this.animationId) {
-      cancelAnimationFrame(this.animationId);
-      this.animationId = null;
+    if (this.worker) {
+      this.worker.postMessage({ type: 'STOP' });
+      setTimeout(() => {
+          if (this.worker) {
+              this.worker.terminate();
+              this.worker = null;
+          }
+      }, 100);
     }
-    this.clear();
-  }
-
-  clear() {
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-  }
-
-  update() {
-    const { width, height } = this.canvas;
-    for (const p of this.particles) {
-      p.x += p.vx;
-      p.y += p.vy;
-      // Wrap around edges
-      if (p.x < 0) p.x = width;
-      if (p.x > width) p.x = 0;
-      if (p.y < 0) p.y = height;
-      if (p.y > height) p.y = 0;
-    }
-  }
-
-  draw() {
-    const ctx = this.ctx;
-    this.clear();
-    for (const p of this.particles) {
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(255,255,255,${p.opacity})`;
-      ctx.fill();
+    if (this._onResize) {
+      window.removeEventListener('resize', this._onResize);
     }
   }
 }

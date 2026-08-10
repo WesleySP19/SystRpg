@@ -60,6 +60,7 @@ export class RulesEngine {
         return {
             total,
             rolls,
+            roll: (numDice === 1 && sides === 20) ? (total - modifier) : (rolls[0] || 0),
             isCrit,
             isFumble,
             formula: expression
@@ -90,22 +91,62 @@ export class RulesEngine {
 
     // --- Backwards Compatibility Wrappers (Will be deprecated when UI adapts) ---
 
+    static getModifier(val) {
+        if (val === null || val === undefined) val = 10;
+        return Math.floor((val - 10) / 2);
+    }
+
+    static resolveD20(bonus = 0, mode = 'normal') {
+        const bonusStr = bonus >= 0 ? `+${bonus}` : `${bonus}`;
+        const res = this.rollExpression(`1d20${bonusStr}`, mode);
+        return { roll: res.roll, total: res.total, isCrit: res.isCrit, isFumble: res.isFumble };
+    }
+
     static checkHit(attackBonus, targetAC, mode = 'normal') {
         const bonusStr = attackBonus >= 0 ? `+${attackBonus}` : `${attackBonus}`;
         const res = this.rollExpression(`1d20${bonusStr}`, mode);
         const success = res.isCrit || (!res.isFumble && res.total >= targetAC);
-        return { success, isCrit: res.isCrit, total: res.total, roll: res.rolls[0] || res.total };
+        return { success, isCrit: res.isCrit, total: res.total, roll: res.roll };
     }
 
     static checkSave(saveBonus, dc, mode = 'normal') {
         const bonusStr = saveBonus >= 0 ? `+${saveBonus}` : `${saveBonus}`;
         const res = this.rollExpression(`1d20${bonusStr}`, mode);
-        return { success: res.total >= dc, total: res.total, roll: res.rolls[0] || res.total };
+        return { success: res.total >= dc, total: res.total, roll: res.roll };
     }
 
     static getHP(actor) {
         const current = actor.hp?.current !== undefined ? actor.hp.current : (actor.hp_current !== undefined ? actor.hp_current : 10);
         const max = actor.hp?.max !== undefined ? actor.hp.max : (actor.hp_max !== undefined ? actor.hp_max : 10);
         return { current: parseInt(current), max: parseInt(max) };
+    }
+
+    /**
+     * Calcula a distância entre duas coordenadas num Grid ou Hex.
+     * @param {Object} posA - { x, y }
+     * @param {Object} posB - { x, y }
+     * @param {string} gridType - 'square' (Chebyshev), 'manhattan', ou 'hex'
+     */
+    static calculateDistance(posA, posB, gridType = 'square') {
+        if (!posA || !posB) return 0;
+        const x1 = posA.x !== undefined ? posA.x : (posA.q !== undefined ? posA.q : 0);
+        const y1 = posA.y !== undefined ? posA.y : (posA.r !== undefined ? posA.r : 0);
+        const x2 = posB.x !== undefined ? posB.x : (posB.q !== undefined ? posB.q : 0);
+        const y2 = posB.y !== undefined ? posB.y : (posB.r !== undefined ? posB.r : 0);
+
+        const dx = Math.abs(x1 - x2);
+        const dy = Math.abs(y1 - y2);
+
+        if (gridType === 'square' && (posA.q === undefined && posB.q === undefined)) {
+            // Distância Chebyshev (diagonal custa 1)
+            return Math.max(dx, dy);
+        } else if (gridType === 'manhattan') {
+            // Sem diagonal (custa 2)
+            return dx + dy;
+        } else {
+            // Usando cubo/axial hexagonal (nativo para tokens q, r do CartoRPG)
+            const dz = Math.abs((x1 + y1) - (x2 + y2));
+            return Math.max(dx, dy, dz);
+        }
     }
 }

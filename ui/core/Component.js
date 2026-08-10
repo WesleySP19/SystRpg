@@ -1,3 +1,5 @@
+import { render as preactRender } from 'preact';
+import { effect } from '@preact/signals';
 /**
  * BASE COMPONENT v3.0
  * Lifecycle-managed UI component with memoized rendering and event delegation.
@@ -29,7 +31,9 @@ export class Component {
         this._mounted = true;
 
         if (this.store) {
-            this._unsubscribe = this.store.subscribe((state) => this.onStoreUpdate(state));
+            this._unsubscribe = effect(() => {
+                this.onStoreUpdate(this.store.signal.value);
+            });
         }
 
         this.render();
@@ -47,7 +51,11 @@ export class Component {
         this._eventCleanups.forEach(fn => fn());
         this._eventCleanups = [];
         this.onUnmount();
-        if (this.element) this.element.innerHTML = '';
+        if (this.element) {
+            // Attempt to unmount Preact component if it was used
+            try { preactRender(null, this.element); } catch(e){}
+            this.element.innerHTML = '';
+        }
     }
 
     /**
@@ -72,19 +80,48 @@ export class Component {
             return;
         }
 
-        const html = this.template().trim();
-        if (html === this._lastHTML) return;
+        if (this._renderPending) return;
+        this._renderPending = true;
 
         requestAnimationFrame(() => {
+            this._renderPending = false;
             if (!this._mounted) return;
-            // Clean up previous event listeners before rendering new ones
-            this._eventCleanups.forEach(fn => fn());
-            this._eventCleanups = [];
 
-            this.element.innerHTML = html;
-            this._lastHTML = html;
-            this._bindDelegatedEvents();
-            this.onMount();
+            const output = this.template();
+            
+            // Hybrid Render: Strings use innerHTML (legacy), Objects use Preact VDOM
+            if (typeof output === 'string') {
+                let html = output.trim();
+                // Injeta lazy loading em todas as imagens renderizadas por string
+                html = html.replace(/<img(?!.*?loading=)([^>]+)>/g, '<img loading="lazy"$1>');
+                
+                if (html === this._lastHTML) return;
+
+                this._eventCleanups.forEach(fn => fn());
+                this._eventCleanups = [];
+
+                this.element.innerHTML = html;
+                this._lastHTML = html;
+
+                // Atribui a referência do componente aos nós raízes para inline handlers
+                if (this.element && this.element.children) {
+                    Array.from(this.element.children).forEach(child => {
+                        child.__component = this;
+                    });
+                }
+
+                this._bindDelegatedEvents();
+                if (typeof this.onMount === 'function') {
+                    this.onMount();
+                }
+            } else if (output != null) {
+                // Preact VDOM branch
+                preactRender(output, this.element);
+                if (!this._vdomMounted) {
+                    if (typeof this.onMount === 'function') this.onMount();
+                    this._vdomMounted = true;
+                }
+            }
         });
     }
 

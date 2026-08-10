@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TOME - Telão de Transmissão Espectador</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #0a0c10;
+            --gold-glow: rgba(212, 175, 55, 0.4);
+            --border-gold: #b38b2d;
+            --text-gold: #f4d36a;
+            --panel-glass: rgba(15, 20, 28, 0.85);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        body {
+            background-color: var(--bg-deep);
+            background-image: 
+                radial-gradient(circle at 50% 50%, #151a24 0%, #080a0d 100%),
+                repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(255,255,255,0.03) 40px),
+                repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(255,255,255,0.03) 40px);
+            color: #e2e8f0;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+        }
+        header {
+            padding: 12px 28px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 100%);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+            border-bottom: 1px solid rgba(179, 139, 45, 0.2);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        h1 {
+            font-family: 'Cinzel', serif;
+            color: var(--text-gold);
+            font-size: 1.6rem;
+            text-shadow: 0 0 10px var(--gold-glow);
+            letter-spacing: 2px;
+        }
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0,0,0,0.5);
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+            font-size: 0.85rem;
+            color: #a0aec0;
+        }
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #ef4444;
+            box-shadow: 0 0 8px #ef4444;
+            transition: background-color 0.3s ease;
+        }
+        .status-dot.active {
+            background-color: #10b981;
+            box-shadow: 0 0 8px #10b981;
+        }
+        #map-stage {
+            flex: 1;
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        .empty-state {
+            text-align: center;
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        .empty-state h3 {
+            font-family: 'Cinzel', serif;
+            font-size: 1.8rem;
+            color: #718096;
+            margin-bottom: 8px;
+        }
+        /* Grid de Avatares dos Heróis no rodapé */
+        #heroes-bar {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            z-index: 15;
+            background: var(--panel-glass);
+            padding: 12px 24px;
+            border-radius: 16px;
+            border: 1px solid var(--border-gold);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+            backdrop-filter: blur(8px);
+        }
+        .hero-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 180px;
+        }
+        .hero-avatar {
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            border: 2px solid var(--border-gold);
+            object-fit: cover;
+            background: #1a202c;
+            box-shadow: 0 0 12px var(--gold-glow);
+        }
+        .hero-info h4 {
+            font-family: 'Cinzel', serif;
+            color: var(--text-gold);
+            font-size: 1rem;
+            margin-bottom: 2px;
+        }
+        .hero-info span {
+            font-size: 0.75rem;
+            color: #cbd5e1;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        /* Alerta Flutuante de Rolagens / Eventos no Topo Direito */
+        #broadcast-events {
+            position: absolute;
+            top: 80px;
+            right: 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 20;
+            max-width: 340px;
+        }
+        .event-popup {
+            background: rgba(15, 23, 42, 0.95);
+            border-left: 4px solid #3b82f6;
+            padding: 12px 16px;
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+            animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1), fadeOut 0.5s ease 6s forwards;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .event-popup.rolagem { border-left-color: var(--text-gold); }
+        .event-popup.alerta { border-left-color: #ef4444; }
+        .event-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.2);
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes fadeOut {
+            to { opacity: 0; transform: translateY(-10px); pointer-events: none; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>TOME • TELÃO ARCANO (MODO ESPECTADOR)</h1>
+        <div class="status-badge">
+            <span id="dot-status" class="status-dot"></span>
+            <span id="txt-status">Aguardando Sintonização com a Mesa...</span>
+        </div>
+    </header>
+
+    <main id="map-stage">
+        <div class="empty-state" id="empty-hint">
+            <h3>Nenhum Tabuleiro Ativo</h3>
+            <p>O Mestre transmitirá o cenário e os heróis quando a ação iniciar.</p>
+        </div>
+        <!-- Container do Konva.js para o Mapa Tático -->
+        <div id="map-container" style="position: absolute; top:0; left:0; width:100%; height:100%;"></div>
+    </main>
+
+    <!-- Barra Superior / Lateral de Eventos Críticos (Rolagens do Chat) -->
+    <div id="broadcast-events"></div>
+
+    <!-- Barra Inferior com Avatares dos Heróis Conectados -->
+    <div id="heroes-bar" style="display: none;">
+        <div id="heroes-container" style="display: flex; gap: 24px;"></div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script type="module">
+        import * as Y from '/public/vendor/yjs.js';
+        import { WebsocketProvider } from '/public/vendor/y-websocket.js';
+        import { TacticalMapEngine } from '/ui/components/TacticalMapEngine.js';
+
+        const dot = document.getElementById('dot-status');
+        const txtStatus = document.getElementById('txt-status');
+        const eventsContainer = document.getElementById('broadcast-events');
+        const heroesBar = document.getElementById('heroes-bar');
+        const heroesContainer = document.getElementById('heroes-container');
+        const emptyHint = document.getElementById('empty-hint');
+        const mapContainer = document.getElementById('map-container');
+
+        // Instancia a Engine do Konva no modo Espectador
+        const mapEngine = new TacticalMapEngine('map-container', {
+            width: window.innerWidth,
+            height: window.innerHeight,
+            isDM: false
+        });
+
+        window.addEventListener('resize', () => {
+            mapEngine.resize(window.innerWidth, window.innerHeight);
+        });
+
+        // Ouve atualizações instantâneas via BroadcastChannel (Mesmo Navegador/PC)
+        const channel = new BroadcastChannel('tome_map');
+        channel.onmessage = (event) => {
+            const data = event.data;
+            if (data.type === 'MAP_UPDATE') {
+                if (data.mapUrl !== undefined) {
+                    mapEngine.setMapUrl(data.mapUrl);
+                    if (data.mapUrl) {
+                        emptyHint.style.display = 'none';
+                    } else {
+                        emptyHint.style.display = 'block';
+                    }
+                }
+                if (data.fog !== undefined) mapEngine.setFog(data.fog);
+                if (data.gridActive !== undefined || data.gridScale !== undefined) {
+                    // Ignorando gridScale temporariamente
+                    if(data.gridActive !== undefined) mapEngine.setGrid(data.gridActive, data.gridScale || '1.5m');
+                }
+                if (data.tokens !== undefined) mapEngine.updateTokens(data.tokens);
+            }
+            if (data.type === 'DELTA_UPDATE' && data.deltaType === 'TOKEN_MOVE') {
+                // Atualiza um token específico suavemente
+                if (data.data) {
+                    const currentTokens = Array.from(mapEngine.tokens.values()).map(g => ({
+                        id: g.id(),
+                        x: g.id() === data.data.id ? data.data.x : g.x(),
+                        y: g.id() === data.data.id ? data.data.y : g.y(),
+                        name: g.findOne('Text').text(),
+                        size: g.findOne('Circle').radius() * 2,
+                        color: g.findOne('Circle').fill()
+                    }));
+                    
+                    // Adiciona o token se for novo (simplificado, ideal seria manter um array)
+                    const existing = currentTokens.find(t => t.id === data.data.id);
+                    if (!existing) {
+                        currentTokens.push({ id: data.data.id, x: data.data.x, y: data.data.y, name: 'Token', size: 40, color: '#eab308' });
+                    }
+                    mapEngine.updateTokens(currentTokens);
+                }
+            }
+            if (data.type === 'PING') {
+                mapEngine.showPing(data.position.x, data.position.y, data.color);
+            }
+        };
+
+        // Tenta detectar a mesa pela URL ou pelo default-table
+        const params = new URLSearchParams(window.location.search);
+        const tableId = params.get('tableId') || localStorage.getItem('tome_last_table') || 'default-table';
+
+        let socket;
+        try {
+            socket = io();
+            socket.emit('joinRoom', { mesaId: tableId });
+
+            socket.on('connect', () => {
+                dot.classList.add('active');
+                txtStatus.textContent = `Telão Sintonizado (Mesa: ${tableId})`;
+            });
+
+            socket.on('disconnect', () => {
+                dot.classList.remove('active');
+                txtStatus.textContent = "Conexão de Rede Local interrompida.";
+            });
+
+            socket.on('chat_message', msg => {
+                showEventPopup(msg);
+            });
+        } catch(e) {
+            console.warn("Socket.io não indisponível no cliente.");
+        }
+
+        // Sintoniza com o Yjs para pegar avatares dos jogadores e rolagens CRDT em tempo real
+        let serverUrl = window.location.origin.replace(/^http/, 'ws');
+        if (serverUrl.endsWith('/')) serverUrl = serverUrl.slice(0, -1);
+        serverUrl += '/yjs';
+
+        const ydoc = new Y.Doc();
+        const chatHistory = ydoc.getArray('chatHistory');
+        
+        try {
+            const provider = new WebsocketProvider(serverUrl, `table-${tableId}`, ydoc);
+            
+            provider.on('status', ev => {
+                if (ev.status === 'connected') {
+                    dot.classList.add('active');
+                    txtStatus.textContent = `Ao Vivo (Mesa: ${tableId})`;
+                }
+            });
+
+            chatHistory.observe(ev => {
+                ev.changes.added.forEach(item => {
+                    item.content.getContent().forEach(msgObj => {
+                        if (msgObj.tipo === 'rolagem' || msgObj.tipo === 'alerta') {
+                            showEventPopup(msgObj);
+                        }
+                    });
+                });
+            });
+        } catch(e) { console.warn("Yjs Websocket indisponivel"); }
+
+        // Remove updateMapState function
+        function renderHeroes(players) {
+            heroesContainer.innerHTML = '';
+            players.forEach(p => {
+                const card = document.createElement('div');
+                card.className = 'hero-card';
+                card.innerHTML = `
+                    <img class="hero-avatar" src="${p.avatar || '/public/uploads/default-hero.png'}" alt="Hero" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'54\' height=\'54\' viewBox=\'0 0 24 24\' fill=\'%23a0aec0\'><circle cx=\'12\' cy=\'8\' r=\'4\'/><path d=\'M12 14c-6.1 0-8 4-8 4v2h16v-2s-1.9-4-8-4z\'/></svg>'">
+                    <div class="hero-info">
+                        <h4>${p.name || p.nome || 'Herói'}</h4>
+                        <span>${p.class || p.classe || 'Aventureiro'}</span>
+                    </div>
+                `;
+                heroesContainer.appendChild(card);
+            });
+            heroesBar.style.display = 'flex';
+        }
+
+        function showEventPopup(msg) {
+            if (!msg || (!msg.conteudo && !msg.text)) return;
+            const pop = document.createElement('div');
+            pop.className = `event-popup ${msg.tipo || 'geral'}`;
+            
+            const avatarHtml = msg.avatar 
+                ? `<img class="event-avatar" src="${msg.avatar}" alt="Img">` 
+                : `<div class="event-avatar" style="background:#1e293b; display:flex; align-items:center; justify-content:center; color:#e2e8f0; font-weight:bold;">${(msg.nome || 'J')[0].toUpperCase()}</div>`;
+            
+            pop.innerHTML = `
+                ${avatarHtml}
+                <div>
+                    <div style="font-size:0.8rem; color:#94a3b8; font-weight:bold;">${msg.nome || 'Jogador'}:</div>
+                    <div style="font-size:0.95rem; color:#f1f5f9; margin-top:2px;">${msg.conteudo || msg.text}</div>
+                </div>
+            `;
+            
+            eventsContainer.prepend(pop);
+            setTimeout(() => {
+                pop.remove();
+            }, 7000);
+        }
+
+        // Busca periódica do estado e tokens dos jogadores que se conectaram por QR Code
+        async function fetchConnectedTokens() {
+            try {
+                const res = await fetch(`/api/sessao/${tableId}/tokens`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.tokens && data.tokens.length > 0) {
+                        renderHeroes(data.tokens);
+                    }
+                }
+            } catch(e) {}
+        }
+        setInterval(fetchConnectedTokens, 5000);
+        fetchConnectedTokens();
+    </script>
+    <script type="module">
+        import { FXEngine } from '/services/FXEngine.js';
+        FXEngine.init();
+    </script>
+</body>
+</html>

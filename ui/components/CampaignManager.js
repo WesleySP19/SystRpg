@@ -1,16 +1,20 @@
-import { Component } from '../core/Component.js';
+import { ReactiveComponent } from '../core/ReactiveComponent.js';
+import { html } from 'htm/preact';
 import { TOME } from '../../core/Registry.js';
 import { MatchHistoryService } from '../../services/MatchHistoryService.js';
 import { Toast } from '../components/Toast.js';
 import { Dice } from '../../utils/Dice.js';
 import { Modal } from './Modal.js';
-
+import { renderQuickQuests } from './QuestLog.js';
+import { renderQuickJournal } from './CampaignNotes.js';
+import { renderQuickMonsters } from './NPCList.js';
 /**
  * CAMPAIGN COMMAND CENTER v6.0 — "The Official Sheet"
  * Integrated D&D 5e Official Layout for PDF/Print Export.
  */
-export class CampaignManager extends Component {
-    constructor(opts) {
+export class CampaignManager extends ReactiveComponent {
+    constructor(opts = {}) {
+        opts.storePath = 'campaign';
         super(opts);
         this._selectedHeroId = null;
         this._timerInterval = null;
@@ -25,27 +29,28 @@ export class CampaignManager extends Component {
         const { players } = this.store.state;
         const selected = players?.find(p => p.id === this._selectedHeroId);
 
-        return `
-            <div class="page" style="max-width: 1400px;">
+        return html`
+            <div class="page max-w-[1400px] mx-auto">
                 <!-- HIDDEN PRINT TEMPLATES (SHEET & COMBAT CARD) -->
                 ${selected ? this._renderPrintTemplate(selected) : ''}
                 ${selected ? this._renderCardTemplate(selected) : ''}
 
-                <div class="section-header" id="command-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <div class="section-header flex justify-between items-center mb-6">
                     <div>
-                        <h2 class="section-title"><i class="fa-solid fa-users-rectangle" style="color:var(--accent); margin-right:12px;"></i> Gestão de Campanha</h2>
-                        <p class="section-subtitle">Sincronização Total com a Sessão Ativa</p>
+                        <h2 class="section-title m-0"><i class="fa-solid fa-users-rectangle text-tomeGold mr-3"></i> Gestão de Campanha</h2>
+                        <p class="section-subtitle mt-1 text-slate-400">Sincronização Total com a Sessão Ativa</p>
                     </div>
-                    <div style="display:flex; gap:10px;">
-                        <button class="btn btn-ghost" data-action="importCamp" style="font-size:0.8rem;"><i class="fa-solid fa-file-import"></i> Importar</button>
-                        <button class="btn btn-primary" data-action="exportCamp" style="font-size:0.8rem;"><i class="fa-solid fa-download"></i> Exportar Dados</button>
+                    <div class="flex gap-2.5">
+                        <button class="btn btn-ghost text-xs" data-action="importCamp"><i class="fa-solid fa-file-import"></i> Importar</button>
+                        <button class="btn btn-primary text-xs" data-action="exportCamp"><i class="fa-solid fa-download"></i> Exportar Dados</button>
                     </div>
                 </div>
 
-                <div style="display:grid; grid-template-columns: 320px 1fr; gap:var(--space-lg); align-items:start;">
-                    <div style="display:flex; flex-direction:column; gap:15px;">
+                <div class="gap-6 items-start" style="display: grid; grid-template-columns: 320px 1fr;">
+                    <div class="flex flex-col gap-5">
                         <!-- ACTIVE SESSION SELECTOR -->
-                        <div id="session-control-card" class="card glass-accent" style="padding:20px; border-radius:14px; border:1.5px solid rgba(197,160,89,0.25); background:rgba(10,12,16,0.65); box-shadow:0 10px 25px rgba(0,0,0,0.4); display:flex; flex-direction:column; gap:14px;">
+                        <div id="session-control-card" class="card glass-accent p-6 rounded-2xl flex flex-col gap-4 border border-tomeGold/20 shadow-[0_15px_40px_rgba(0,0,0,0.6)] relative overflow-hidden">
+                            <div class="absolute -top-10 -right-10 w-32 h-32 bg-tomeGold/10 rounded-full blur-3xl pointer-events-none"></div>
                             <style>
                                 @keyframes timerPulse { 0%,100%{text-shadow:0 0 8px rgba(197,160,89,0.5);} 50%{text-shadow:0 0 18px rgba(197,160,89,0.9), 0 0 30px rgba(197,160,89,0.4);} }
                                 @keyframes statusBlink { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
@@ -59,45 +64,45 @@ export class CampaignManager extends Component {
                                 .badge-active { background:rgba(251,191,36,0.12); border:1px solid rgba(251,191,36,0.5); color:#fbbf24; }
                                 .timer-btn { border:none; border-radius:8px; font-family:'Cinzel', serif; font-size:0.65rem; font-weight:800; letter-spacing:1px; text-transform:uppercase; padding:8px 10px; cursor:pointer; transition:all 0.25s cubic-bezier(0.16,1,0.3,1); display:flex; align-items:center; justify-content:center; gap:6px; }
                                 .timer-btn:hover { transform:translateY(-1px); }
-                                .timer-btn-start { background:linear-gradient(135deg,#16a34a,#22c55e); color:#fff; box-shadow:0 3px 12px rgba(34,197,94,0.3); }
-                                .timer-btn-start:hover { box-shadow:0 5px 18px rgba(34,197,94,0.5); }
-                                .timer-btn-pause { background:linear-gradient(135deg,#b45309,#fbbf24); color:#000; box-shadow:0 3px 12px rgba(251,191,36,0.3); }
-                                .timer-btn-pause:hover { box-shadow:0 5px 18px rgba(251,191,36,0.5); }
-                                .timer-btn-end { background:linear-gradient(135deg,#991b1b,#ef4444); color:#fff; box-shadow:0 3px 12px rgba(239,68,68,0.3); }
-                                .timer-btn-end:hover { box-shadow:0 5px 18px rgba(239,68,68,0.5); }
+                                .timer-btn-start { background:rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.4); color:#4ade80; box-shadow:0 3px 12px rgba(34,197,94,0.1); }
+                                .timer-btn-start:hover { background:rgba(34,197,94,0.25); box-shadow:0 5px 18px rgba(34,197,94,0.3); }
+                                .timer-btn-pause { background:rgba(251,191,36,0.15); border: 1px solid rgba(251,191,36,0.4); color:#fbbf24; box-shadow:0 3px 12px rgba(251,191,36,0.1); }
+                                .timer-btn-pause:hover { background:rgba(251,191,36,0.25); box-shadow:0 5px 18px rgba(251,191,36,0.3); }
+                                .timer-btn-end { background:rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.4); color:#f87171; box-shadow:0 3px 12px rgba(239,68,68,0.1); }
+                                .timer-btn-end:hover { background:rgba(239,68,68,0.25); box-shadow:0 5px 18px rgba(239,68,68,0.3); }
                             </style>
 
                             <!-- HEADER -->
-                            <div style="font-family:'Cinzel',serif; font-size:0.75rem; font-weight:800; color:var(--accent,#d4af37); text-transform:uppercase; letter-spacing:1px; border-bottom:1px solid rgba(197,160,89,0.2); padding-bottom:8px; display:flex; align-items:center; justify-content:space-between;">
+                            <div class="font-cinzel text-xs font-extrabold text-tomeGold uppercase tracking-wide border-b border-tomeGold/20 pb-2 flex items-center justify-between">
                                 <div>
-                                    <span><i class="fa-solid fa-folder-open" style="margin-right:6px;"></i> Sessão do Jogo</span>
-                                    <button class="btn btn-ghost btn-sm" data-action="editCampaign" style="padding:2px 6px; font-size:0.6rem; margin-left:8px; border-radius:4px;"><i class="fa-solid fa-pen"></i> Editar</button>
+                                    <span><i class="fa-solid fa-folder-open mr-1.5"></i> Sessão do Jogo</span>
+                                    <button class="btn btn-ghost btn-sm py-0.5 px-1.5 text-[0.6rem] ml-2 rounded" data-action="editCampaign"><i class="fa-solid fa-pen"></i> Editar</button>
                                 </div>
                                 ${this._getActiveSessionStatus()}
                             </div>
 
                             <!-- ACTIVE SESSION INFO -->
-                            <div style="font-size:0.65rem; color:var(--text-dim,#94a3b8);">
-                                Sessão Ativa: <b style="color:var(--accent,#d4af37);">${TOME.persistence?.filename || 'state.json'}</b>
+                            <div class="text-[0.65rem] text-slate-400">
+                                Sessão Ativa: <b class="text-tomeGold">${TOME.persistence?.filename || 'state.json'}</b>
                             </div>
 
                             <!-- TIMER DISPLAY -->
-                            <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(197,160,89,0.15); border-radius:12px; padding:14px 16px; display:flex; flex-direction:column; gap:10px;">
-                                <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                            <div class="glass p-4 rounded-xl flex flex-col gap-3">
+                                <div class="flex justify-between items-center w-full">
                                     <div>
-                                        <div style="font-size:0.55rem; color:#64748b; font-weight:700; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">Tempo de Sessão</div>
-                                        <div id="session-timer-display" class="session-timer-display" style="font-family:'JetBrains Mono',monospace; font-size:1.6rem; font-weight:900; color:#c5a059; letter-spacing:2px; line-height:1;">
+                                        <div class="text-[0.55rem] text-slate-500 font-bold uppercase tracking-wide mb-1">Tempo de Sessão</div>
+                                        <div id="session-timer-display" class="session-timer-display font-mono text-2xl font-black text-tomeGold tracking-wider leading-none">
                                             ${this._getTimerDisplay()}
                                         </div>
-                                        ${this._isTimerRunning() ? `<div style="font-size:0.55rem; color:#22c55e; margin-top:4px; display:flex; align-items:center; gap:4px;"><span class="timer-running-dot" style="width:5px;height:5px;border-radius:50%;background:#22c55e;display:inline-block;"></span>Em andamento</div>` : ''}
+                                        ${this._isTimerRunning() ? html`<div class="text-[0.55rem] text-green-500 mt-1 flex items-center gap-1"><span class="timer-running-dot w-1.5 h-1.5 rounded-full bg-green-500 inline-block"></span>Em andamento</div>` : ''}
                                     </div>
-                                    <div style="width: 100px; display:flex; flex-direction:column; gap:4px;">
+                                    <div style="min-width: 130px; max-width: 140px; display:flex; flex-direction:column; gap:6px;">
                                         ${this._renderTimerButtons()}
                                     </div>
                                 </div>
-                                <div style="width:100%; border-top:1px solid rgba(255,255,255,0.05); padding-top:8px;">
-                                    <label style="display:block; font-size:0.55rem; color:#64748b; font-weight:700; text-transform:uppercase; margin-bottom:4px;">Limite de Duração</label>
-                                    <select class="form-select" id="timer-limit-select" style="font-size:0.65rem; padding:4px 8px; background:rgba(0,0,0,0.5); border:1px solid rgba(197,160,89,0.25); color:#fff; border-radius:6px; width:100%; cursor:pointer;">
+                                <div class="w-full border-t border-white/5 pt-2">
+                                    <label class="block text-[0.55rem] text-slate-500 font-bold uppercase mb-1">Limite de Duração</label>
+                                    <select class="legacy-input w-full" id="timer-limit-select">
                                         <option value="0" ${!this._getSessionMeta(TOME.persistence?.filename || 'state.json').timerLimitMs ? 'selected' : ''}>Livre (Progressivo)</option>
                                         <option value="3600000" ${this._getSessionMeta(TOME.persistence?.filename || 'state.json').timerLimitMs === 3600000 ? 'selected' : ''}>1 Hora (Regressivo)</option>
                                         <option value="7200000" ${this._getSessionMeta(TOME.persistence?.filename || 'state.json').timerLimitMs === 7200000 ? 'selected' : ''}>2 Horas (Regressivo)</option>
@@ -108,117 +113,117 @@ export class CampaignManager extends Component {
                             </div>
 
                             <!-- DROPDOWN SELECTOR -->
-                            <select class="form-select" id="session-dropdown" data-action="changeSession" style="width:100%; font-family:'Outfit',sans-serif; font-size:0.8rem; padding:8px 12px; background:rgba(0,0,0,0.5); border:1px solid rgba(197,160,89,0.3); border-radius:8px; color:#fff; cursor:pointer;">
+                            <select class="legacy-input w-full mt-2" id="session-dropdown" data-action="changeSession">
                                 ${this._getSessionsList().map(s => {
                                     const meta = this._getSessionMeta(s.file);
                                     const isOpen = meta.status === 'open';
                                     const isCurrent = TOME.persistence?.filename === s.file;
                                     const duration = meta.totalElapsed ? ` • ${this._formatElapsed(meta.totalElapsed)}` : '';
-                                    return `<option value="${s.file}" class="${isOpen ? 'session-opt-open' : 'session-opt-closed'}" ${isCurrent ? 'selected' : ''}>${
+                                    return html`<option value="${s.file}" class="${isOpen ? 'session-opt-open' : 'session-opt-closed'}" ${isCurrent ? 'selected' : ''}>${
                                         isOpen ? '🟢' : '⚫'
                                     } ${s.name}${duration}</option>`;
-                                }).join('')}
+                                })}
                             </select>
 
                             <!-- SESSION STATUS LIST -->
-                            <div style="display:flex; flex-direction:column; gap:4px; max-height:120px; overflow-y:auto; padding-right:2px;">
+                            <div class="flex flex-col gap-1 max-h-32 overflow-y-auto pr-0.5">
                                 ${this._getSessionsList().map(s => {
                                     const meta = this._getSessionMeta(s.file);
                                     const isCurrent = TOME.persistence?.filename === s.file;
                                     const isOpen = meta.status === 'open';
                                     const duration = meta.totalElapsed ? this._formatElapsed(meta.totalElapsed) : '--:--:--';
-                                    return `
-                                        <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 10px; border-radius:8px; background:${isCurrent ? 'rgba(197,160,89,0.08)' : 'rgba(255,255,255,0.02)'}; border:1px solid ${isCurrent ? 'rgba(197,160,89,0.3)' : 'rgba(255,255,255,0.04)'}; font-size:0.65rem;">
-                                            <div style="display:flex; align-items:center; gap:6px; overflow:hidden;">
-                                                <span style="width:6px;height:6px;border-radius:50%;background:${isOpen ? '#22c55e' : '#64748b'};flex-shrink:0;box-shadow:${isOpen ? '0 0 5px #22c55e' : 'none'};"></span>
-                                                <span style="color:${isCurrent ? '#c5a059' : '#94a3b8'}; font-weight:${isCurrent ? '700' : '500'}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${s.name}</span>
+                                    return html`
+                                        <div class="flex items-center justify-between py-2 px-3 rounded-lg text-[0.65rem] border transition-all ${isCurrent ? 'bg-tomeGold/10 border-tomeGold/40' : 'glass hover:bg-white/10 border-transparent'}">
+                                            <div class="flex items-center gap-1.5 overflow-hidden">
+                                                <span class="w-1.5 h-1.5 rounded-full shrink-0 ${isOpen ? 'bg-green-500 shadow-[0_0_5px_#22c55e]' : 'bg-slate-500'}"></span>
+                                                <span class="whitespace-nowrap overflow-hidden text-ellipsis ${isCurrent ? 'text-tomeGold font-bold' : 'text-slate-400 font-medium'}">${s.name}</span>
                                             </div>
-                                            <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
-                                                <span style="font-family:'JetBrains Mono',monospace; color:#475569; font-size:0.6rem;">${duration}</span>
+                                            <div class="flex items-center gap-1.5 shrink-0">
+                                                <span class="font-mono text-slate-600 text-[0.6rem]">${duration}</span>
                                                 <span class="session-status-badge ${isOpen ? 'badge-open' : 'badge-closed'}">${isOpen ? 'Aberta' : 'Finalizada'}</span>
                                             </div>
                                         </div>
                                     `;
-                                }).join('')}
+                                })}
                             </div>
 
                             <!-- ACTIONS -->
-                            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px;">
-                                <button class="btn btn-ghost btn-sm" style="border-radius:6px; font-size:0.7rem; font-weight:700; padding:6px; background:rgba(255,255,255,0.02);" data-action="createNewSession">
-                                    <i class="fa-solid fa-plus" style="margin-right:4px;"></i> Nova Sessão
+                            <div class="grid grid-cols-2 gap-2 mt-1">
+                                <button class="btn btn-ghost btn-sm rounded-lg text-[0.7rem] font-bold p-2" data-action="createNewSession">
+                                    <i class="fa-solid fa-plus mr-1"></i> Nova Sessão
                                 </button>
-                                <button class="btn btn-ghost btn-sm" style="border-radius:6px; font-size:0.7rem; font-weight:700; padding:6px; background:rgba(255,255,255,0.02);" data-action="cloneSession">
-                                    <i class="fa-solid fa-copy" style="margin-right:4px;"></i> Clonar Sessão
+                                <button class="btn btn-ghost btn-sm rounded-lg text-[0.7rem] font-bold p-2" data-action="cloneSession">
+                                    <i class="fa-solid fa-copy mr-1"></i> Clonar Sessão
                                 </button>
-                                <button class="btn btn-success btn-sm" style="border-radius:6px; font-size:0.7rem; font-weight:700; padding:6px; background:rgba(46,204,113,0.12); border:1px solid rgba(46,204,113,0.35); color:#2ecc71; grid-column:span 2;" data-action="startCampaignForm">
-                                    <i class="fa-solid fa-wand-magic-sparkles" style="margin-right:4px;"></i> Iniciar Nova Campanha
+                                <button class="btn btn-success btn-sm rounded-lg text-[0.7rem] font-bold p-2 col-span-2" data-action="startCampaignForm">
+                                    <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Iniciar Nova Campanha
                                 </button>
-                                <button class="btn btn-danger btn-sm" style="border-radius:6px; font-size:0.7rem; font-weight:700; padding:6px; background:rgba(231,76,60,0.1); border:1px solid rgba(231,76,60,0.3); color:var(--danger); grid-column:span 2;" data-action="resetCampaignState">
-                                    <i class="fa-solid fa-power-off" style="margin-right:4px;"></i> Zerar Estado da Campanha
+                                <button class="btn btn-danger btn-sm rounded-lg text-[0.7rem] font-bold p-2 col-span-2" data-action="resetCampaignState">
+                                    <i class="fa-solid fa-power-off mr-1"></i> Zerar Estado da Campanha
                                 </button>
                             </div>
                         </div>
 
                         <!-- HERO SELECTOR -->
-                        <div class="card" id="management-sidebar" style="padding:0; overflow:hidden; border:1px solid rgba(212,175,55,0.1); border-radius:14px; background:rgba(10,12,16,0.45);">
-                            <div class="card-header" style="background:rgba(212,175,55,0.05); padding:15px; margin-bottom:0; border-bottom:1px solid rgba(212,175,55,0.1);">
-                                <span class="card-title" style="font-size:0.75rem; font-family:'Cinzel'; letter-spacing:1px; color:var(--accent);">HERÓIS DO GRUPO</span>
+                        <div class="card glass p-0 overflow-hidden rounded-2xl border border-tomeGold/20 shadow-[0_10px_30px_rgba(0,0,0,0.5)]" id="management-sidebar">
+                            <div class="card-header bg-gradient-to-r from-tomeGold/20 to-transparent p-4 m-0 border-b border-tomeGold/30 backdrop-blur-md">
+                                <span class="card-title text-xs font-cinzel font-bold tracking-[2px] text-tomeGold drop-shadow-md flex items-center gap-2"><i class="fa-solid fa-users"></i> Heróis do Grupo</span>
                             </div>
-                            <div style="display:flex; flex-direction:column;">
-                                ${players?.map(p => this._renderHeroItem(p)).join('') || '<p style="padding:20px; font-size:0.7rem; opacity:0.5; text-align:center;">Crie heróis na aba de criação.</p>'}
+                            <div class="flex flex-col bg-black/40">
+                                ${players?.map(p => this._renderHeroItem(p)).join('') || html`<p class="p-5 text-[0.7rem] opacity-50 text-center">Crie heróis na aba de criação.</p>`}
                             </div>
                         </div>
                     </div>
 
                     <!-- COMMAND PANEL & DYNAMIC INTEGRATED SECTIONS (Prime Dashboard) -->
-                    <div style="display:flex; flex-direction:column; gap:20px;">
+                    <div class="flex flex-col gap-5">
 
                         <!-- PRIME CAMPAIGN INFO BANNER -->
                         ${this._renderCampaignBanner()}
                         
                         <!-- COMMAND PANEL -->
                         <div id="command-ui">
-                            ${selected ? this._renderCommandPanel(selected) : `
-                                <div class="card empty-state" style="min-height:200px; background:rgba(10,12,16,0.3); border-radius:16px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; border:1px dashed rgba(197,160,89,0.15);">
-                                    <i class="fa-solid fa-user-plus" style="font-size:2.5rem; color:rgba(197,160,89,0.2);"></i>
-                                    <p style="font-size:0.8rem; color:#64748b; font-family:'Cinzel'; text-transform:uppercase; letter-spacing:1px;">Selecione um herói ao lado para gerenciar</p>
+                            ${selected ? this._renderCommandPanel(selected) : html`
+                                <div class="card empty-state min-h-[200px] glass rounded-2xl flex flex-col items-center justify-center gap-3 border border-dashed border-tomeGold/30">
+                                    <i class="fa-solid fa-user-plus text-[2.5rem] text-tomeGold/20"></i>
+                                    <p class="text-xs text-slate-500 font-cinzel uppercase tracking-wide">Selecione um herói ao lado para gerenciar</p>
                                 </div>
                             `}
                         </div>
 
                         <!-- DYNAMIC INTEGRATED SECTIONS (Modular Visibility) -->
-                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+                        <div class="grid grid-cols-2 gap-5">
                             
                             <!-- QUEST COMMAND -->
-                            <div class="card glass-accent" style="padding:20px; border-radius:14px; border:1px solid rgba(197,160,89,0.15); background:rgba(10,12,16,0.45);">
-                                <h3 style="font-family:'Cinzel'; color:var(--accent); font-size:0.85rem; margin: 0 0 14px 0; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(197,160,89,0.1); padding-bottom:10px;">
-                                    <span><i class="fa-solid fa-list-check" style="margin-right:6px; color:var(--accent);"></i> Quadro de Missões</span>
-                                    <button class="btn btn-ghost btn-sm" data-action="quickAddQuest" style="font-size:0.6rem; padding:2px 8px; border-radius:4px;"><i class="fa-solid fa-plus"></i> Adicionar</button>
+                            <div class="card glass p-0 rounded-2xl border border-tomeGold/20 shadow-[0_10px_30px_rgba(0,0,0,0.5)] overflow-hidden">
+                                <h3 class="font-cinzel text-tomeGold text-[0.85rem] m-0 flex justify-between items-center border-b border-tomeGold/30 bg-gradient-to-r from-tomeGold/20 to-transparent p-4 backdrop-blur-md font-bold tracking-widest drop-shadow-md">
+                                    <span><i class="fa-solid fa-list-check mr-2"></i> Quadro de Missões</span>
+                                    <button class="btn btn-ghost btn-sm text-[0.6rem] py-0.5 px-2 rounded" data-action="quickAddQuest"><i class="fa-solid fa-plus"></i> Adicionar</button>
                                 </h3>
-                                <div style="display:flex; flex-direction:column; gap:8px; max-height:180px; overflow-y:auto; padding-right:4px;">
-                                    ${this._renderQuickQuests()}
+                                <div class="flex flex-col gap-2 max-h-[180px] overflow-y-auto p-4 bg-black/40">
+                                    ${renderQuickQuests(this)}
                                 </div>
                             </div>
                             
-                            <!-- QUICK JOURNAL & ORACLE -->
-                            <div class="card glass-accent" style="padding:20px; border-radius:14px; border:1px solid rgba(197,160,89,0.15); background:rgba(10,12,16,0.45);">
-                                <h3 style="font-family:'Cinzel'; color:var(--accent); font-size:0.85rem; margin: 0 0 14px 0; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(197,160,89,0.1); padding-bottom:10px;">
-                                    <span><i class="fa-solid fa-scroll" style="margin-right:6px; color:var(--accent);"></i> Diário Narrativo</span>
-                                    <button class="btn btn-ghost btn-sm" data-action="quickOracleInspire" style="font-size:0.6rem; padding:2px 8px; border-radius:4px;"><i class="fa-solid fa-wand-magic-sparkles"></i> Oráculo</button>
+                            <!-- NARRATIVE / DIARY -->
+                            <div class="card glass p-0 rounded-2xl border border-tomeGold/20 shadow-[0_10px_30px_rgba(0,0,0,0.5)] overflow-hidden">
+                                <h3 class="font-cinzel text-tomeGold text-[0.85rem] m-0 flex justify-between items-center border-b border-tomeGold/30 bg-gradient-to-r from-tomeGold/20 to-transparent p-4 backdrop-blur-md font-bold tracking-widest drop-shadow-md">
+                                    <span><i class="fa-solid fa-book-journal-whills mr-2"></i> Diário Narrativo</span>
+                                    <button class="btn btn-ghost btn-sm text-[0.6rem] py-0.5 px-2 rounded" data-action="quickOracleInspire"><i class="fa-solid fa-wand-magic-sparkles"></i> Oráculo</button>
                                 </h3>
-                                <div style="display:flex; flex-direction:column; gap:6px; max-height:180px; overflow-y:auto; padding-right:4px;">
-                                    ${this._renderQuickJournal()}
+                                <div class="flex flex-col gap-1.5 max-h-[180px] overflow-y-auto p-4 bg-black/40">
+                                    ${renderQuickJournal(this)}
                                 </div>
                             </div>
 
-                            <!-- BESTIARY & MONSTERS -->
-                            <div class="card glass-accent" style="padding:20px; border-radius:14px; border:1px solid rgba(197,160,89,0.15); background:rgba(10,12,16,0.45); grid-column: span 2;">
-                                <h3 style="font-family:'Cinzel'; color:var(--accent); font-size:0.85rem; margin: 0 0 14px 0; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(197,160,89,0.1); padding-bottom:10px;">
-                                    <span><i class="fa-solid fa-dragon" style="margin-right:6px; color:#ef4444;"></i> Bestiário & Combates Ativos</span>
-                                    <span style="font-size:0.6rem; color:#64748b; font-family:'JetBrains Mono',monospace;">${(this.store.state.monsters||[]).length} criatura(s)</span>
+                            <!-- COMBAT & BESTIARY PREVIEW -->
+                            <div class="card glass p-0 rounded-2xl col-span-2 border border-tomeGold/20 shadow-[0_10px_30px_rgba(0,0,0,0.5)] overflow-hidden">
+                                <h3 class="font-cinzel text-tomeGold text-[0.85rem] m-0 flex justify-between items-center border-b border-tomeGold/30 bg-gradient-to-r from-tomeGold/20 to-transparent p-4 backdrop-blur-md font-bold tracking-widest drop-shadow-md">
+                                    <span><i class="fa-solid fa-dragon mr-2"></i> Bestiário & Combates Ativos</span>
+                                    <span class="text-[0.6rem] text-slate-300 font-mono tracking-wider bg-black/50 px-2 py-1 rounded-md border border-tomeGold/20">${(this.store.state.monsters||[]).length} criatura(s)</span>
                                 </h3>
-                                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; max-height:180px; overflow-y:auto; padding-right:4px;">
-                                    ${this._renderQuickMonsters()}
+                                <div class="grid grid-cols-2 gap-3 max-h-[180px] overflow-y-auto p-4 bg-black/40">
+                                    ${renderQuickMonsters(this)}
                                 </div>
                             </div>
                             
@@ -235,7 +240,7 @@ export class CampaignManager extends Component {
         const stats = p.stats || { str:10, dex:10, con:10, int:10, wis:10, cha:10 };
         const getMod = (v) => Math.floor((v - 10) / 2);
         
-        return `
+        return html`
             <div class="dnd-print-template">
                 <div class="dnd-header">
                     <div style="flex:1;">
@@ -258,13 +263,13 @@ export class CampaignManager extends Component {
 
                 <div class="dnd-grid">
                     <div class="dnd-stats-column">
-                        ${Object.entries(stats).map(([s, v]) => `
+                        ${Object.entries(stats).map(([s, v]) => html`
                             <div class="stat-box">
                                 <div class="stat-label">${s}</div>
                                 <div class="stat-mod">${getMod(v) >= 0 ? '+' : ''}${getMod(v)}</div>
                                 <div class="stat-val">${v}</div>
                             </div>
-                        `).join('')}
+                        `)}
                     </div>
                     
                     <div class="skill-list card" style="padding:15px; border:2px solid #000;">
@@ -310,7 +315,7 @@ export class CampaignManager extends Component {
 
     _renderHeroItem(p) {
         const isActive = p.id === this._selectedHeroId;
-        return `
+        return html`
             <div class="init-row ${isActive ? 'active' : ''}" style="padding:15px; cursor:pointer;" data-action="selectHero" data-id="${p.id}">
                 <div style="display:flex; align-items:center; gap:12px;">
                     <div class="token-avatar" style="width:35px; height:35px; border-color:${isActive ? 'var(--accent)' : 'rgba(255,255,255,0.1)'}; ${p.img ? `background:url(${p.img}) center/cover;` : ''}">${p.img ? '' : p.name.substring(0,2)}</div>
@@ -347,129 +352,124 @@ export class CampaignManager extends Component {
 
         const attrNames = { str: 'Força', dex: 'Destreza', con: 'Constituição', int: 'Inteligência', wis: 'Sabedoria', cha: 'Carisma' };
 
-        return `
-            <div style="display:flex; flex-direction:column; gap:var(--space-lg); animation: fadeIn 0.35s ease-out; font-family:'Outfit';">
+        return html`
+            <div class="flex flex-col gap-6 animate-fade-in font-sans">
                 
                 <!-- TOP CARD HEADER WITH XP PROGRESS TRACKER -->
-                <div class="card glass-accent" style="padding:30px; border:2px solid var(--accent); border-radius:16px; box-shadow:0 8px 32px rgba(0,0,0,0.5); background:linear-gradient(135deg, rgba(197,160,89,0.03), rgba(0,0,0,0.4));">
-                    <div style="display:flex; gap:25px; align-items:center; flex-wrap:wrap;">
-                        <div class="token-avatar" style="width:90px; height:90px; border-width:3px; border-color:var(--accent); font-family:'Cinzel'; font-size:2rem; box-shadow:0 0 15px rgba(197,160,89,0.3); background:rgba(0,0,0,0.6);">${p.name.substring(0,2)}</div>
-                        <div style="flex:1; min-width:250px;">
-                            <h1 style="margin:0; font-size:2.2rem; font-family:'Cinzel'; color:var(--accent); text-shadow:0 2px 10px #000; letter-spacing:1px;">${p.name}</h1>
-                            <p style="color:var(--text-dim); font-size:0.95rem; margin-top:6px; font-weight:600; text-transform:uppercase; letter-spacing:1px;"><i class="fa-solid fa-wand-magic-sparkles" style="color:var(--accent);"></i> ${p.race} ${p.class} • Nível ${lvl}</p>
+                <div class="card glass-accent p-8 rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.6)] border-tomeGold/40">
+                    <div class="flex gap-6 items-center flex-wrap">
+                        <div class="token-avatar w-[90px] h-[90px] border-[3px] border-tomeGold font-cinzel text-3xl shadow-[0_0_15px_rgba(197,160,89,0.3)] bg-black/60 flex items-center justify-center">${p.name.substring(0,2)}</div>
+                        <div class="flex-1 min-w-[250px]">
+                            <h1 class="m-0 text-4xl font-cinzel text-tomeGold drop-shadow-md tracking-wide">${p.name}</h1>
+                            <p class="text-slate-400 text-[0.95rem] mt-1.5 font-semibold uppercase tracking-wide"><i class="fa-solid fa-wand-magic-sparkles text-tomeGold"></i> ${p.race} ${p.class} • Nível ${lvl}</p>
                         </div>
-                        <div style="text-align:right;">
-                            <div style="font-size:0.65rem; color:var(--accent); font-weight:800; letter-spacing:1.5px; text-transform:uppercase;">Experiência Acumulada</div>
-                            <div style="font-size:2rem; font-weight:900; color:#fff; font-family:'Cinzel'; text-shadow:0 2px 5px #000;">${currentXP} <span style="font-size:1rem; color:var(--accent);">XP</span></div>
+                        <div class="text-right">
+                            <div class="text-[0.65rem] text-tomeGold font-extrabold tracking-[1.5px] uppercase">Experiência Acumulada</div>
+                            <div class="text-3xl font-black text-white font-cinzel drop-shadow-sm">${currentXP} <span class="text-base text-tomeGold">XP</span></div>
                         </div>
                     </div>
 
                     <!-- PROGRESS BAR -->
-                    <div style="margin-top:25px; background:rgba(0,0,0,0.3); padding:15px; border-radius:12px; border:1px solid rgba(255,255,255,0.03);">
-                        <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-dim); margin-bottom:8px; font-weight:700;">
-                            <span style="color:var(--accent);">Nível ${lvl}</span>
-                            <span style="color:#fff;">${currentXP} / ${nextXP} XP (${Math.round(progress)}%)</span>
-                            <span style="opacity:0.6;">Nível ${lvl + 1}</span>
+                    <div class="mt-6 glass p-4 rounded-xl border-transparent">
+                        <div class="flex justify-between text-xs text-slate-400 mb-2 font-bold">
+                            <span class="text-tomeGold">Nível ${lvl}</span>
+                            <span class="text-white">${currentXP} / ${nextXP} XP (${Math.round(progress)}%)</span>
+                            <span class="opacity-60">Nível ${lvl + 1}</span>
                         </div>
-                        <div style="height:10px; background:rgba(0,0,0,0.5); border-radius:6px; overflow:hidden; border:1px solid rgba(197, 160, 89, 0.25);">
-                            <div style="width:${progress}%; height:100%; background:linear-gradient(90deg, var(--accent), #ffd700); box-shadow:0 0 10px rgba(197,160,89,0.5); transition:width 0.4s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+                        <div class="h-2.5 bg-black/50 rounded border border-tomeGold/25 overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-tomeGold to-yellow-400 shadow-[0_0_10px_rgba(197,160,89,0.5)] transition-all duration-500 ease-out" style="width:${progress}%;"></div>
                         </div>
                     </div>
                 </div>
 
                 <!-- QUICK ACTIONS SECTION -->
-                <div class="grid grid-3" style="gap:var(--space-md);">
+                <div class="grid grid-cols-3 gap-6">
                     
                     <!-- HP CARD -->
-                    <div class="card glass" style="background:rgba(10,12,16,0.5); border-radius:14px; border:1px solid rgba(255,255,255,0.06); padding:20px; box-shadow:0 10px 25px rgba(0,0,0,0.4); display:flex; flex-direction:column; justify-content:space-between;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                            <span style="font-size:0.75rem; color:var(--text-dim); font-weight:800; text-transform:uppercase;"><i class="fa-solid fa-heart" style="color:var(--danger); margin-right:6px;"></i> Vida do Herói</span>
-                            <span style="font-size:0.9rem; font-weight:800; color:#fff;">${p.hp?.current} / ${p.hp?.max} HP</span>
+                    <div class="card glass rounded-2xl p-5 flex flex-col justify-between">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-xs text-slate-400 font-extrabold uppercase"><i class="fa-solid fa-heart text-dndRedBright mr-1.5"></i> Vida do Herói</span>
+                            <span class="text-sm font-extrabold text-white">${p.hp?.current} / ${p.hp?.max} HP</span>
                         </div>
-                        <div class="hp-bar" style="height:10px; margin-bottom:20px; background:rgba(0,0,0,0.4); border-radius:5px; border:1px solid rgba(255,255,255,0.05); overflow:hidden;">
-                            <div class="hp-bar-fill ${hpPct < 30 ? 'hp-red' : 'hp-green'}" style="width:${hpPct}%; height:100%; transition:width 0.3s ease;"></div>
+                        <div class="hp-bar h-2.5 mb-5 bg-black/40 rounded border border-white/5 overflow-hidden">
+                            <div class="hp-bar-fill ${hpPct < 30 ? 'bg-dndRedBright' : 'bg-green-500'} h-full transition-all duration-300" style="width:${hpPct}%;"></div>
                         </div>
-                        <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:6px;">
-                            <button class="btn btn-danger btn-sm" style="border-radius:6px; font-weight:700;" data-action="adjustHP" data-val="-5">-5</button>
-                            <button class="btn btn-ghost btn-sm" style="border-radius:6px; color:var(--danger); border-color:rgba(231,76,60,0.15); font-weight:700;" data-action="adjustHP" data-val="-1">-1</button>
-                            <button class="btn btn-ghost btn-sm" style="border-radius:6px; color:var(--success); border-color:rgba(46,204,113,0.15); font-weight:700;" data-action="adjustHP" data-val="1">+1</button>
-                            <button class="btn btn-primary btn-sm" style="background:var(--success); border-color:var(--success); font-weight:700; border-radius:6px;" data-action="adjustHP" data-val="5">+5</button>
+                        <div class="grid grid-cols-4 gap-1.5">
+                            <button class="btn btn-danger btn-sm rounded-md font-bold" data-action="adjustHP" data-val="-5">-5</button>
+                            <button class="btn btn-ghost btn-sm rounded-md text-dndRedBright border-dndRedBright/15 font-bold" data-action="adjustHP" data-val="-1">-1</button>
+                            <button class="btn btn-ghost btn-sm rounded-md text-green-500 border-green-500/15 font-bold" data-action="adjustHP" data-val="1">+1</button>
+                            <button class="btn btn-primary btn-sm bg-green-500 border-green-500 font-bold rounded-md" data-action="adjustHP" data-val="5">+5</button>
                         </div>
                     </div>
 
                     <!-- XP MANAGEMENT CARD -->
-                    <div class="card glass" style="background:rgba(10,12,16,0.5); border-radius:14px; border:1px solid rgba(255,255,255,0.06); padding:20px; box-shadow:0 10px 25px rgba(0,0,0,0.4); display:flex; flex-direction:column; justify-content:space-between;">
-                        <span style="font-size:0.75rem; font-weight:800; color:var(--info); text-transform:uppercase;"><i class="fa-solid fa-star" style="margin-right:6px;"></i> Canalizar Experiência</span>
-                        <div class="grid grid-2" style="gap:8px; margin:15px 0;">
-                            <button class="btn btn-ghost btn-sm" style="border-radius:6px; font-weight:700; font-family:'Cinzel';" data-action="adjustXP" data-val="100">+100 XP</button>
-                            <button class="btn btn-ghost btn-sm" style="border-radius:6px; font-weight:700; font-family:'Cinzel';" data-action="adjustXP" data-val="500">+500 XP</button>
+                    <div class="card glass rounded-2xl p-5 flex flex-col justify-between">
+                        <span class="text-xs font-extrabold text-blue-500 uppercase"><i class="fa-solid fa-star mr-1.5"></i> Canalizar Experiência</span>
+                        <div class="grid grid-cols-2 gap-2 my-4">
+                            <button class="btn btn-ghost btn-sm rounded-md font-bold font-cinzel" data-action="adjustXP" data-val="100">+100 XP</button>
+                            <button class="btn btn-ghost btn-sm rounded-md font-bold font-cinzel" data-action="adjustXP" data-val="500">+500 XP</button>
                         </div>
-                        <button class="btn btn-info btn-sm btn-block" style="border-radius:8px; font-weight:800; padding:10px; font-size:0.85rem;" data-action="customXP">
-                            <i class="fa-solid fa-circle-plus" style="margin-right:6px;"></i> Adicionar XP Customizado
+                        <button class="btn btn-info btn-sm w-full rounded-lg font-extrabold py-2.5 text-sm" data-action="customXP">
+                            <i class="fa-solid fa-circle-plus mr-1.5"></i> Adicionar XP Customizado
                         </button>
                     </div>
 
                     <!-- PDF TOOLS CARD -->
-                    <div class="card glass" style="background:rgba(10,12,16,0.5); border-radius:14px; border:1px solid rgba(255,255,255,0.06); padding:20px; box-shadow:0 10px 25px rgba(0,0,0,0.4); display:flex; flex-direction:column; justify-content:space-between; gap:10px;">
-                        <span style="font-size:0.75rem; font-weight:800; color:var(--accent); text-transform:uppercase;"><i class="fa-solid fa-print" style="margin-right:6px;"></i> Ferramentas Físicas</span>
-                        <button class="btn btn-primary btn-sm btn-block" style="border-radius:8px; font-weight:800; padding:10px; font-size:0.85rem; background:var(--accent); border-color:var(--accent); box-shadow:0 0 10px rgba(197,160,89,0.25);" data-action="printSheet">
-                            <i class="fa-solid fa-file-pdf" style="margin-right:6px;"></i> Imprimir Ficha Oficial 5e
+                    <div class="card glass rounded-2xl p-5 flex flex-col justify-between gap-2.5">
+                        <span class="text-xs font-extrabold text-tomeGold uppercase"><i class="fa-solid fa-print mr-1.5"></i> Ferramentas Físicas</span>
+                        <button class="btn btn-primary btn-sm w-full rounded-lg font-extrabold py-2.5 text-sm bg-tomeGold border-tomeGold shadow-[0_0_10px_rgba(197,160,89,0.25)] text-black" data-action="printSheet">
+                            <i class="fa-solid fa-file-pdf mr-1.5"></i> Imprimir Ficha Oficial 5e
                         </button>
-                        <button class="btn btn-ghost btn-sm btn-block" style="border-radius:8px; font-weight:800; padding:10px; font-size:0.85rem;" data-action="printCard">
-                            <i class="fa-solid fa-id-card" style="margin-right:6px;"></i> Imprimir Card Rápido
+                        <button class="btn btn-ghost btn-sm w-full rounded-lg font-extrabold py-2.5 text-sm" data-action="printCard">
+                            <i class="fa-solid fa-id-card mr-1.5"></i> Imprimir Card Rápido
                         </button>
                     </div>
                 </div>
 
                 <!-- INTERACTIVE ATTRIBUTE GRID WITH CLICK-TO-ROLL -->
-                <div class="card glass" style="padding:25px; border-radius:16px; border:1px solid rgba(255,255,255,0.05); background:rgba(10,12,16,0.4); box-shadow:0 12px 30px rgba(0,0,0,0.5);">
-                    <div style="font-size:0.85rem; color:var(--accent); font-weight:800; text-transform:uppercase; margin-bottom:18px; font-family:'Cinzel'; letter-spacing:1px;"><i class="fa-solid fa-dice-d20"></i> Atributos do Personagem (Clique para Rolar d20)</div>
-                    <div class="grid grid-6" style="gap:15px;">
+                <div class="card glass p-6 rounded-2xl border-transparent">
+                    <div class="text-sm text-tomeGold font-extrabold uppercase mb-4.5 font-cinzel tracking-wide"><i class="fa-solid fa-dice-d20"></i> Atributos do Personagem (Clique para Rolar d20)</div>
+                    <div class="grid grid-cols-6 gap-4">
                         ${Object.entries(p.stats || {str:10,dex:10,con:10,int:10,wis:10,cha:10}).map(([s,v]) => {
                             const mod = Math.floor((v-10)/2);
-                            return `
-                                <div class="glass-accent hover-scale" 
-                                     style="text-align:center; padding:15px; background:rgba(255,255,255,0.02); border-radius:12px; border:1.5px solid rgba(197,160,89,0.15); cursor:pointer; transition:all 0.25s cubic-bezier(0.4, 0, 0.2, 1);"
-                                     onmouseover="this.style.borderColor='var(--accent)'; this.style.background='rgba(197,160,89,0.04)'; this.style.boxShadow='0 0 15px rgba(197,160,89,0.15)'"
-                                     onmouseout="this.style.borderColor='rgba(197,160,89,0.15)'; this.style.background='rgba(255,255,255,0.02)'; this.style.boxShadow='none'"
+                            return html`
+                                <div class="glass hover:scale-105 hover:border-tomeGold hover:shadow-[0_0_20px_rgba(197,160,89,0.3)] text-center p-4 rounded-xl border border-transparent cursor-pointer transition-all duration-300 ease-out group"
                                      data-action="rollAttribute" data-attr="${s}" data-val="${v}">
-                                    <div style="font-size:0.7rem; color:var(--accent); font-weight:900; letter-spacing:1px; text-transform:uppercase; margin-bottom:6px; font-family:'Cinzel';">${attrNames[s] || s}</div>
-                                    <div style="font-size:1.8rem; font-weight:900; color:#fff; line-height:1; font-family:'Cinzel';">${v}</div>
-                                    <div style="font-size:0.75rem; color:${mod >= 0 ? 'var(--success)' : 'var(--danger)'}; font-weight:800; margin-top:8px; background:rgba(0,0,0,0.3); padding:4px 8px; border-radius:15px; display:inline-block;">
+                                    <div class="text-[0.7rem] text-tomeGold font-black tracking-wide uppercase mb-1.5 font-cinzel">${attrNames[s] || s}</div>
+                                    <div class="text-3xl font-black text-white leading-none font-cinzel">${v}</div>
+                                    <div class="text-xs ${mod >= 0 ? 'text-green-500' : 'text-dndRedBright'} font-extrabold mt-2 bg-black/30 py-1 px-2 rounded-full inline-block">
                                         MOD ${mod >= 0 ? '+' : ''}${mod}
                                     </div>
                                 </div>
                             `;
-                        }).join('')}
+                        })}
                     </div>
                 </div>
 
                 <!-- INVENTORY & NARRATIVE PARCHMENT TEXTAREAS -->
-                <div class="grid grid-2" style="gap:var(--space-lg);">
+                <div class="grid grid-cols-2 gap-6">
                     
                     <!-- ITEMS INVENTORY -->
-                    <div class="card glass" style="background:rgba(10,12,16,0.5); border-radius:16px; border:1px solid rgba(255,255,255,0.05); padding:25px; box-shadow:0 12px 30px rgba(0,0,0,0.5); display:flex; flex-direction:column; gap:12px;">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <span style="font-size:0.85rem; color:var(--accent); font-weight:800; text-transform:uppercase; font-family:'Cinzel'; letter-spacing:1px;"><i class="fa-solid fa-backpack" style="margin-right:6px;"></i> 🎒 Inventário de Itens</span>
-                            <span id="items-save-status" style="font-size:0.65rem; color:var(--success); font-weight:800; opacity:0; transition:opacity 0.3s;"><i class="fa-solid fa-circle-check"></i> Auto-salvo</span>
+                    <div class="card glass rounded-2xl p-6 flex flex-col gap-3 border-transparent">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-tomeGold font-extrabold uppercase font-cinzel tracking-wide"><i class="fa-solid fa-backpack mr-1.5"></i> 🎒 Inventário de Itens</span>
+                            <span id="items-save-status" class="text-[0.65rem] text-green-500 font-extrabold opacity-0 transition-opacity duration-300"><i class="fa-solid fa-circle-check"></i> Auto-salvo</span>
                         </div>
-                        <p style="font-size:0.65rem; color:var(--text-dim); margin:0;">Digite os itens um por linha. Ex: <b style="color:var(--accent);">2x Poção de Cura</b> ou <b style="color:var(--accent);">Escudo de Aço</b>.</p>
-                        <textarea class="form-textarea" rows="6" 
-                                  style="font-family:'JetBrains Mono', monospace; font-size:0.8rem; line-height:1.5; padding:15px; background:rgba(0,0,0,0.4); border-color:rgba(255,255,255,0.08); border-radius:10px; color:#fff;" 
+                        <p class="text-[0.65rem] text-slate-400 m-0">Digite os itens um por linha. Ex: <b class="text-tomeGold">2x Poção de Cura</b> ou <b class="text-tomeGold">Escudo de Aço</b>.</p>
+                        <textarea class="form-textarea w-full font-mono text-sm leading-relaxed p-4 bg-black/40 border border-white/10 rounded-xl text-white" rows="6" 
                                   placeholder="Digite um item por linha..." 
                                   data-action="updateItems"
                                   oninput="const status = document.getElementById('items-save-status'); if(status){ status.style.opacity=1; setTimeout(()=>status.style.opacity=0, 1000); }">${itemsVal}</textarea>
                     </div>
 
                     <!-- NARRATIVE NOTES -->
-                    <div class="card glass" style="background:rgba(10,12,16,0.5); border-radius:16px; border:1px solid rgba(255,255,255,0.05); padding:25px; box-shadow:0 12px 30px rgba(0,0,0,0.5); display:flex; flex-direction:column; gap:12px;">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <span style="font-size:0.85rem; color:var(--accent); font-weight:800; text-transform:uppercase; font-family:'Cinzel'; letter-spacing:1px;"><i class="fa-solid fa-pen-nib" style="margin-right:6px;"></i> 📝 Características & Diário</span>
-                            <span id="notes-save-status" style="font-size:0.65rem; color:var(--success); font-weight:800; opacity:0; transition:opacity 0.3s;"><i class="fa-solid fa-circle-check"></i> Auto-salvo</span>
+                    <div class="card glass bg-black/50 rounded-2xl border border-white/5 p-6 shadow-[0_12px_30px_rgba(0,0,0,0.5)] flex flex-col gap-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-tomeGold font-extrabold uppercase font-cinzel tracking-wide"><i class="fa-solid fa-pen-nib mr-1.5"></i> 📝 Características & Diário</span>
+                            <span id="notes-save-status" class="text-[0.65rem] text-green-500 font-extrabold opacity-0 transition-opacity duration-300"><i class="fa-solid fa-circle-check"></i> Auto-salvo</span>
                         </div>
-                        <p style="font-size:0.65rem; color:var(--text-dim); margin:0;">Registre traços de personalidade, antecedente, e notas de interpretação do herói.</p>
-                        <textarea class="form-textarea" rows="6" 
-                                  style="font-family:'Outfit', sans-serif; font-size:0.85rem; line-height:1.6; padding:15px; background:rgba(0,0,0,0.4); border-color:rgba(255,255,255,0.08); border-radius:10px; color:#fff;" 
+                        <p class="text-[0.65rem] text-slate-400 m-0">Registre traços de personalidade, antecedente, e notas de interpretação do herói.</p>
+                        <textarea class="form-textarea w-full font-sans text-sm leading-relaxed p-4 bg-black/40 border border-white/10 rounded-xl text-white" rows="6" 
                                   placeholder="Escreva traços ou anotações..." 
                                   data-action="updateNotes"
                                   oninput="const status = document.getElementById('notes-save-status'); if(status){ status.style.opacity=1; setTimeout(()=>status.style.opacity=0, 1000); }">${p.roleplay?.traits || ''}</textarea>
@@ -499,51 +499,51 @@ export class CampaignManager extends Component {
         const stats = p.stats || { str:10, dex:10, con:10, int:10, wis:10, cha:10 };
         const getMod = (v) => Math.floor((v - 10) / 2);
         
-        return `
-            <div class="dnd-card-template" style="box-sizing:border-box; width:450px; background:#fff; border:3px double #000; border-radius:12px; padding:20px; color:#000; font-family:'Outfit', sans-serif; margin:20px auto; box-shadow:0 4px 10px rgba(0,0,0,0.15);">
-                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2.5px solid #000; padding-bottom:8px; margin-bottom:12px;">
+        return html`
+            <div class="dnd-card-template box-border w-[450px] bg-white border-[3px] border-double border-black rounded-xl p-5 text-black font-sans my-5 mx-auto shadow-[0_4px_10px_rgba(0,0,0,0.15)]">
+                <div class="flex justify-between items-center border-b-[2.5px] border-black pb-2 mb-3">
                     <div>
-                        <h2 style="margin:0; font-size:20px; font-family:'Cinzel', serif; font-weight:900; letter-spacing:0.5px; color:#000;">${p.name}</h2>
-                        <span style="font-size:9.5px; color:#444; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">${p.race} • ${p.class} Nível ${p.level}</span>
+                        <h2 class="m-0 text-xl font-cinzel font-black tracking-wide text-black">${p.name}</h2>
+                        <span class="text-[9.5px] text-[#444] font-bold uppercase tracking-wide">${p.race} • ${p.class} Nível ${p.level}</span>
                     </div>
-                    <div style="text-align:right;">
-                        <span style="font-size:13px; font-weight:900; border:2px solid #000; padding:4px 8px; border-radius:6px; background:#f0f0f0;">CA ${p.ac}</span>
-                    </div>
-                </div>
-
-                <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:8px; margin-bottom:15px; text-align:center;">
-                    <div style="border:1.5px solid #000; padding:6px 4px; border-radius:6px;">
-                        <div style="font-size:8px; text-transform:uppercase; font-weight:800; color:#555;">Iniciativa</div>
-                        <div style="font-size:15px; font-weight:900; color:#000;">${getMod(stats.dex) >= 0 ? '+' : ''}${getMod(stats.dex)}</div>
-                    </div>
-                    <div style="border:1.5px solid #000; padding:6px 4px; border-radius:6px;">
-                        <div style="font-size:8px; text-transform:uppercase; font-weight:800; color:#555;">Desloc.</div>
-                        <div style="font-size:15px; font-weight:900; color:#000;">9m</div>
-                    </div>
-                    <div style="border:1.5px solid #000; padding:6px 4px; border-radius:6px; grid-column: span 2; background:#f5f5f5;">
-                        <div style="font-size:8px; text-transform:uppercase; font-weight:800; color:#555;">Pontos de Vida</div>
-                        <div style="font-size:15px; font-weight:900; color:#000;">${p.hp?.current} / ${p.hp?.max} HP</div>
+                    <div class="text-right">
+                        <span class="text-[13px] font-black border-2 border-black py-1 px-2 rounded-md bg-[#f0f0f0]">CA ${p.ac}</span>
                     </div>
                 </div>
 
-                <div style="display:grid; grid-template-columns: repeat(6, 1fr); gap:6px; margin-bottom:15px; text-align:center;">
-                    ${Object.entries(stats).map(([s, v]) => `
-                        <div style="border:1.5px solid #000; padding:5px 2px; border-radius:6px; background:#fffcf5;">
-                            <div style="font-size:8px; text-transform:uppercase; font-weight:900; color:#555;">${s.toUpperCase()}</div>
-                            <div style="font-size:14px; font-weight:900; color:#000; margin:2px 0;">${v}</div>
-                            <div style="font-size:8.5px; color:#444; font-weight:700; background:rgba(0,0,0,0.05); padding:1px 0; border-radius:3px;">${getMod(v) >= 0 ? '+' : ''}${getMod(v)}</div>
+                <div class="grid grid-cols-4 gap-2 mb-3.5 text-center">
+                    <div class="border-[1.5px] border-black py-1.5 px-1 rounded-md">
+                        <div class="text-[8px] uppercase font-extrabold text-[#555]">Iniciativa</div>
+                        <div class="text-[15px] font-black text-black">${getMod(stats.dex) >= 0 ? '+' : ''}${getMod(stats.dex)}</div>
+                    </div>
+                    <div class="border-[1.5px] border-black py-1.5 px-1 rounded-md">
+                        <div class="text-[8px] uppercase font-extrabold text-[#555]">Desloc.</div>
+                        <div class="text-[15px] font-black text-black">9m</div>
+                    </div>
+                    <div class="border-[1.5px] border-black py-1.5 px-1 rounded-md col-span-2 bg-[#f5f5f5]">
+                        <div class="text-[8px] uppercase font-extrabold text-[#555]">Pontos de Vida</div>
+                        <div class="text-[15px] font-black text-black">${p.hp?.current} / ${p.hp?.max} HP</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-6 gap-1.5 mb-3.5 text-center">
+                    ${Object.entries(stats).map(([s, v]) => html`
+                        <div class="border-[1.5px] border-black py-1 px-0.5 rounded-md bg-[#fffcf5]">
+                            <div class="text-[8px] uppercase font-black text-[#555]">${s.toUpperCase()}</div>
+                            <div class="text-[14px] font-black text-black my-0.5">${v}</div>
+                            <div class="text-[8.5px] text-[#444] font-bold bg-black/5 py-[1px] rounded-sm">${getMod(v) >= 0 ? '+' : ''}${getMod(v)}</div>
                         </div>
-                    `).join('')}
+                    `)}
                 </div>
 
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; font-size:10px;">
-                    <div style="border:1.5px solid #000; padding:10px; border-radius:8px; background:#fffcfc;">
-                        <strong style="display:block; border-bottom:1.5px solid #000; padding-bottom:4px; margin-bottom:6px; font-size:9.5px; text-transform:uppercase; font-family:'Cinzel'; color:#000;">🎒 Inventário</strong>
-                        <div style="white-space:pre-wrap; font-size:8.5px; line-height:1.4; color:#222;">${Array.isArray(p.equipment?.items) ? p.equipment.items.map(i => `${i.qty}x ${i.name}`).join('\n') : p.equipment?.items || 'Nenhum item.'}</div>
+                <div class="grid grid-cols-2 gap-3 text-[10px]">
+                    <div class="border-[1.5px] border-black p-2.5 rounded-lg bg-[#fffcfc]">
+                        <strong class="block border-b-[1.5px] border-black pb-1 mb-1.5 text-[9.5px] uppercase font-cinzel text-black">🎒 Inventário</strong>
+                        <div class="whitespace-pre-wrap text-[8.5px] leading-relaxed text-[#222]">${Array.isArray(p.equipment?.items) ? p.equipment.items.map(i => `${i.qty}x ${i.name}`).join('\n') : p.equipment?.items || 'Nenhum item.'}</div>
                     </div>
-                    <div style="border:1.5px solid #000; padding:10px; border-radius:8px; background:#fffcfc;">
-                        <strong style="display:block; border-bottom:1.5px solid #000; padding-bottom:4px; margin-bottom:6px; font-size:9.5px; text-transform:uppercase; font-family:'Cinzel'; color:#000;">📝 Diário & Notas</strong>
-                        <div style="white-space:pre-wrap; font-size:8.5px; line-height:1.4; color:#222;">${p.roleplay?.traits || 'Nenhuma nota.'}</div>
+                    <div class="border-[1.5px] border-black p-2.5 rounded-lg bg-[#fffcfc]">
+                        <strong class="block border-b-[1.5px] border-black pb-1 mb-1.5 text-[9.5px] uppercase font-cinzel text-black">📝 Diário & Notas</strong>
+                        <div class="whitespace-pre-wrap text-[8.5px] leading-relaxed text-[#222]">${p.roleplay?.traits || 'Nenhuma nota.'}</div>
                     </div>
                 </div>
             </div>
@@ -557,7 +557,7 @@ export class CampaignManager extends Component {
 
     _getSessionMetaKey(file) {
         const tableKey = localStorage.getItem('DM_ACTIVE_TABLE') || 'default';
-        return `TOME_SESSION_META_${tableKey}_${file}`;
+        return html`TOME_SESSION_META_${tableKey}_${file}`;
     }
 
     _getSessionMeta(file) {
@@ -606,20 +606,20 @@ export class CampaignManager extends Component {
         const h = Math.floor(totalSec / 3600);
         const m = Math.floor((totalSec % 3600) / 60);
         const s = totalSec % 60;
-        return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+        return html`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
     }
 
     _getActiveSessionStatus() {
         const file = TOME.persistence?.filename || 'state.json';
         const meta = this._getSessionMeta(file);
         if (meta.status === 'open' && !meta.timerPaused && meta.timerStart) {
-            return `<span class="session-status-badge badge-active"><i class="fa-solid fa-circle" style="font-size:0.5rem;"></i> Em Andamento</span>`;
+            return html`<span class="session-status-badge badge-active"><i class="fa-solid fa-circle" style="font-size:0.5rem;"></i> Em Andamento</span>`;
         } else if (meta.status === 'open') {
-            return `<span class="session-status-badge badge-open"><i class="fa-solid fa-door-open" style="font-size:0.55rem;"></i> Aberta</span>`;
+            return html`<span class="session-status-badge badge-open"><i class="fa-solid fa-door-open" style="font-size:0.55rem;"></i> Aberta</span>`;
         } else if (meta.status === 'closed') {
-            return `<span class="session-status-badge badge-closed"><i class="fa-solid fa-check" style="font-size:0.55rem;"></i> Finalizada</span>`;
+            return html`<span class="session-status-badge badge-closed"><i class="fa-solid fa-check" style="font-size:0.55rem;"></i> Finalizada</span>`;
         }
-        return `<span class="session-status-badge badge-closed">Não Iniciada</span>`;
+        return html`<span class="session-status-badge badge-closed">Não Iniciada</span>`;
     }
 
     _renderTimerButtons() {
@@ -631,24 +631,24 @@ export class CampaignManager extends Component {
 
         let startPauseBtn = '';
         if (isClosed) {
-            startPauseBtn = `<button class="timer-btn timer-btn-start" data-action="startSessionTimer" style="width:100%;">
+            startPauseBtn = html`<button class="timer-btn timer-btn-start" data-action="startSessionTimer" style="width:100%;">
                 <i class="fa-solid fa-rotate-left"></i> Reabrir
             </button>`;
         } else if (isRunning) {
-            startPauseBtn = `<button class="timer-btn timer-btn-pause" data-action="pauseSessionTimer" style="width:100%;">
+            startPauseBtn = html`<button class="timer-btn timer-btn-pause" data-action="pauseSessionTimer" style="width:100%;">
                 <i class="fa-solid fa-pause"></i> Pausar
             </button>`;
         } else if (isPaused) {
-            startPauseBtn = `<button class="timer-btn timer-btn-start" data-action="startSessionTimer" style="width:100%;">
+            startPauseBtn = html`<button class="timer-btn timer-btn-start" data-action="startSessionTimer" style="width:100%;">
                 <i class="fa-solid fa-play"></i> Continuar
             </button>`;
         } else {
-            startPauseBtn = `<button class="timer-btn timer-btn-start" data-action="startSessionTimer" style="width:100%;">
+            startPauseBtn = html`<button class="timer-btn timer-btn-start" data-action="startSessionTimer" style="width:100%;">
                 <i class="fa-solid fa-play"></i> Iniciar
             </button>`;
         }
 
-        const zerarBtn = `<button class="timer-btn timer-btn-end" style="width:100%; margin-top: 4px;" data-action="resetSessionTimer" title="Zerar o cronômetro e gerar relatório de consistência">
+        const zerarBtn = html`<button class="timer-btn timer-btn-end" style="width:100%; margin-top: 4px;" data-action="resetSessionTimer" title="Zerar o cronômetro e gerar relatório de consistência">
             <i class="fa-solid fa-flag-checkered"></i> Zerar
         </button>`;
 
@@ -834,7 +834,7 @@ export class CampaignManager extends Component {
             scoreRating = 'Estável / Atenção';
         }
 
-        const reportHtml = `
+        const reportHtml = html`
             <div style="font-family:'Outfit', sans-serif; text-align:left; color:#fff;">
                 <div style="background:rgba(0,0,0,0.3); border:1px solid rgba(197,160,89,0.25); border-radius:12px; padding:18px; display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
                     <div>
@@ -865,7 +865,7 @@ export class CampaignManager extends Component {
                     <i class="fa-solid fa-list-check"></i> Diagnósticos e Recomendações
                 </h4>
                 <div style="background:rgba(0,0,0,0.4); padding:12px; border-radius:8px; display:flex; flex-direction:column; gap:8px; max-height:180px; overflow-y:auto;">
-                    ${diagnostics.map(d => `<div style="font-size:0.8rem; line-height:1.4; color:#e2e8f0;">${d}</div>`).join('') || '<div style="font-size:0.8rem; color:#64748b; font-style:italic;">Nenhuma inconformidade encontrada no sistema. Integridade perfeita!</div>'}
+                    ${diagnostics.map(d => html`<div style="font-size:0.8rem; line-height:1.4; color:#e2e8f0;">${d}</div>`).join('') || '<div style="font-size:0.8rem; color:#64748b; font-style:italic;">Nenhuma inconformidade encontrada no sistema. Integridade perfeita!</div>'}
                 </div>
             </div>
         `;
@@ -892,7 +892,7 @@ export class CampaignManager extends Component {
             animation: fadeIn 0.3s ease;
         `;
 
-        modal.innerHTML = `
+        modal.innerHTML = html`
             <div class="card glass-accent" style="width:90%; max-width:480px; padding:30px; border-radius:18px; border:2px solid var(--accent); background:rgba(10,12,16,0.95); box-shadow: 0 20px 50px rgba(0,0,0,0.8);">
                 <h3 style="font-family:'Cinzel'; color:var(--accent); margin:0 0 8px 0; border-bottom:1px solid rgba(197,160,89,0.2); padding-bottom:10px;">
                     <i class="fa-solid fa-wand-magic-sparkles" style="margin-right:8px;"></i> Iniciar Nova Campanha
@@ -902,11 +902,11 @@ export class CampaignManager extends Component {
                 <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:25px;">
                     <div>
                         <label style="display:block; margin-bottom:5px; font-size:0.7rem; color:var(--accent); font-weight:800; text-transform:uppercase;">Nome da Campanha</label>
-                        <input type="text" id="new-camp-name" class="form-input" value="A Lenda de Hawnk" style="width:100%; background:rgba(0,0,0,0.4); border:1px solid rgba(197,160,89,0.3); padding:8px 12px; border-radius:8px; color:#fff;">
+                        <input type="text" id="new-camp-name" class="form-input" value="A Lenda de Hawnk" style="width:100%; background:rgba(0,0,0,0.4); border:1px solid rgba(197,160,89,0.3); padding:8px 12px; border-radius:8px; color:#fff;" />
                     </div>
                     <div>
                         <label style="display:block; margin-bottom:5px; font-size:0.7rem; color:var(--accent); font-weight:800; text-transform:uppercase;">Mestre / DM</label>
-                        <input type="text" id="new-camp-dm" class="form-input" value="${dmName}" style="width:100%; background:rgba(0,0,0,0.4); border:1px solid rgba(197,160,89,0.3); padding:8px 12px; border-radius:8px; color:#fff;">
+                        <input type="text" id="new-camp-dm" class="form-input" value="${dmName}" style="width:100%; background:rgba(0,0,0,0.4); border:1px solid rgba(197,160,89,0.3); padding:8px 12px; border-radius:8px; color:#fff;" />
                     </div>
                     <div>
                         <label style="display:block; margin-bottom:5px; font-size:0.7rem; color:var(--accent); font-weight:800; text-transform:uppercase;">Sistema de Jogo</label>
@@ -924,7 +924,7 @@ export class CampaignManager extends Component {
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
                         <div>
                             <label style="display:block; margin-bottom:5px; font-size:0.7rem; color:var(--accent); font-weight:800; text-transform:uppercase;">Nível Inicial</label>
-                            <input type="number" id="new-camp-lvl" class="form-input" value="1" min="1" max="20" style="width:100%; background:rgba(0,0,0,0.4); border:1px solid rgba(197,160,89,0.3); padding:8px 12px; border-radius:8px; color:#fff; text-align:center;">
+                            <input type="number" id="new-camp-lvl" class="form-input" value="1" min="1" max="20" style="width:100%; background:rgba(0,0,0,0.4); border:1px solid rgba(197,160,89,0.3); padding:8px 12px; border-radius:8px; color:#fff; text-align:center;" />
                         </div>
                         <div>
                             <label style="display:block; margin-bottom:5px; font-size:0.7rem; color:var(--accent); font-weight:800; text-transform:uppercase;">Limite do Timer</label>
@@ -1020,90 +1020,7 @@ export class CampaignManager extends Component {
         };
     }
 
-    _renderQuickQuests() {
-        const quests = this.store.state.quests || [];
-        if (quests.length === 0) {
-            return `<div style="font-size:0.75rem; color:#64748b; font-style:italic; text-align:center; padding:15px;">Nenhuma missão ativa no momento.</div>`;
-        }
-        return quests.map(q => {
-            const isCompleted = q.completed || q.status === 'completed';
-            const isFailed = q.failed || q.status === 'failed';
-            return `
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); padding:10px 12px; border-radius:8px; display:flex; flex-direction:column; gap:8px; font-size:0.75rem;">
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                        <div style="flex:1; padding-right:8px;">
-                            <strong style="color:${isCompleted ? '#2ecc71' : isFailed ? '#ef4444' : '#cbd5e1'}; ${isCompleted || isFailed ? 'text-decoration:line-through; opacity:0.8;' : ''}">${q.title}</strong>
-                            <span style="font-size:0.65rem; color:#64748b; display:block; margin-top:2px;">Recompensa: ${q.reward || 'Nenhuma'}</span>
-                        </div>
-                        <span style="font-size:0.6rem; text-transform:uppercase; font-weight:800; color:${isCompleted ? '#2ecc71' : isFailed ? '#ef4444' : '#f1c40f'}; background:${isCompleted ? 'rgba(46,204,113,0.1)' : isFailed ? 'rgba(239,68,68,0.1)' : 'rgba(241,196,15,0.1)'}; padding:2px 6px; border-radius:4px; flex-shrink:0;">
-                            ${isCompleted ? 'Concluída' : isFailed ? 'Fracassada' : 'Pendente'}
-                        </span>
-                    </div>
-                    
-                    <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(255,255,255,0.03); padding-top:6px; margin-top:2px;">
-                        <!-- Delete action -->
-                        <button class="btn btn-ghost btn-sm" style="padding:2px 6px; font-size:0.65rem; color:var(--danger); border:1px solid rgba(239, 68, 68, 0.15); background:rgba(239,68,68,0.02); border-radius:4px;" data-action="quickDeleteQuest" data-id="${q.id}">
-                            <i class="fa-solid fa-trash-can"></i> Apagar
-                        </button>
-                        
-                        <div style="display:flex; gap:4px;">
-                            ${!isCompleted && !isFailed ? `
-                                <button class="btn btn-ghost btn-sm" style="padding:2px 8px; font-size:0.65rem; color:var(--danger); border:1.5px solid rgba(239,68,68,0.2); border-radius:4px;" data-action="quickFailQuest" data-id="${q.id}">
-                                    <i class="fa-solid fa-skull"></i> Falhar
-                                </button>
-                                <button class="btn btn-sm btn-ghost" style="padding:2px 8px; font-size:0.65rem; color:#86efac; border:1.5px solid rgba(34,197,94,0.3); background:rgba(34,197,94,0.05); border-radius:4px;" data-action="quickCompleteQuest" data-id="${q.id}">
-                                    <i class="fa-solid fa-check"></i> Concluir
-                                </button>
-                            ` : ''}
-                            
-                            ${isCompleted && q.reward && q.reward !== 'Nenhuma' ? `
-                                ${!q.rewardDistributed ? `
-                                    <button class="btn btn-ghost btn-sm" style="padding:2px 8px; font-size:0.65rem; color:#34d399; border:1.5px solid rgba(52,211,153,0.35); background:rgba(52,211,153,0.08); border-radius:4px;" data-action="quickLootQuest" data-id="${q.id}">
-                                        <i class="fa-solid fa-hand-holding-dollar"></i> Loot
-                                    </button>
-                                ` : `
-                                    <span style="font-size:0.62rem; color:#34d399; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; padding:2px 6px; background:rgba(52,211,153,0.05); border-radius:4px; display:inline-flex; align-items:center; gap:3px;">
-                                        <i class="fa-solid fa-circle-check"></i> Loot Entregue
-                                    </span>
-                                `}
-                            ` : ''}
-                        </div>
-                    </div>
-                </div>
-            `;
-        }).join('');
-    }
 
-    _renderQuickJournal() {
-        const journal = this.store.state.journalEntries || [];
-        if (journal.length === 0) {
-            return `<div style="font-size:0.75rem; color:#64748b; font-style:italic; text-align:center; padding:15px;">Nenhum evento recente registrado.</div>`;
-        }
-        return journal.slice(-4).reverse().map(e => `
-            <div style="font-size:0.7rem; color:#e2e8f0; line-height:1.4; padding-bottom:6px; border-bottom:1px dashed rgba(255,255,255,0.03);">
-                <strong style="color:var(--accent); font-family:'Cinzel';">[${e.type.toUpperCase()}] ${e.title}</strong>: ${e.content}
-            </div>
-        `).join('');
-    }
-
-    _renderQuickMonsters() {
-        const monsters = this.store.state.monsters || [];
-        if (monsters.length === 0) {
-            return `<div style="font-size:0.75rem; color:#64748b; font-style:italic; text-align:center; padding:15px; grid-column: span 2;">Nenhum monstro ativo na arena de combate.</div>`;
-        }
-        return monsters.map(m => `
-            <div style="background:rgba(231,76,60,0.02); border:1px solid rgba(231,76,60,0.15); padding:8px 12px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; font-size:0.75rem;">
-                <div>
-                    <strong style="color:#ef4444;">${m.name}</strong>
-                    <span style="font-size:0.65rem; color:#64748b; display:block;">ND ${m.cr || '0'} • HP: ${m.hp?.current}/${m.hp?.max}</span>
-                </div>
-                <div style="display:flex; gap:4px;">
-                    <button class="btn btn-ghost btn-sm" style="padding:2px 6px; font-size:0.6rem;" data-action="adjustMonsterHP" data-id="${m.id}" data-val="-5">-5</button>
-                    <button class="btn btn-ghost btn-sm" style="padding:2px 6px; font-size:0.6rem; color:#2ecc71;" data-action="adjustMonsterHP" data-id="${m.id}" data-val="5">+5</button>
-                </div>
-            </div>
-        `).join('');
-    }
 
     _renderCampaignBanner() {
         const state = this.store.state;
@@ -1123,7 +1040,7 @@ export class CampaignManager extends Component {
         const statusText = combatActive ? 'Em Combate' : 'Explorando';
         const statusIcon = combatActive ? 'fa-swords' : 'fa-compass';
 
-        return `
+        return html`
             <div style="
                 background: linear-gradient(135deg, rgba(197,160,89,0.06), rgba(10,12,16,0.8));
                 border: 1px solid rgba(197,160,89,0.25);
@@ -1440,7 +1357,7 @@ export class CampaignManager extends Component {
 
         const players = this.store.state.players || [];
 
-        return `
+        return html`
             <div class="modal-overlay animate-fadeIn" style="position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(5px); z-index:2000; display:flex; align-items:center; justify-content:center; padding:20px;" onclick="this.closest('.campaign-manager').__component.closeLootModal()">
                 <div class="card glass-accent animate-scaleIn" style="max-width:500px; width:100%; padding:30px; border:2px solid var(--accent); border-radius:16px; box-shadow:0 20px 50px rgba(0,0,0,0.9); text-align:left; background:rgba(10,12,16,0.95);" onclick="event.stopPropagation()">
                     <div style="text-align:center; margin-bottom:20px; border-bottom:1px solid rgba(197,160,89,0.2); padding-bottom:15px;">
@@ -1454,31 +1371,31 @@ export class CampaignManager extends Component {
                     <!-- Input Gold -->
                     <div class="form-group" style="margin-bottom:15px;">
                         <label class="form-label" style="font-family:'Cinzel'; font-size:0.7rem; color:var(--accent); font-weight:800;">Ouro Total a Dividir (GP / PO)</label>
-                        <input type="number" id="loot-gold-input" value="${this._lootGold}" style="background:rgba(0,0,0,0.4); border:1.5px solid rgba(197,160,89,0.25); border-radius:8px; padding:8px 12px; color:#fff; width:100%; font-size:0.85rem; outline:none;" oninput="this.closest('.campaign-manager').__component._lootGold = parseInt(this.value) || 0">
+                        <input type="number" id="loot-gold-input" value="${this._lootGold}" style="background:rgba(0,0,0,0.4); border:1.5px solid rgba(197,160,89,0.25); border-radius:8px; padding:8px 12px; color:#fff; width:100%; font-size:0.85rem; outline:none;" oninput="this.closest('.campaign-manager').__component._lootGold = parseInt(this.value) || 0" />
                     </div>
 
                     <!-- Input Items -->
                     <div class="form-group" style="margin-bottom:20px;">
                         <label class="form-label" style="font-family:'Cinzel'; font-size:0.7rem; color:var(--accent); font-weight:800;">Itens Mágicos / Equipamentos a Entregar</label>
-                        <input type="text" id="loot-items-input" value="${this._lootItems}" placeholder="Ex: Poção de Cura Maior, Anel de Proteção" style="background:rgba(0,0,0,0.4); border:1.5px solid rgba(197,160,89,0.25); border-radius:8px; padding:8px 12px; color:#fff; width:100%; font-size:0.85rem; outline:none;" oninput="this.closest('.campaign-manager').__component._lootItems = this.value">
+                        <input type="text" id="loot-items-input" value="${this._lootItems}" placeholder="Ex: Poção de Cura Maior, Anel de Proteção" style="background:rgba(0,0,0,0.4); border:1.5px solid rgba(197,160,89,0.25); border-radius:8px; padding:8px 12px; color:#fff; width:100%; font-size:0.85rem; outline:none;" oninput="this.closest('.campaign-manager').__component._lootItems = this.value" />
                     </div>
 
                     <label class="form-label" style="font-family:'Cinzel'; font-size:0.7rem; color:var(--accent); font-weight:800; display:block; margin-bottom:8px;">Selecione os Heróis Beneficiários</label>
                     <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:25px; max-height:180px; overflow-y:auto; padding-right:5px; scrollbar-width:thin;">
                         ${players.map(p => {
                             const selected = this._selectedLootPlayers.includes(p.id);
-                            return `
+                            return html`
                                 <label style="display:flex; align-items:center; gap:12px; padding:10px 14px; background:${selected ? 'rgba(197,160,89,0.08)' : 'rgba(255,255,255,0.02)'}; border-radius:10px; cursor:pointer; border:1px solid ${selected ? 'var(--accent)' : 'rgba(255,255,255,0.06)'}; transition:all 0.2s;">
                                     <input type="checkbox" style="width:18px; height:18px; accent-color:var(--accent); cursor:pointer;" 
                                            ${selected ? 'checked' : ''}
-                                           onchange="this.closest('.campaign-manager').__component.toggleLootPlayer('${p.id}')">
+                                           onchange="this.closest('.campaign-manager').__component.toggleLootPlayer('${p.id}')" />
                                     <div style="flex:1;">
                                         <div style="font-weight:800; font-size:0.9rem; color:#fff;">${p.name}</div>
                                         <div style="font-size:0.65rem; color:var(--text-dim); text-transform:uppercase;">${p.class || 'Aventureiro'}</div>
                                     </div>
                                 </label>
                             `;
-                        }).join('')}
+                        })}
                     </div>
 
                     <div style="display:flex; gap:12px;">
@@ -1771,7 +1688,7 @@ export class CampaignManager extends Component {
             animation: fadeIn 0.25s ease;
         `;
 
-        modal.innerHTML = `
+        modal.innerHTML = html`
             <div class="card glass-accent" style="max-width:500px; width:90%; padding:30px; border-radius:18px; border:2px solid rgba(197,160,89,0.35); background:rgba(10,12,16,0.95); box-shadow: 0 20px 50px rgba(0,0,0,0.8), inset 0 0 20px rgba(197,160,89,0.05); text-align:left;">
                 
                 <!-- HEADER -->
@@ -1883,7 +1800,7 @@ export class CampaignManager extends Component {
         }
 
         import('./Toast.js').then(m => {
-            m.Toast.show(`🎲 **${p.name}** fez um teste de **${attrName}**!<br>${rollText}`, 'success');
+            m.Toast.show(`🎲 **${p.name}** fez um teste de **${attrName}**!<br />${rollText}`, 'success');
         });
     }
 
@@ -1944,15 +1861,15 @@ export class CampaignManager extends Component {
             animation: fadeIn 0.25s ease;
         `;
 
-        modal.innerHTML = `
+        modal.innerHTML = html`
             <div class="card glass-accent" style="width:90%; max-width:400px; padding:25px; border-radius:16px;">
                 <h3 style="font-family:'Cinzel'; color:var(--accent); margin-bottom:20px; border-bottom:1px solid rgba(197,160,89,0.2); padding-bottom:10px;">Editar Campanha</h3>
                 
                 <label style="display:block; margin-bottom:5px; font-size:0.75rem; color:var(--text-dim);">Nome da Campanha</label>
-                <input type="text" id="camp-name-input" class="form-input" value="${currentName}" style="width:100%; margin-bottom:15px; background:rgba(0,0,0,0.5); color:#fff; border:1px solid rgba(197,160,89,0.3); padding:10px; border-radius:8px;">
+                <input type="text" id="camp-name-input" class="form-input" value="${currentName}" style="width:100%; margin-bottom:15px; background:rgba(0,0,0,0.5); color:#fff; border:1px solid rgba(197,160,89,0.3); padding:10px; border-radius:8px;" />
                 
                 <label style="display:block; margin-bottom:5px; font-size:0.75rem; color:var(--text-dim);">Sistema de Jogo</label>
-                <input type="text" id="camp-system-input" class="form-input" value="${currentSystem}" style="width:100%; margin-bottom:20px; background:rgba(0,0,0,0.5); color:#fff; border:1px solid rgba(197,160,89,0.3); padding:10px; border-radius:8px;">
+                <input type="text" id="camp-system-input" class="form-input" value="${currentSystem}" style="width:100%; margin-bottom:20px; background:rgba(0,0,0,0.5); color:#fff; border:1px solid rgba(197,160,89,0.3); padding:10px; border-radius:8px;" />
                 
                 <label style="display:block; margin-bottom:5px; font-size:0.75rem; color:var(--text-dim);">Status da Sessão (Forçar)</label>
                 <select id="camp-status-input" class="form-select" style="width:100%; margin-bottom:25px; background:rgba(0,0,0,0.5); color:#fff; border:1px solid rgba(197,160,89,0.3); padding:10px; border-radius:8px;">

@@ -1,4 +1,5 @@
-import { Component } from '../core/Component.js';
+import { ReactiveComponent } from '../core/ReactiveComponent.js';
+import { html } from 'htm/preact';
 import { TOME } from '../../core/Registry.js';
 import { Toast } from '../components/Toast.js';
 
@@ -81,7 +82,7 @@ function logChronicleEntry(store, text, type = 'custom') {
  * QUEST MANAGER v3.0 — D&D 5e Chronicles & Quests Engine
  * Handles narration timelines, faction reputation, milestones, and advanced loot splits.
  */
-export class QuestManager extends Component {
+export class QuestManager extends ReactiveComponent {
     constructor(opts) {
         super(opts);
         this._showForm = false;
@@ -134,7 +135,7 @@ export class QuestManager extends Component {
             ? Math.round(players.reduce((sum, p) => sum + (parseInt(p.level) || 1), 0) / players.length)
             : 1;
 
-        return `
+        return html`
             <div class="page" style="max-width:1100px; margin:0 auto; padding:20px; animation: fadeIn 0.4s ease-out;">
                 <style>
                     @keyframes cardFadeIn {
@@ -239,7 +240,7 @@ export class QuestManager extends Component {
                     </div>
 
                     <!-- Filters and Search -->
-                    ${this._activeTab !== 'factions' && this._activeTab !== 'chronicles' ? `
+                    ${this._activeTab !== 'factions' && this._activeTab !== 'chronicles' ? html`
                     <div style="display: flex; gap: 10px; align-items: center; flex: 1; max-width: 500px; justify-content: flex-end; width: 100%;">
                         <select data-action="filterType" style="background: rgba(8, 8, 10, 0.8); border: 1.5px solid rgba(197,160,89,0.25); padding: 8px 12px; border-radius: 8px; color: #fff; font-size: 0.75rem; outline: none; cursor: pointer; height: 36px;">
                             <option value="all" ${this._filterType === 'all' ? 'selected' : ''}>Todos os Tipos</option>
@@ -254,7 +255,7 @@ export class QuestManager extends Component {
                             <input type="text" placeholder="Buscar missão..." 
                                    value="${this._searchQuery}"
                                    style="width: 100%; padding: 8px 10px 8px 34px; border-radius: 8px; border: 1.5px solid rgba(197,160,89,0.25); background: rgba(8, 8, 10, 0.8); color: #fff; font-size: 0.75rem; outline: none; height: 36px;"
-                                   data-action="search">
+                                   data-action="search" />
                         </div>
                     </div>
                     ` : ''}
@@ -264,7 +265,7 @@ export class QuestManager extends Component {
 
                 <!-- Main Content Pane based on Tab selection -->
                 ${this._activeTab === 'factions' ? this._renderFactionsTab(renown) : 
-                  this._activeTab === 'chronicles' ? this._renderChroniclesTab() : `
+                  this._activeTab === 'chronicles' ? this._renderChroniclesTab() : html`
                   <!-- Quests Grid -->
                   <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;">
                       ${filtered.length ? filtered.map(q => this._renderQuestCard(q)).join('') : this._renderEmptyState()}
@@ -278,13 +279,13 @@ export class QuestManager extends Component {
     }
 
     _renderForm(avgLevel) {
-        return `
+        return html`
             <div class="card glass-accent" style="margin-bottom:30px; border-radius: 12px; padding: 25px; animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1.5px solid rgba(197,160,89,0.3); background: rgba(10,12,16,0.85); backdrop-filter: blur(15px);">
                 <form id="quest-form" style="display:flex; flex-direction:column; gap:16px;">
                     <!-- Title -->
                     <div class="form-group">
                         <label class="form-label" style="font-family:'Cinzel'; font-size:0.7rem; letter-spacing:0.5px; color:var(--accent); font-weight:800;">Título da Missão</label>
-                        <input type="text" name="title" class="form-input" required placeholder="Ex: O Segredo do Forte Sombrio" style="background:rgba(0,0,0,0.4); border:1.5px solid rgba(197,160,89,0.25); font-family:'Outfit';">
+                        <input type="text" name="title" class="form-input" required placeholder="Ex: O Segredo do Forte Sombrio" style="background:rgba(0,0,0,0.4); border:1.5px solid rgba(197,160,89,0.25); font-family:'Outfit';" />
                     </div>
                     
                     <!-- Description -->
@@ -341,11 +342,11 @@ export class QuestManager extends Component {
                             <label class="form-label" style="font-family:'Cinzel'; font-size:0.7rem; letter-spacing:0.5px; color:var(--accent); font-weight:800;">Tipo de Recompensa XP</label>
                             <div style="display:flex; gap:20px; align-items:center; height:38px;">
                                 <label style="font-size:0.75rem; color:#fff; cursor:pointer; display:flex; align-items:center; gap:6px;">
-                                    <input type="radio" name="xpType" value="xp" checked style="accent-color:var(--accent);" onchange="document.getElementById('xp-value-input-wrapper').style.display='block'">
+                                    <input type="radio" name="xpType" value="xp" checked style="accent-color:var(--accent);" onchange="document.getElementById('xp-value-input-wrapper').style.display='block'" />
                                     Experiência (XP)
                                 </label>
                                 <label style="font-size:0.75rem; color:#fff; cursor:pointer; display:flex; align-items:center; gap:6px;">
-                                    <input type="radio" name="xpType" value="milestone" style="accent-color:var(--accent);" onchange="document.getElementById('xp-value-input-wrapper').style.display='none'">
+                                    <input type="radio" name="xpType" value="milestone" style="accent-color:var(--accent);" onchange="document.getElementById('xp-value-input-wrapper').style.display='none'" />
                                     Marco Narrativo (Milestone)
                                 </label>
                             </div>
@@ -361,18 +362,18 @@ export class QuestManager extends Component {
                                     🔮 Sugerir XP (Nv Médio: ${avgLevel})
                                 </button>
                             </div>
-                            <input type="number" id="quest-xp-reward-input" name="xpReward" class="form-input" min="0" placeholder="Ex: 500" style="background:rgba(0,0,0,0.4); border:1.5px solid rgba(197,160,89,0.25); font-family:'Outfit';">
+                            <input type="number" id="quest-xp-reward-input" name="xpReward" class="form-input" min="0" placeholder="Ex: 500" style="background:rgba(0,0,0,0.4); border:1.5px solid rgba(197,160,89,0.25); font-family:'Outfit';" />
                         </div>
                         <div class="form-group">
                             <label class="form-label" style="font-family:'Cinzel'; font-size:0.7rem; letter-spacing:0.5px; color:var(--accent); font-weight:800;">Recompensa Física (Ouro / Itens Mágicos)</label>
-                            <input type="text" name="reward" class="form-input" placeholder="Ex: 250 GP, Poção de Cura Maior" style="background:rgba(0,0,0,0.4); border:1.5px solid rgba(197,160,89,0.25); font-family:'Outfit';">
+                            <input type="text" name="reward" class="form-input" placeholder="Ex: 250 GP, Poção de Cura Maior" style="background:rgba(0,0,0,0.4); border:1.5px solid rgba(197,160,89,0.25); font-family:'Outfit';" />
                         </div>
                     </div>
 
                     <!-- Initial Milestones/Objectives -->
                     <div class="form-group">
                         <label class="form-label" style="font-family:'Cinzel'; font-size:0.7rem; letter-spacing:0.5px; color:var(--accent); font-weight:800;">Etapas da Missão (Objetivos do checklist - separados por vírgula)</label>
-                        <input type="text" name="initialMilestones" class="form-input" placeholder="Ex: Investigar as ruínas, Encontrar a chave da cripta, Banir o espírito" style="background:rgba(0,0,0,0.4); border:1.5px solid rgba(197,160,89,0.25); font-family:'Outfit';">
+                        <input type="text" name="initialMilestones" class="form-input" placeholder="Ex: Investigar as ruínas, Encontrar a chave da cripta, Banir o espírito" style="background:rgba(0,0,0,0.4); border:1.5px solid rgba(197,160,89,0.25); font-family:'Outfit';" />
                     </div>
 
                     <button type="submit" class="btn btn-primary btn-block" style="padding:12px; font-family:'Cinzel'; font-weight:900; letter-spacing:1.5px; margin-top:8px;">
@@ -405,7 +406,7 @@ export class QuestManager extends Component {
         const difficultyLabel = diffLabels[q.difficulty] || 'Média';
         const difficultyColor = diffColors[q.difficulty] || 'var(--accent)';
 
-        return `
+        return html`
             <div class="${cardClass}" style="padding: 22px; border-radius: 14px; transition: all 0.25s ease; animation: cardFadeIn 0.4s ease-out; ${borderStyle} display:flex; flex-direction:column; justify-content:space-between; min-height:380px;">
                 <div>
                     <!-- Badge header -->
@@ -436,7 +437,7 @@ export class QuestManager extends Component {
                     </div>
 
                     <!-- Faction tie -->
-                    ${q.faction && q.faction !== 'Nenhuma' ? `
+                    ${q.faction && q.faction !== 'Nenhuma' ? html`
                         <div style="font-size:0.65rem; color:var(--text-dim); display:flex; align-items:center; gap:5px; margin-bottom:15px; background:rgba(255,255,255,0.02); padding:4px 8px; border-radius:6px; border:1px solid rgba(255,255,255,0.02); width:fit-content;">
                             <i class="fa-solid fa-flag" style="color:${colors.faction || '#a855f7'};"></i> Facção: <strong style="color:#fff;">${q.faction}</strong>
                         </div>
@@ -446,12 +447,12 @@ export class QuestManager extends Component {
                     ${this._renderMilestones(q)}
 
                     <!-- Milestone Inline Form -->
-                    ${!q.completed && !q.failed ? `
+                    ${!q.completed && !q.failed ? html`
                         <div style="display:flex; gap:6px; margin-bottom:15px;">
                             <input type="text" placeholder="Nova etapa da missão..." 
                                    style="flex:1; background:rgba(8,8,10,0.6); border:1.5px solid rgba(197,160,89,0.2); border-radius:6px; padding:4px 10px; color:#fff; font-size:0.7rem; outline:none;" 
                                    id="new-milestone-${q.id}"
-                                   onkeydown="if(event.key==='Enter'){event.preventDefault(); document.getElementById('add-btn-${q.id}').click();}">
+                                   onkeydown="if(event.key==='Enter'){event.preventDefault(); document.getElementById('add-btn-${q.id}').click();}" />
                             <button class="btn btn-ghost" id="add-btn-${q.id}" style="padding:4px 10px; border-radius:6px; font-size:0.7rem; font-weight:800; border-color:rgba(197,160,89,0.3); color:var(--accent);" data-action="addMilestoneInline" data-id="${q.id}">
                                 <i class="fa-solid fa-plus"></i>
                             </button>
@@ -468,8 +469,8 @@ export class QuestManager extends Component {
                         </span>
                         <span>
                             ${q.xpType === 'milestone' 
-                                ? `<span style="color:#fbbf24; font-weight:800; display:inline-flex; align-items:center; gap:3px;"><i class="fa-solid fa-trophy"></i> Marco</span>`
-                                : `<span style="color:#60a5fa; font-weight:800; display:inline-flex; align-items:center; gap:3px;"><i class="fa-solid fa-star"></i> +${q.xpReward || 0} XP</span>`
+                                ? html`<span style="color:#fbbf24; font-weight:800; display:inline-flex; align-items:center; gap:3px;"><i class="fa-solid fa-trophy"></i> Marco</span>`
+                                : html`<span style="color:#60a5fa; font-weight:800; display:inline-flex; align-items:center; gap:3px;"><i class="fa-solid fa-star"></i> +${q.xpReward || 0} XP</span>`
                             }
                         </span>
                     </div>
@@ -478,11 +479,11 @@ export class QuestManager extends Component {
                     <div style="display:flex; flex-direction:column; gap:6px;">
                         <!-- XP Distribution (if eligible) -->
                         ${q.completed && q.xpType !== 'milestone' ? (
-                            !q.xpDistributed ? `
+                            !q.xpDistributed ? html`
                                 <button class="btn btn-info btn-sm btn-block" style="padding:6px; border-radius:6px; font-size:0.68rem; font-weight:800; display:inline-flex; align-items:center; justify-content:center; gap:6px; background:rgba(96,165,250,0.15); border:1px solid rgba(96,165,250,0.4); color:#93c5fd;" data-action="distributeQuestXP" data-id="${q.id}">
                                     <i class="fa-solid fa-gift"></i> Distribuir XP ao Grupo
                                 </button>
-                            ` : `
+                            ` : html`
                                 <div style="text-align:center; font-size:0.62rem; color:var(--success); font-weight:700; text-transform:uppercase; letter-spacing:0.5px; padding:3px; background:rgba(34,197,94,0.05); border-radius:4px;">
                                     <i class="fa-solid fa-circle-check"></i> XP da Missão Distribuído
                                 </div>
@@ -491,11 +492,11 @@ export class QuestManager extends Component {
 
                         <!-- Group Level-Up for Milestone (if eligible) -->
                         ${q.completed && q.xpType === 'milestone' ? (
-                            !q.milestoneLeveled ? `
+                            !q.milestoneLeveled ? html`
                                 <button class="btn btn-ghost btn-sm btn-block" style="padding:6px; border-radius:6px; font-size:0.68rem; font-weight:800; display:inline-flex; align-items:center; justify-content:center; gap:6px; color:#fbbf24; border-color:rgba(251,191,36,0.35); background:rgba(251,191,36,0.08);" data-action="triggerMilestoneLevelUp" data-id="${q.id}">
                                     <i class="fa-solid fa-angles-up"></i> Conceder Level Up ao Grupo
                                 </button>
-                            ` : `
+                            ` : html`
                                 <div style="text-align:center; font-size:0.62rem; color:#fbbf24; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; padding:3px; background:rgba(251,191,36,0.05); border-radius:4px;">
                                     <i class="fa-solid fa-circle-check"></i> Level Up do Grupo Concedido
                                 </div>
@@ -504,11 +505,11 @@ export class QuestManager extends Component {
 
                         <!-- Loot / Treasure Distribution (if eligible) -->
                         ${q.completed && q.reward && q.reward !== 'Nenhuma' ? (
-                            !q.rewardDistributed ? `
+                            !q.rewardDistributed ? html`
                                 <button class="btn btn-ghost btn-sm btn-block" style="padding:6px; border-radius:6px; font-size:0.68rem; font-weight:800; display:inline-flex; align-items:center; justify-content:center; gap:6px; color:#34d399; border-color:rgba(52,211,153,0.35); background:rgba(52,211,153,0.08);" data-action="openQuestLootModal" data-id="${q.id}">
                                     <i class="fa-solid fa-hand-holding-dollar"></i> Distribuir Tesouros & Itens
                                 </button>
-                            ` : `
+                            ` : html`
                                 <div style="text-align:center; font-size:0.62rem; color:#34d399; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; padding:3px; background:rgba(52,211,153,0.05); border-radius:4px;">
                                     <i class="fa-solid fa-circle-check"></i> Riquezas Entregues aos Heróis
                                 </div>
@@ -525,11 +526,11 @@ export class QuestManager extends Component {
 
                         <div style="display:flex; gap:6px; flex:1; justify-content:flex-end;">
                             <!-- Active/Reactivate -->
-                            ${q.completed || q.failed ? `
+                            ${q.completed || q.failed ? html`
                                 <button class="btn btn-ghost btn-sm" style="padding:6px 12px; font-size:0.68rem; border-radius:6px;" data-action="toggleComplete" data-id="${q.id}" data-type="reactivate">
                                     Reativar Missão
                                 </button>
-                            ` : `
+                            ` : html`
                                 <!-- Fail -->
                                 <button class="btn btn-ghost btn-sm" style="padding:6px 12px; font-size:0.68rem; border-radius:6px; border-color:rgba(239, 68, 68, 0.2); color:var(--danger);" data-action="markFailed" data-id="${q.id}">
                                     <i class="fa-solid fa-skull"></i> Falhar
@@ -549,7 +550,7 @@ export class QuestManager extends Component {
     _renderMilestones(q) {
         const milestones = q.milestones || [];
         if (milestones.length === 0) {
-            return `
+            return html`
                 <div style="font-size:0.7rem; color:var(--text-dim); margin-bottom:12px; font-style:italic;">
                     Nenhum objetivo específico registrado.
                 </div>
@@ -559,7 +560,7 @@ export class QuestManager extends Component {
         const completedCount = milestones.filter(m => m.completed).length;
         const percent = Math.round((completedCount / milestones.length) * 100) || 0;
 
-        return `
+        return html`
             <div style="margin-bottom:15px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.65rem; color:var(--text-dim); margin-bottom:5px; font-weight:800; letter-spacing:0.5px; text-transform:uppercase;">
                     <span>Objetivos (${completedCount}/${milestones.length})</span>
@@ -569,23 +570,23 @@ export class QuestManager extends Component {
                     <div style="width:${percent}%; height:100%; background:linear-gradient(90deg, var(--accent), #fbbf24); border-radius:3px; transition:width 0.3s ease;"></div>
                 </div>
                 <div style="display:flex; flex-direction:column; gap:6px; max-height:100px; overflow-y:auto; padding-right:4px;">
-                    ${milestones.map(m => `
+                    ${milestones.map(m => html`
                         <label style="display:flex; align-items:flex-start; gap:8px; font-size:0.72rem; color:${m.completed ? 'var(--text-dim)' : 'var(--text-main)'}; cursor:pointer; text-decoration:${m.completed ? 'line-through' : 'none'}; line-height:1.2;">
                             <input type="checkbox" style="accent-color:var(--accent); cursor:pointer; margin-top:2px;" 
                                     ${m.completed ? 'checked' : ''} 
                                     data-action="toggleMilestone" 
                                     data-quest-id="${q.id}" 
-                                    data-milestone-id="${m.id}">
+                                    data-milestone-id="${m.id}" />
                             <span>${m.text}</span>
                         </label>
-                    `).join('')}
+                    `)}
                 </div>
             </div>
         `;
     }
 
     _renderFactionsTab(renown) {
-        return `
+        return html`
             <div style="display:grid; grid-template-columns: 1fr; gap:20px; animation: cardFadeIn 0.4s ease-out;">
                 <div class="card glass-accent" style="padding:20px; border-radius:12px; background:rgba(197,160,89,0.02); border-left:4px solid var(--accent);">
                     <h3 style="font-family:'Cinzel'; margin:0; color:var(--accent);">🚩 Influência de Facções</h3>
@@ -596,7 +597,7 @@ export class QuestManager extends Component {
                     ${FACTIONS.map(f => {
                         const pts = renown[f.id] || 0;
                         const rank = getRenownRank(pts);
-                        return `
+                        return html`
                             <div class="card glass-accent" style="padding:22px; border-radius:14px; border-top: 4px solid ${f.color}; background:rgba(0,0,0,0.25); display:flex; flex-direction:column; justify-content:space-between; min-height:220px;">
                                 <div>
                                     <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
@@ -621,7 +622,7 @@ export class QuestManager extends Component {
                                 </div>
                             </div>
                         `;
-                    }).join('')}
+                    })}
                 </div>
             </div>
         `;
@@ -630,13 +631,13 @@ export class QuestManager extends Component {
     _renderChroniclesTab() {
         const chronicles = this.store.state.chronicleEntries || [];
         
-        return `
+        return html`
             <div style="animation: cardFadeIn 0.4s ease-out; max-width:800px; margin: 0 auto;">
                 <div class="card glass-accent" style="padding:22px; border-radius:12px; margin-bottom:30px; background:rgba(10,12,16,0.6);">
                     <h4 style="font-family:'Cinzel'; color:var(--accent); margin:0 0 10px 0;"><i class="fa-solid fa-feather"></i> Escrever Nova Crônica de Feitos</h4>
                     <form id="chronicle-manual-form" style="display:flex; gap:10px;">
                         <input type="text" id="manual-chronicle-text" placeholder="Ex: Dia 18 da Primavera: O grupo explorou as Minas Perdidas de Phandelver e encontrou a Forja das Magias..." required
-                               style="flex:1; background:rgba(0,0,0,0.4); border:1.5px solid rgba(197,160,89,0.25); border-radius:8px; padding:10px 15px; color:#fff; font-size:0.8rem; outline:none; font-family:'Outfit';">
+                               style="flex:1; background:rgba(0,0,0,0.4); border:1.5px solid rgba(197,160,89,0.25); border-radius:8px; padding:10px 15px; color:#fff; font-size:0.8rem; outline:none; font-family:'Outfit';" />
                         <button type="submit" class="btn btn-primary" style="font-family:'Cinzel'; font-weight:800; font-size:0.75rem; display:inline-flex; align-items:center; gap:6px; border-radius:8px;">
                             ✍️ Registrar Feito
                         </button>
@@ -648,7 +649,7 @@ export class QuestManager extends Component {
                 </h3>
 
                 <div class="chronicle-timeline">
-                    ${chronicles.length === 0 ? `
+                    ${chronicles.length === 0 ? html`
                         <div style="text-align:center; color:var(--text-dim); padding:40px; font-style:italic; font-size:0.85rem;">
                             Nenhum feito crônico registrado na linha do tempo. Complete missões ou insira um feito acima!
                         </div>
@@ -664,7 +665,7 @@ export class QuestManager extends Component {
                         else if (c.type === 'loot_divided') { icon = '💰'; badgeColor = 'rgba(52,211,153,0.08)'; textColor = '#6ee7b7'; }
                         else if (c.type === 'renown_change') { icon = '🚩'; badgeColor = 'rgba(168,85,247,0.08)'; textColor = '#c084fc'; }
 
-                        return `
+                        return html`
                             <div class="chronicle-node">
                                 <div class="chronicle-dot"></div>
                                 <div class="card glass" style="padding:15px 20px; background:${badgeColor}; border:1px solid rgba(255,255,255,0.05); border-radius:10px;">
@@ -678,14 +679,14 @@ export class QuestManager extends Component {
                                 </div>
                             </div>
                         `;
-                    }).join('')}
+                    })}
                 </div>
             </div>
         `;
     }
 
     _renderEmptyState() {
-        return `
+        return html`
             <div class="empty-state" style="grid-column:1 / -1; padding:70px; text-align:center; border:1.5px dashed rgba(197,160,89,0.2); border-radius:12px; background:rgba(197,160,89,0.02); animation: cardFadeIn 0.5s ease;">
                 <i class="fa-solid fa-feather-pointed" style="font-size:2.5rem; opacity:0.3; color:var(--accent); margin-bottom:15px; display:block;"></i>
                 <h3 style="font-family:'Cinzel', serif; color:#fff; font-size:1.15rem; margin:0 0 5px 0;">Crônica Sem Registros</h3>
@@ -700,7 +701,7 @@ export class QuestManager extends Component {
 
         const players = this.store.state.players || [];
 
-        return `
+        return html`
             <div class="modal-overlay animate-fadeIn" style="position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(5px); z-index:2000; display:flex; align-items:center; justify-content:center; padding:20px;" onclick="this.closest('.quest-manager').__component.closeLootModal()">
                 <div class="card glass-accent animate-scaleIn" style="max-width:500px; width:100%; padding:30px; border:2px solid var(--accent); border-radius:16px; box-shadow:0 20px 50px rgba(0,0,0,0.9); text-align:left; background:rgba(10,12,16,0.95);" onclick="event.stopPropagation()">
                     <div style="text-align:center; margin-bottom:20px; border-bottom:1px solid rgba(197,160,89,0.2); padding-bottom:15px;">
@@ -714,31 +715,31 @@ export class QuestManager extends Component {
                     <!-- Input Gold -->
                     <div class="form-group" style="margin-bottom:15px;">
                         <label class="form-label" style="font-family:'Cinzel'; font-size:0.7rem; color:var(--accent); font-weight:800;">Ouro Total a Dividir (GP / PO)</label>
-                        <input type="number" id="loot-gold-input" value="${this._lootGold}" style="background:rgba(0,0,0,0.4); border:1.5px solid rgba(197,160,89,0.25); border-radius:8px; padding:8px 12px; color:#fff; width:100%; font-size:0.85rem; outline:none;" oninput="this.closest('.quest-manager').__component._lootGold = parseInt(this.value) || 0">
+                        <input type="number" id="loot-gold-input" value="${this._lootGold}" style="background:rgba(0,0,0,0.4); border:1.5px solid rgba(197,160,89,0.25); border-radius:8px; padding:8px 12px; color:#fff; width:100%; font-size:0.85rem; outline:none;" oninput="this.closest('.quest-manager').__component._lootGold = parseInt(this.value) || 0" />
                     </div>
 
                     <!-- Input Items -->
                     <div class="form-group" style="margin-bottom:20px;">
                         <label class="form-label" style="font-family:'Cinzel'; font-size:0.7rem; color:var(--accent); font-weight:800;">Itens Mágicos / Equipamentos a Entregar</label>
-                        <input type="text" id="loot-items-input" value="${this._lootItems}" placeholder="Ex: Poção de Cura Maior, Anel de Proteção" style="background:rgba(0,0,0,0.4); border:1.5px solid rgba(197,160,89,0.25); border-radius:8px; padding:8px 12px; color:#fff; width:100%; font-size:0.85rem; outline:none;" oninput="this.closest('.quest-manager').__component._lootItems = this.value">
+                        <input type="text" id="loot-items-input" value="${this._lootItems}" placeholder="Ex: Poção de Cura Maior, Anel de Proteção" style="background:rgba(0,0,0,0.4); border:1.5px solid rgba(197,160,89,0.25); border-radius:8px; padding:8px 12px; color:#fff; width:100%; font-size:0.85rem; outline:none;" oninput="this.closest('.quest-manager').__component._lootItems = this.value" />
                     </div>
 
                     <label class="form-label" style="font-family:'Cinzel'; font-size:0.7rem; color:var(--accent); font-weight:800; display:block; margin-bottom:8px;">Selecione os Heróis Beneficiários</label>
                     <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:25px; max-height:180px; overflow-y:auto; padding-right:5px; scrollbar-width:thin;">
                         ${players.map(p => {
                             const selected = this._selectedLootPlayers.includes(p.id);
-                            return `
+                            return html`
                                 <label style="display:flex; align-items:center; gap:12px; padding:10px 14px; background:${selected ? 'rgba(197,160,89,0.08)' : 'rgba(255,255,255,0.02)'}; border-radius:10px; cursor:pointer; border:1px solid ${selected ? 'var(--accent)' : 'rgba(255,255,255,0.06)'}; transition:all 0.2s;">
                                     <input type="checkbox" style="width:18px; height:18px; accent-color:var(--accent); cursor:pointer;" 
                                            ${selected ? 'checked' : ''}
-                                           onchange="this.closest('.quest-manager').__component.toggleLootPlayer('${p.id}')">
+                                           onchange="this.closest('.quest-manager').__component.toggleLootPlayer('${p.id}')" />
                                     <div style="flex:1;">
                                         <div style="font-weight:800; font-size:0.9rem; color:#fff;">${p.name}</div>
                                         <div style="font-size:0.65rem; color:var(--text-dim); text-transform:uppercase;">${p.class || 'Aventureiro'}</div>
                                     </div>
                                 </label>
                             `;
-                        }).join('')}
+                        })}
                     </div>
 
                     <div style="display:flex; gap:12px;">

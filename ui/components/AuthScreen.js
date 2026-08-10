@@ -139,17 +139,17 @@ export class AuthScreen {
                 max-width: 420px;
                 padding: 40px 30px;
                 border-radius: 24px;
-                background: rgba(8, 7, 10, 0.75);
+                background: rgba(8, 7, 10, 0.85);
                 backdrop-filter: blur(20px);
                 -webkit-backdrop-filter: blur(20px);
-                border: 1px solid rgba(255, 255, 255, 0.04);
+                border: 1px solid rgba(197, 160, 89, 0.25);
                 position: relative;
-                box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8), 
-                            0 0 80px rgba(153, 27, 27, 0.12);
+                box-shadow: 0 30px 60px rgba(0, 0, 0, 0.9), 
+                            0 0 80px rgba(153, 27, 27, 0.2);
                 text-align: center;
                 color: #f1f5f9;
                 animation: authFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-                overflow: hidden;
+                overflow: visible;
                 box-sizing: border-box;
             }
 
@@ -157,6 +157,7 @@ export class AuthScreen {
                 content: '';
                 position: absolute;
                 top: 0; left: 0; right: 0; height: 3px;
+                border-radius: 24px 24px 0 0;
                 background: linear-gradient(90deg, #991b1b, #c5a059, #991b1b);
                 opacity: 0.8;
             }
@@ -184,48 +185,50 @@ export class AuthScreen {
 
             .auth-logo-balloon {
                 position: absolute;
-                top: 50%;
-                left: 115%;
-                transform: translateY(-50%) scale(0.8);
-                background: #fff;
-                color: #000;
-                padding: 10px 18px;
-                border-radius: 12px;
-                font-family: 'Comic Sans MS', 'Outfit', sans-serif;
-                font-size: 0.95rem;
-                font-weight: 900;
+                bottom: 110%;
+                left: 50%;
+                transform: translateX(-50%) scale(0.85);
+                background: #ffffff;
+                color: #0f172a;
+                padding: 8px 14px;
+                border-radius: 10px;
+                font-family: 'Outfit', sans-serif;
+                font-size: 0.82rem;
+                font-weight: 800;
                 white-space: nowrap;
-                box-shadow: 4px 4px 0 rgba(0,0,0,0.8);
-                border: 3px solid #000;
+                box-shadow: 0 10px 25px rgba(0,0,0,0.8);
+                border: 2px solid #c5a059;
                 opacity: 0;
                 pointer-events: none;
                 cursor: pointer;
-                transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-                z-index: 100;
+                transition: opacity 0.25s ease, transform 0.25s ease;
+                z-index: 1000;
+                text-align: center;
+                line-height: 1.3;
             }
             .auth-logo-balloon::before {
                 content: '';
                 position: absolute;
-                top: 50%;
-                left: -15px;
-                transform: translateY(-50%);
-                border-width: 12px 15px 12px 0;
+                bottom: -9px;
+                left: 50%;
+                transform: translateX(-50%);
+                border-width: 9px 8px 0 8px;
                 border-style: solid;
-                border-color: transparent #000 transparent transparent;
+                border-color: #c5a059 transparent transparent transparent;
             }
             .auth-logo-balloon::after {
                 content: '';
                 position: absolute;
-                top: 50%;
-                left: -10px;
-                transform: translateY(-50%);
-                border-width: 9px 12px 9px 0;
+                bottom: -6px;
+                left: 50%;
+                transform: translateX(-50%);
+                border-width: 7px 6px 0 6px;
                 border-style: solid;
-                border-color: transparent #fff transparent transparent;
+                border-color: #ffffff transparent transparent transparent;
             }
             .auth-logo-container:hover .auth-logo-balloon {
                 opacity: 1;
-                transform: translateY(-50%) scale(1);
+                transform: translateX(-50%) scale(1);
                 pointer-events: auto;
             }
 

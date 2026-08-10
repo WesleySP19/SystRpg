@@ -1,4 +1,5 @@
-import { Component } from '../core/Component.js';
+import { ReactiveComponent } from '../core/ReactiveComponent.js';
+import { html } from 'htm/preact';
 import { TOME } from '../../core/Registry.js';
 import { Toast } from '../components/Toast.js';
 
@@ -6,7 +7,7 @@ import { Toast } from '../components/Toast.js';
  * NPC HELPER v3.1
  * AI-powered NPC generator (Name, Personality, Secret, Motivation).
  */
-export class NPCHelper extends Component {
+export class NPCHelper extends ReactiveComponent {
     constructor(opts) {
         super(opts);
         this._npc = null;
@@ -16,7 +17,7 @@ export class NPCHelper extends Component {
     }
 
     template() {
-        return `
+        return html`
             <div class="page" style="max-width:800px; margin:0 auto;">
                 <div class="section-header">
                     <div>
@@ -29,15 +30,15 @@ export class NPCHelper extends Component {
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">
                         <div class="form-group">
                             <label class="form-label">Raça/Tipo</label>
-                            <input class="form-input" id="npc-race" type="text" placeholder="Ex: Elfo, Tabaxi, Guarda...">
+                            <input class="form-input" id="npc-race" type="text" placeholder="Ex: Elfo, Tabaxi, Guarda..." />
                         </div>
                         <div class="form-group">
                             <label class="form-label">Ocupação</label>
-                            <input class="form-input" id="npc-job" type="text" placeholder="Ex: Taberneiro, Ferreiro, Nobre...">
+                            <input class="form-input" id="npc-job" type="text" placeholder="Ex: Taberneiro, Ferreiro, Nobre..." />
                         </div>
                         <div class="form-group">
                             <label class="form-label">Atmosfera (Vibe)</label>
-                            <select class="form-input" id="npc-vibe" onchange="this.closest('.npc-helper').__component.setVibe(this.value)">
+                            <select class="form-input" id="npc-vibe" onChange=${(e) => this.setVibe(e.target.value)}>
                                 <option value="friendly">😊 Amigável / Prestativo</option>
                                 <option value="hostile">😠 Hostil / Agressivo</option>
                                 <option value="sarcastic">😏 Sarcástico / Irônico</option>
@@ -51,7 +52,7 @@ export class NPCHelper extends Component {
                     </button>
                 </div>
 
-                ${this._npc ? `
+                ${this._npc ? html`
                     <div class="card glass-accent" style="animation: scaleIn 0.3s var(--ease-bounce);">
                         <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:20px;">
                             <div>
@@ -87,10 +88,10 @@ export class NPCHelper extends Component {
                         <div style="margin-top:24px; padding:20px; background:rgba(0,0,0,0.2); border-radius:10px; border:1px dashed var(--accent);">
                             <label class="form-label" style="color:var(--accent);">🔮 Oráculo de Diálogo</label>
                             <div style="display:flex; gap:10px; margin-top:10px;">
-                                <input type="text" id="dialogue-intent" class="form-input" style="flex:1;" placeholder="O que ele quer dizer? (Ex: Expulsar da taverna)">
+                                <input type="text" id="dialogue-intent" class="form-input" style="flex:1;" placeholder="O que ele quer dizer? (Ex: Expulsar da taverna)" />
                                 <button class="btn btn-primary btn-sm" data-action="generateDialogue">Como ele diria?</button>
                             </div>
-                            ${this._lastDialogue ? `
+                            ${this._lastDialogue ? html`
                                 <div style="margin-top:15px; padding:15px; background:var(--bg-surface); border-radius:8px; font-style:italic; border-left:3px solid var(--accent); animation:fadeIn 0.3s;">
                                     "${this._lastDialogue}"
                                     <div style="margin-top:10px; display:flex; gap:5px;">
@@ -105,7 +106,7 @@ export class NPCHelper extends Component {
                             <button class="btn btn-ghost btn-sm" data-action="clearNPC">Limpar</button>
                         </div>
                     </div>
-                ` : `
+                ` : html`
                     <div class="empty-state" style="padding:var(--space-2xl);">
                         <i class="fa-solid fa-users" style="font-size:3rem; opacity:0.1;"></i>
                         <p>Preencha os campos ou deixe em branco para um NPC totalmente aleatório.</p>
@@ -113,21 +114,21 @@ export class NPCHelper extends Component {
                 `}
 
                 <!-- BIBLIOTECA DE NPCs SALVOS -->
-                ${(this.store.state.savedNPCs || []).length > 0 ? `
+                ${(this.store.state.savedNPCs || []).length > 0 ? html`
                     <div class="card" style="margin-top:var(--space-lg);">
                         <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
                             <span class="card-title">📚 NPCs Registrados (${(this.store.state.savedNPCs || []).length})</span>
                             <button class="btn btn-ghost btn-sm" data-action="clearAllNPCs">Limpar Todos</button>
                         </div>
                         <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:12px; padding:12px;">
-                            ${(this.store.state.savedNPCs || []).map((n, i) => `
+                            ${(this.store.state.savedNPCs || []).map((n, i) => html`
                                 <div class="glass" style="padding:14px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
                                     <div style="font-weight:700; color:var(--accent); font-size:0.85rem;">${n.name}</div>
                                     <div style="font-size:0.65rem; opacity:0.6; margin:4px 0;">${n.race} • ${n.job}</div>
                                     <div style="font-size:0.75rem; opacity:0.8; line-height:1.4;">${n.personality}</div>
                                     <button class="btn btn-ghost btn-sm" style="margin-top:8px; font-size:0.6rem; width:100%;" data-action="loadSavedNPC" data-index="${i}">↩ Carregar</button>
                                 </div>
-                            `).join('')}
+                            `)}
                         </div>
                     </div>
                 ` : ''}

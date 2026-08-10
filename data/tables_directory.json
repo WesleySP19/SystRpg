@@ -1,7 +1,10 @@
-﻿{
-    "id":  "243359",
-    "mestrePhone":  "(61) 99454-7380",
-    "sessionNum":  1,
-    "heroesCount":  0,
-    "createdAt":  1785183023189
-}
+[
+  {
+    "id": "112793",
+    "mestrePhone": "(61) 99454-7380",
+    "sessionNum": 1,
+    "heroesCount": 1,
+    "createdAt": 1786026156449,
+    "lastActive": 1786379697422
+  }
+]

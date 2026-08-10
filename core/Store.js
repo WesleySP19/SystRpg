@@ -1,103 +1,127 @@
+import { signal } from '@preact/signals';
+
 /**
- * REACTIVE STORE v3.0
- * High-performance state management with Proxy-based reactivity.
- * 
- * Features:
- * - Deep nested reactivity via recursive Proxy
- * - Batched microtask notifications (prevents render storms)
- * - Selective subscriptions for granular updates
- * - Immutable snapshots for safe reads
+ * REACTIVE STORE v15.0 — Leve, Direto e Sem Conflitos Yjs
+ *
+ * Eliminamos o SyncedStore do frontend para evitar a duplicação de instâncias
+ * de Yjs ('Yjs was already imported') e o erro 'cannot set new elements on root doc'.
+ * A sincronização CRDT é feita exclusivamente pelo CRDTManager (via WebSocket),
+ * enquanto o Store cuida apenas do estado local reativo da UI.
  */
 export class Store {
     constructor(initialState = {}) {
-        this._listeners = new Set();
         this._pendingNotify = false;
-        this._rawState = structuredClone(initialState);
-        this.state = this._createProxy(this._rawState);
-    }
 
-    /**
-     * Creates a deep reactive Proxy.
-     * WeakMap prevents re-proxying the same object (memory safety).
-     */
-    _createProxy(obj) {
-        const self = this;
-        const proxyCache = new WeakMap();
+        this._data = this._sanitize(initialState);
+        this.signal = signal(this._data);
 
-        const ARRAY_MUTATORS = new Set(['push','pop','shift','unshift','splice','sort','reverse','fill']);
-        const handler = {
-            set(target, key, value) {
-                if (target[key] === value) return true;
-                target[key] = value;
-                // Ignore internal array length updates — push/splice handle notification
-                if (key !== 'length') self._scheduleNotify();
-                return true;
+        // Sub-divisão reativa para evitar re-render global (V17.8)
+        this.pathSignals = {};
+        for (const key of Object.keys(this._data)) {
+            this.pathSignals[key] = signal(this._data[key]);
+        }
+
+        this.state = new Proxy(this._data, {
+            get: (target, prop) => {
+                return target[prop];
             },
-            get(target, key) {
-                const val = target[key];
-                // Intercept array mutator methods to trigger reactivity
-                if (Array.isArray(target) && ARRAY_MUTATORS.has(key)) {
-                    return function(...args) {
-                        const result = Array.prototype[key].apply(target, args);
-                        self._scheduleNotify();
-                        return result;
-                    };
+            set: (target, prop, value) => {
+                const cloned = this._deepClone(value);
+                target[prop] = cloned;
+                
+                if (!this.pathSignals[prop]) {
+                    this.pathSignals[prop] = signal(cloned);
+                } else {
+                    this.pathSignals[prop].value = cloned;
                 }
-                if (val !== null && typeof val === 'object') {
-                    if (proxyCache.has(val)) return proxyCache.get(val);
-                    const proxy = new Proxy(val, handler);
-                    proxyCache.set(val, proxy);
-                    return proxy;
-                }
-                return val;
-            }
-        };
 
-        return new Proxy(obj, handler);
+                this._scheduleNotify();
+                this.signal.value = { ...this._data };
+                return true;
+            }
+        });
     }
 
-    /**
-     * Batched notification using microtask queue.
-     * Multiple synchronous mutations = single render pass.
-     */
+    _sanitize(obj) {
+        if (!obj || typeof obj !== 'object') return {};
+        const copy = this._deepClone(obj);
+        let result = { ...copy };
+        while (result && result.state && typeof result.state === 'object' && !Array.isArray(result.state)) {
+            const nested = result.state;
+            delete result.state;
+            result = { ...nested, ...result };
+        }
+        return result;
+    }
+
+    _deepClone(value) {
+        if (value === null || value === undefined) return value;
+        if (typeof value !== 'object') return value;
+        try {
+            return JSON.parse(JSON.stringify(value));
+        } catch {
+            return value;
+        }
+    }
+
     _scheduleNotify() {
         if (this._pendingNotify) return;
         this._pendingNotify = true;
-
         queueMicrotask(() => {
-            this._listeners.forEach(cb => {
-                try { cb(this.state); }
-                catch (e) { console.error('[Store] Listener error:', e); }
-            });
             this._pendingNotify = false;
         });
     }
 
-    /**
-     * Subscribe to state changes. Returns unsubscribe function.
-     * Does NOT fire immediately — call render() yourself after mount.
-     */
-    subscribe(callback) {
-        this._listeners.add(callback);
-        return () => this._listeners.delete(callback);
-    }
-
-    /**
-     * Batch-update state via a mutator function.
-     */
     update(fn) {
         fn(this.state);
+        this._scheduleNotify();
+        this.signal.value = { ...this._data };
+        
+        // Push updates to pathSignals
+        for (const key of Object.keys(this._data)) {
+            if (!this.pathSignals[key]) {
+                this.pathSignals[key] = signal(this._data[key]);
+            } else {
+                this.pathSignals[key].value = this._data[key];
+            }
+        }
+    }
+
+    merge(partial) {
+        if (!partial || typeof partial !== 'object') return;
+        const clean = this._sanitize(partial);
+        Object.assign(this._data, clean);
+        this._scheduleNotify();
+        this.signal.value = { ...this._data };
+        
+        for (const key of Object.keys(clean)) {
+            if (!this.pathSignals[key]) {
+                this.pathSignals[key] = signal(this._data[key]);
+            } else {
+                this.pathSignals[key].value = this._data[key];
+            }
+        }
+    }
+
+    subscribe(listener) {
+        return this.signal.subscribe(listener);
+    }
+
+    subscribeTo(path, listener) {
+        if (!this.pathSignals[path]) {
+            this.pathSignals[path] = signal(this._data[path]);
+        }
+        return this.pathSignals[path].subscribe(listener);
     }
 
     /**
-     * Get a plain snapshot (safe for serialization / IndexedDB).
+     * Retorna snapshot JSON limpo do estado atual, sem referências circulares.
      */
     snapshot() {
         try {
-            return structuredClone(this._rawState);
-        } catch (e) {
-            // Silently fallback to JSON serialization to avoid warning spam (due to Proxies/non-cloneables in state)
-            return JSON.parse(JSON.stringify(this._rawState));
+            return this._deepClone(this._data) || {};
+        } catch {
+            return {};
         }
     }
 }

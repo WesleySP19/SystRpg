@@ -33,6 +33,9 @@ export class ReferencePanel extends Component {
                         <i class="fa-solid fa-image"></i> Referência Visual
                     </span>
                     <div style="display:flex;gap:4px;">
+                        <button class="btn btn-ghost btn-sm" data-action="openSpectatorTV" title="Abrir Telão Espectador (TV/Projetor)">
+                            <i class="fa-solid fa-desktop"></i>
+                        </button>
                         <button class="btn btn-ghost btn-sm" data-action="uploadImage" title="Carregar Imagem">
                             <i class="fa-solid fa-upload"></i>
                         </button>
@@ -52,7 +55,7 @@ export class ReferencePanel extends Component {
                              title="Clique para ampliar" />
                         <div class="ref-img-label">${active.name}</div>
                         <div class="ref-img-controls">
-                            <button class="ref-ctrl-btn" data-action="broadcastActive" title="Enviar para Jogadores">
+                            <button class="ref-ctrl-btn" data-action="broadcastActive" title="Enviar para Jogadores e Telão">
                                 <i class="fa-solid fa-broadcast-tower"></i>
                             </button>
                             <button class="ref-ctrl-btn danger" data-action="deleteActive" title="Remover">
@@ -88,7 +91,7 @@ export class ReferencePanel extends Component {
                 ${this.store.state.referenceBroadcast ? `
                     <div style="font-size:0.6rem;color:var(--success);text-align:center;padding:4px;display:flex;align-items:center;gap:4px;justify-content:center;">
                         <span style="width:6px;height:6px;background:var(--success);border-radius:50%;display:inline-block;animation:pulse 1.5s infinite;"></span>
-                        Transmitindo para Jogadores
+                        Transmitindo para Jogadores e Telão TV
                     </div>
                 ` : ''}
             </div>
@@ -96,6 +99,11 @@ export class ReferencePanel extends Component {
     }
 
     /* ── Actions ────────────────────────────────────────────────── */
+
+    openSpectatorTV() {
+        window.open('/transmissao.html', '_blank', 'noopener,noreferrer,width=1280,height=720');
+        Toast.show('📺 Telão do Espectador acionado para TV / Segunda Tela!', 'info');
+    }
 
     uploadImage() {
         this.$('#ref-upload').click();
@@ -139,7 +147,19 @@ export class ReferencePanel extends Component {
             });
         }
 
-        Toast.show(`📡 "${img.name}" enviado para jogadores!`, 'success');
+        // Sincroniza diretamente com o Telão de TV da sala / modo espectador LAN!
+        try {
+            if (typeof window !== 'undefined' && window.socket && typeof window.socket.emit === 'function') {
+                window.socket.emit('state_update', { mapImage: img.data });
+            } else if (typeof io !== 'undefined') {
+                const tempSocket = io();
+                const tableId = localStorage.getItem('tome_last_table') || 'default-table';
+                tempSocket.emit('joinRoom', { mesaId: tableId });
+                tempSocket.emit('state_update', { mapImage: img.data });
+            }
+        } catch(e) { console.warn("Falha de envio socket ao telão TV"); }
+
+        Toast.show(`📡 "${img.name}" enviado para Telão e Celulares dos Jogadores!`, 'success');
         this.render();
     }
 

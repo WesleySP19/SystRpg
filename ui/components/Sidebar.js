@@ -3,57 +3,272 @@ import { TOME } from '../../core/Registry.js';
 import { PersistenceService } from '../../services/PersistenceService.js';
 
 /**
- * SIDEBAR v10.0
- * Navigation panel with active-tab highlighting and status indicator.
+ * SIDEBAR v15.0
+ * Clean, minimalist navigation panel.
  */
 export class Sidebar extends Component {
     template() {
         const { activeTab } = this.store.state;
 
         const items = [
-            { id: 'dashboard', label: 'Painel do Mestre',       icon: 'fa-shield-halved' },
-            { id: 'dmshield',  label: 'Escudo do Mestre',       icon: 'fa-scroll' },
-            { id: 'combat',    label: 'Combate Tático',          icon: 'fa-crosshairs' },
-            { id: 'initiative',label: 'Monitor de Iniciativa',   icon: 'fa-swords' },
-            { id: 'map',       label: 'Mapa Tático',            icon: 'fa-map-location-dot' },
-            { id: 'quest',     label: 'Gerenciador de Quests',  icon: 'fa-hat-wizard' },
-            { id: 'journal',   label: 'Diário de Sessão',       icon: 'fa-book-open-reader' },
-            { id: 'npc',       label: 'Gerador de NPCs',        icon: 'fa-user-secret' },
-            { id: 'herohub',   label: 'Monitor de Heróis',      icon: 'fa-users' },
-            { id: 'cardgenerator', label: 'Gerador de Cartas',  icon: 'fa-address-card' },
-            { id: 'bestiary',  label: 'Bestiário',              icon: 'fa-dragon' },
-            { id: 'loot',      label: 'Gerador de Loot',        icon: 'fa-coins' },
-            { id: 'settings',  label: 'Glossário de Regras',    icon: 'fa-book' }
+            { id: 'dmtable',       label: 'Mesa do Mestre',        icon: 'fa-table-cells-large' },
+            { id: 'dashboard',     label: 'Painel de Controle',    icon: 'fa-shield-halved' },
+            { id: 'dmshield',      label: 'Escudo do Mestre',      icon: 'fa-scroll' },
+            { id: 'combat',        label: 'Combate Tatico',        icon: 'fa-crosshairs' },
+            { id: 'initiative',    label: 'Monitor de Iniciativa', icon: 'fa-swords' },
+            { id: 'quest',         label: 'Gerenciador de Quests', icon: 'fa-hat-wizard' },
+            { id: 'journal',       label: 'Diario de Sessao',      icon: 'fa-book-open-reader' },
+            { id: 'npc',           label: 'Gerador de NPCs',       icon: 'fa-user-secret' },
+            { id: 'herohub',       label: 'Monitor de Herois',     icon: 'fa-users' },
+            { id: 'tomesinal',     label: 'Elo Arcano',            icon: 'fa-satellite-dish' },
+            { id: 'cardgenerator', label: 'Gerador de Cartas',     icon: 'fa-address-card' },
+            { id: 'bestiary',      label: 'Bestiario',             icon: 'fa-dragon' },
+            { id: 'loot',          label: 'Gerador de Loot',       icon: 'fa-coins' },
+            { id: 'settings',      label: 'Glossario de Regras',   icon: 'fa-book' }
         ];
 
         return `
-            <div class="sidebar-brand" style="display:flex; flex-direction:column; align-items:center; gap:8px; padding: 20px 16px 12px; position:relative;">
-                <div class="sidebar-logo-wrapper" style="position:relative; cursor:pointer;" title="Sua aventura começa aqui! 🧙‍♂️✨">
-                    <img src="assets/logo.png" alt="Mesa do Mestre" class="sidebar-logo" style="width: 64px; height: 64px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 20px rgba(0,0,0,0.6), 0 0 0 2px rgba(197,160,89,0.3); border: 2px solid var(--accent); transition: transform 0.5s ease;">
-                    <div class="sidebar-easter-egg" style="position:absolute; left:120%; top:50%; transform:translateY(-50%) scale(0); opacity:0; background:#fff; color:#000; padding:8px 12px; border-radius:8px; font-weight:bold; white-space:nowrap; transition:all 0.3s; pointer-events:none; z-index:100; border:2px solid #000; font-size:0.8rem;">Sua aventura começa aqui! 🧙‍♂️✨</div>
-                </div>
-                <h1>Mesa do Mestre</h1>
-                <span style="font-size:0.55rem; color:var(--text-dim); letter-spacing:1.5px; text-transform:uppercase; font-weight:600;">Domínio RPG v12.3.5</span>
-            </div>
             <style>
-                .sidebar-logo-wrapper:hover .sidebar-logo {
-                    transform: rotate(360deg) scale(1.1);
-                    transition: transform 0.3s linear;
+                /* ── Sidebar Minimalista v15.0 ("Modern Epic") ── */
+                .sidebar {
+                    display: flex;
+                    flex-direction: column;
+                    width: var(--sidebar-w, 265px);
+                    height: 100vh;
+                    background: #08090d !important;
+                    border-right: 1px solid rgba(197, 160, 89, 0.12);
+                    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.65);
+                    overflow: hidden;
+                    flex-shrink: 0;
+                    z-index: 100;
                 }
-                .sidebar-logo-wrapper:hover .sidebar-easter-egg {
-                    transform: translateY(-50%) scale(1);
-                    opacity: 1;
+
+                /* Cabeçalho */
+                .sm-header {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    padding: 20px 18px 16px;
+                    border-bottom: 1px solid rgba(197, 160, 89, 0.1);
+                    background: #0a0c12 !important;
+                    flex-shrink: 0;
+                }
+                .sm-header-icon {
+                    width: 34px;
+                    height: 34px;
+                    border-radius: 8px;
+                    background: linear-gradient(135deg, rgba(212, 175, 55, 0.2) 0%, rgba(15, 17, 26, 0.8) 100%);
+                    border: 1px solid rgba(212, 175, 55, 0.35);
+                    box-shadow: 0 0 10px rgba(212, 175, 55, 0.15);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: #d4af37;
+                    font-size: 0.95rem;
+                    flex-shrink: 0;
+                }
+                .sm-header-text {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 2px;
+                    min-width: 0;
+                }
+                .sm-title {
+                    font-family: 'Cinzel', serif;
+                    font-size: 0.92rem;
+                    font-weight: 800;
+                    color: #f1f5f9;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    letter-spacing: 0.05em;
+                }
+                .sm-badge {
+                    font-size: 0.58rem;
+                    color: #d4af37;
+                    text-transform: uppercase;
+                    letter-spacing: 0.12em;
+                    font-weight: 700;
+                    opacity: 0.9;
+                }
+
+                /* Nav */
+                .sm-nav {
+                    flex: 1;
+                    overflow-y: auto;
+                    padding: 10px 10px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 2px;
+                }
+                .sm-nav::-webkit-scrollbar { width: 4px; }
+                .sm-nav::-webkit-scrollbar-thumb { background: rgba(212, 175, 55, 0.2); border-radius: 4px; }
+
+                .sm-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    padding: 9px 12px;
+                    border-radius: 8px;
+                    border: 1px solid transparent;
+                    cursor: pointer;
+                    background: none;
+                    color: #94a3b8;
+                    font-family: 'Outfit', sans-serif;
+                    font-size: 0.81rem;
+                    font-weight: 500;
+                    text-align: left;
+                    width: 100%;
+                    transition: color 0.18s, background 0.18s, border-color 0.18s, transform 0.18s;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+                .sm-item i {
+                    font-size: 0.82rem;
+                    width: 16px;
+                    text-align: center;
+                    flex-shrink: 0;
+                    opacity: 0.7;
+                    transition: opacity 0.18s, color 0.18s, transform 0.18s;
+                }
+                .sm-item:hover {
+                    background: rgba(255, 255, 255, 0.035);
+                    color: #f8fafc;
+                    border-color: rgba(255, 255, 255, 0.06);
+                    transform: translateX(2px);
+                }
+                .sm-item:hover i { opacity: 1; color: #d4af37; }
+                .sm-item.active {
+                    background: linear-gradient(90deg, rgba(212, 175, 55, 0.12) 0%, rgba(212, 175, 55, 0.03) 100%);
+                    color: #f3e5ab;
+                    border-color: rgba(212, 175, 55, 0.25);
+                    font-weight: 600;
+                    box-shadow: inset 3px 0 0 #d4af37;
+                }
+                .sm-item.active i { opacity: 1; color: #d4af37; filter: drop-shadow(0 0 4px rgba(212, 175, 55, 0.4)); }
+
+                /* Separador */
+                .sm-sep {
+                    height: 1px;
+                    background: linear-gradient(90deg, transparent, rgba(197, 160, 89, 0.15), transparent);
+                    margin: 8px 4px;
+                }
+
+                /* Footer */
+                .sm-footer {
+                    padding: 12px 10px;
+                    border-top: 1px solid rgba(197, 160, 89, 0.1);
+                    background: #0a0c12 !important;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 5px;
+                    flex-shrink: 0;
+                }
+                .sm-footer-btn {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    padding: 8px 11px;
+                    border-radius: 8px;
+                    border: 1px solid transparent;
+                    cursor: pointer;
+                    background: none;
+                    color: #64748b;
+                    font-family: 'Outfit', sans-serif;
+                    font-size: 0.76rem;
+                    font-weight: 500;
+                    text-align: left;
+                    width: 100%;
+                    transition: all 0.18s ease;
+                }
+                .sm-footer-btn i {
+                    font-size: 0.75rem;
+                    width: 15px;
+                    text-align: center;
+                    flex-shrink: 0;
+                }
+                .sm-footer-btn:hover {
+                    background: rgba(255, 255, 255, 0.04);
+                    color: #cbd5e1;
+                }
+                .sm-footer-btn.danger {
+                    color: #ef4444;
+                    background: rgba(239, 68, 68, 0.06);
+                    border-color: rgba(239, 68, 68, 0.15);
+                    font-weight: 600;
+                }
+                .sm-footer-btn.danger:hover {
+                    background: rgba(239, 68, 68, 0.12);
+                    color: #f87171;
+                    box-shadow: 0 0 12px rgba(239, 68, 68, 0.2);
+                }
+                .sm-footer-btn.gold {
+                    color: #d4af37;
+                    background: rgba(212, 175, 55, 0.07);
+                    border-color: rgba(212, 175, 55, 0.2);
+                    font-weight: 600;
+                }
+                .sm-footer-btn.gold:hover {
+                    background: rgba(212, 175, 55, 0.14);
+                    color: #f3e5ab;
+                    box-shadow: 0 0 12px rgba(212, 175, 55, 0.2);
+                }
+
+                /* Status */
+                .sm-status {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    padding: 8px 10px 2px;
+                }
+                .sm-status-dot {
+                    width: 6px;
+                    height: 6px;
+                    border-radius: 50%;
+                    background: #22c55e;
+                    box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+                    flex-shrink: 0;
+                }
+                .sm-status-label {
+                    font-size: 0.62rem;
+                    color: #475569;
+                    font-weight: 600;
+                    text-transform: uppercase;
+                    letter-spacing: 0.1em;
+                }
+
+                /* Botões de ação lado a lado */
+                .sm-row {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 5px;
                 }
             </style>
 
-            <div class="sidebar-divider"></div>
+            <!-- Cabeçalho -->
+            <div class="sm-header">
+                <div class="sm-header-icon">
+                    <i class="fa-solid fa-dice-d20"></i>
+                </div>
+                <div class="sm-header-text">
+                    <span class="sm-title">Mesa do Mestre</span>
+                    <span class="sm-badge">V18.5</span>
+                </div>
+            </div>
 
-            <nav class="sidebar-nav">
-                <button class="nav-btn ${activeTab === 'campaign' ? 'active' : ''}" data-action="navigate" data-tab="campaign">
-                    <i class="fa-solid fa-users-viewfinder"></i> <span>Gestão de Campanha</span>
+            <!-- Navegação principal -->
+            <nav class="sm-nav">
+                <button class="sm-item ${activeTab === 'campaign' ? 'active' : ''}"
+                        data-action="navigate" data-tab="campaign">
+                    <i class="fa-solid fa-users-viewfinder"></i>
+                    <span>Gestão de Campanha</span>
                 </button>
+
+                <div class="sm-sep"></div>
+
                 ${items.map(i => `
-                    <button class="nav-btn ${activeTab === i.id ? 'active' : ''}"
+                    <button class="sm-item ${activeTab === i.id ? 'active' : ''}"
                             data-action="navigate" data-tab="${i.id}">
                         <i class="fa-solid ${i.icon}"></i>
                         <span>${i.label}</span>
@@ -61,65 +276,35 @@ export class Sidebar extends Component {
                 `).join('')}
             </nav>
 
-            <div class="sidebar-footer">
-                <div class="sidebar-audio-section">
-                    <div style="display:flex; align-items:center; gap:6px;">
-                        <i class="fa-solid fa-music" style="font-size:0.55rem; color:var(--accent); width:14px;"></i>
-                        <span class="sidebar-audio-label">Música</span>
-                    </div>
-                    <input type="range" min="0" max="1" step="0.05" value="0.5" data-action="setChanVol" data-channel="music">
-                    <div style="display:flex; align-items:center; gap:6px; margin-top:4px;">
-                        <i class="fa-solid fa-wind" style="font-size:0.55rem; color:var(--accent); width:14px;"></i>
-                        <span class="sidebar-audio-label">Ambiente</span>
-                    </div>
-                    <input type="range" min="0" max="1" step="0.05" value="0.5" data-action="setChanVol" data-channel="ambience">
+            <!-- Rodapé com ações -->
+            <div class="sm-footer">
+                <div class="sm-row">
+                    <button class="sm-footer-btn" data-action="exportCampaign">
+                        <i class="fa-solid fa-file-export"></i> Exportar
+                    </button>
+                    <button class="sm-footer-btn" data-action="importCampaign">
+                        <i class="fa-solid fa-file-import"></i> Importar
+                    </button>
                 </div>
 
-                <div class="sidebar-audio-grid">
-                    <button class="sidebar-audio-btn" data-action="playMusic" data-url="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3">🎵 Épico</button>
-                    <button class="sidebar-audio-btn" data-action="playAmb" data-url="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3">🍃 Floresta</button>
-                    <button class="sidebar-audio-btn" data-action="setEnv" data-env="night">🌙 Noite</button>
-                    <button class="sidebar-audio-btn" data-action="setEnv" data-env="dungeon">💀 Dungeon</button>
-                    <button class="sidebar-audio-btn" data-action="setEnv" data-env="default">☀️ Reset Luz</button>
-                    <button class="sidebar-audio-btn stop" data-action="stopAllAudio">⏹ Parar Áudio</button>
-                </div>
+                <button class="sm-footer-btn" onclick="window.location.href='/index.html?reset=1'">
+                    <i class="fa-solid fa-broom"></i> Limpar Cache
+                </button>
 
-                <div class="sidebar-action-group">
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:5px;">
-                        <button class="btn btn-ghost btn-sm" data-action="exportCampaign"><i class="fa-solid fa-file-export" style="margin-right:4px;"></i> Exportar</button>
-                        <button class="btn btn-ghost btn-sm" data-action="importCampaign"><i class="fa-solid fa-file-import" style="margin-right:4px;"></i> Importar</button>
-                    </div>
-                    <button class="btn btn-premium btn-block" style="font-size:0.7rem; padding:8px 12px; margin-top:5px; margin-bottom:5px; border:1px solid rgba(197,160,89,0.35);" data-action="openTolkienSummon"><i class="fa-solid fa-dragon" style="margin-right:4px; color:var(--accent);"></i> Invocação de Tolkien</button>
-                    <button class="btn-magic btn-block" style="font-size:0.75rem; padding:10px 16px;" data-action="finishSession">🏁 FINALIZAR SESSÃO</button>
-                </div>
+                <button class="sm-footer-btn gold" data-action="openTolkienSummon">
+                    <i class="fa-solid fa-dragon"></i> Invocação de Tolkien
+                </button>
 
-                <div style="display:flex; align-items:center; gap:8px; padding-top:6px;">
-                    <div class="status-dot"></div>
-                    <span style="font-size:0.65rem; color:var(--text-dim); font-weight:500;">Sistema Ativo v12.3.5</span>
+                <button class="sm-footer-btn danger" data-action="finishSession">
+                    <i class="fa-solid fa-flag-checkered"></i> Finalizar Sessão
+                </button>
+
+                <div class="sm-status">
+                    <div class="sm-status-dot"></div>
+                    <span class="sm-status-label">Sistema Ativo</span>
                 </div>
             </div>
         `;
-    }
-
-    _ambience = null;
-
-    playMusic(e, el) {
-        TOME.audio.fadeTo('music', el.dataset.url, 2000);
-        import('./Toast.js').then(m => m.Toast.show('Sinfonia arcana transicionando suavemente...', 'info')).catch(function() {});
-    }
-
-    playAmb(e, el) {
-        TOME.audio.fadeTo('ambience', el.dataset.url, 2000);
-        import('./Toast.js').then(m => m.Toast.show('Atmosfera ambiental mudando suavemente...', 'info')).catch(function() {});
-    }
-
-    stopAllAudio() {
-        TOME.audio.stopAll();
-        import('./Toast.js').then(m => m.Toast.show('Áudio encerrado.', 'info')).catch(() => {});
-    }
-
-    setChanVol(e, el) {
-        TOME.audio.setChannelVolume(el.dataset.channel, el.value);
     }
 
     async finishSession() {
@@ -384,12 +569,6 @@ export class Sidebar extends Component {
         };
     }
 
-    setEnv(e, el) {
-        const env = el.dataset.env;
-        TOME.store.update(s => s.currentEnvironment = env);
-        import('./Toast.js').then(m => m.Toast.show(`Iluminação alterada: ${env}`, 'info')).catch(() => {});
-    }
-
     onMount() {
     }
 
@@ -501,31 +680,27 @@ export class Sidebar extends Component {
                 const m = JSON.parse(btn.dataset.monster);
                 closeModal();
                 
-                // 1. Switch to map tab
-                TOME.store.update(s => s.activeTab = 'map');
+                // 1. Não muda mais para a aba 'map', mantendo o mestre na DM Table.
                 
-                // 2. We will set this monster as the spawn entity
-                TOME.store.update(s => {
-                    if (!s.monsters) s.monsters = [];
-                    let existingMon = s.monsters.find(x => x.name === m.name);
-                    if (!existingMon) {
-                        existingMon = {
-                            id: m.id + '_' + Date.now(),
-                            name: m.name,
-                            hp_max: m.hp_max,
-                            ac: m.ac,
-                            emoji: m.emoji,
-                            size: m.size,
-                            speed: m.speed,
-                            type: 'monster'
-                        };
-                        s.monsters.push(existingMon);
+                // 2. Cria a entidade estruturada do monstro
+                let entity = {
+                    id: m.id + '_' + Date.now(),
+                    name: m.name,
+                    hp_max: m.hp_max,
+                    hp: m.hp_max, // Current HP
+                    ac: m.ac,
+                    emoji: m.emoji,
+                    size: m.size,
+                    speed: m.speed,
+                    type: 'monster'
+                };
+
+                // 3. Emite o evento global de invocação para o Combat Tracker ouvir
+                setTimeout(() => {
+                    if (window.TOME && window.TOME.events) {
+                        window.TOME.events.emit('MONSTER_INVOKED', entity);
                     }
-                    
-                    setTimeout(() => {
-                        window.dispatchEvent(new CustomEvent('tome-summon-monster', { detail: existingMon }));
-                    }, 100);
-                });
+                }, 100);
             };
         });
     }

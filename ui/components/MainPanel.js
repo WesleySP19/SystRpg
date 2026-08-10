@@ -1,5 +1,6 @@
 // MainPanel component – cinematic UI with hero image and particle effect
 import { Component } from '../core/Component.js';
+import { html } from 'htm/preact';
 import { TOME } from '../../core/Registry.js';
 import ParticleEngine from '../utils/ParticleEngine.js';
 // CSS is loaded via a <link> tag in the template
@@ -17,16 +18,11 @@ export class MainPanel extends Component {
   }
 
   template() {
-    return `
-<link rel="stylesheet" href="ui/components/main-panel.css">
-
+    return html`
       <div class="panel-overlay">
+        <link rel="stylesheet" href="ui/components/main-panel.css" />
         <canvas class="particles-canvas" id="particleCanvas"></canvas>
         <img class="character-hero" src="${this._heroImageUrl()}" alt="Hero" />
-        <div class="panel-content">
-          <h1 class="panel-title">Bem‑vindo ao Mundo</h1>
-          <p class="panel-subtitle">Sua aventura começa aqui.</p>
-        </div>
       </div>
     `;
   }
@@ -34,7 +30,7 @@ export class MainPanel extends Component {
   // Resolve hero image URL from store or fallback placeholder
   _heroImageUrl() {
     const url = this.store?.state?.heroImage;
-    return url || 'assets/placeholder-hero.png';
+    return url || 'assets/logo.png';
   }
 
   async onMount() {
@@ -47,12 +43,47 @@ export class MainPanel extends Component {
       });
       this._particleEngine.start();
     }
+
+    if (TOME?.events) {
+        this._slainListener = () => {
+            if (this._particleEngine && this.element) {
+                const rect = this.element.getBoundingClientRect();
+                this._particleEngine.explosion({
+                    x: rect.width / 2, 
+                    y: rect.height / 2, 
+                    color: '239,68,68', // Sangue / Escarlate
+                    count: 350, 
+                    speed: 18 
+                });
+            }
+        };
+        
+        this._fallenListener = () => {
+            if (this._particleEngine && this.element) {
+                const rect = this.element.getBoundingClientRect();
+                this._particleEngine.explosion({
+                    x: rect.width / 2, 
+                    y: rect.height / 2, 
+                    color: '229,193,123', // Ouro Frio / Cinzas Arcanas
+                    count: 400, 
+                    speed: 25 
+                });
+            }
+        };
+
+        TOME.events.on('ENTITY_SLAIN', this._slainListener);
+        TOME.events.on('HERO_FALLEN', this._fallenListener);
+    }
   }
 
   onUnmount() {
     if (this._particleEngine) {
       this._particleEngine.stop();
       this._particleEngine = null;
+    }
+    if (TOME?.events) {
+        if (this._slainListener) TOME.events.off('ENTITY_SLAIN', this._slainListener);
+        if (this._fallenListener) TOME.events.off('HERO_FALLEN', this._fallenListener);
     }
   }
 }

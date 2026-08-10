@@ -1,22 +1,50 @@
 /**
- * AI SERVICE v3.0
- * Handles narrative generation and tactical advice.
- * Uses backend proxy for API key security; falls back to local heuristics offline.
+ * AI SERVICE v15.9 - Scalability Edition
+ * Handles narrative generation, tactical advice, and heavy offline RAG searches.
+ * Utiliza Web Workers para delegar buscas massivas, preservando os 60 FPS da Main Thread.
  */
 export class AIService {
     constructor() {
         this._baseUrl = 'http://localhost:3001/api';
+        this._ollamaUrl = 'http://localhost:11434/api/generate';
+        this._ollamaModel = 'llama3';
         this._token = 'tome_secure_2026';
-        this._timeout = 8000; // 8s timeout
+        this._timeout = 8000;
+        
+        // v15.9: AI Worker initialization
+        this._worker = null;
+        this._workerCallbacks = new Map();
+        
+        if (typeof window !== 'undefined' && window.Worker) {
+            try {
+                this._worker = new Worker('/public/workers/aiWorker.js');
+                this._worker.onmessage = (e) => {
+                    const { id, result, status, error } = e.data;
+                    if (this._workerCallbacks.has(id)) {
+                        const { resolve, reject } = this._workerCallbacks.get(id);
+                        if (status === 'success') resolve(result);
+                        else reject(new Error(error));
+                        this._workerCallbacks.delete(id);
+                    }
+                };
+            } catch (err) {
+                console.warn('[AIService] Não foi possível iniciar AI Worker, operando na main thread.', err);
+            }
+        }
     }
 
-    /**
-     * Secure fetch wrapper with timeout and auth.
-     */
+    _runInWorker(type, query, payload = {}) {
+        if (!this._worker) return null;
+        return new Promise((resolve, reject) => {
+            const id = Math.random().toString(36).substring(2);
+            this._workerCallbacks.set(id, { resolve, reject });
+            this._worker.postMessage({ id, type, query, payload });
+        });
+    }
+
     async _fetch(endpoint, body) {
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), this._timeout);
-
         try {
             const res = await fetch(`${this._baseUrl}${endpoint}`, {
                 method: 'POST',
@@ -36,9 +64,6 @@ export class AIService {
         }
     }
 
-    /**
-     * Generate a narrative paragraph from combat logs.
-     */
     async narrate(logs) {
         try {
             const data = await this._fetch('/ai/narrate', { logs });
@@ -48,9 +73,6 @@ export class AIService {
         }
     }
 
-    /**
-     * Generate a localized rumor based on current campaign state.
-     */
     async generateRumor(context) {
         try {
             const data = await this._fetch('/ai/rumor', { context });
@@ -60,67 +82,99 @@ export class AIService {
                 "Dizem que as luzes na floresta não são fadas, mas sim olhos de algo antigo...",
                 "O taverneiro jura que viu o barão conversando com uma sombra no jardim.",
                 "Há uma recompensa para quem encontrar o medalhão perdido da sacerdotisa.",
-                "Dizem que o poço da vila está secando por causa de uma maldição.",
-                "Um viajante jurou ter visto um dragão de metal sobrevoando as montanhas."
+                "Dizem que o poço da vila está secando por causa de uma maldição."
             ];
             return rumors[Math.floor(Math.random() * rumors.length)];
         }
     }
 
-    /**
-     * Local fallback: heuristic-based tactics when backend is offline.
-     */
     _localTactics(monster) {
         const type = (monster.type || '').toLowerCase();
         const cr = parseFloat(monster.cr || 0);
 
-        if (type.includes('besta'))
-            return 'Comportamento Animal: Ataca o alvo mais próximo. Se cair abaixo de 25% HP, tenta fugir.';
-        if (type.includes('humanoide'))
-            return 'Combate Tático: Flanqueia alvos isolados. Foca em conjuradores. Usa cobertura.';
-        if (type.includes('morto-vivo'))
-            return 'Incansável: Ataca sem medo até ser destruído. Ignora táticas defensivas.';
-        if (type.includes('dragão') || cr > 10)
-            return 'Predador de Elite: Usa sopro/área sempre que disponível. Mantém distância voando.';
-
+        if (type.includes('besta')) return 'Comportamento Animal: Ataca o alvo mais próximo. Se cair abaixo de 25% HP, tenta fugir.';
+        if (type.includes('humanoide')) return 'Combate Tático: Flanqueia alvos isolados. Foca em conjuradores. Usa cobertura.';
+        if (type.includes('morto-vivo')) return 'Incansável: Ataca sem medo até ser destruído. Ignora táticas defensivas.';
+        if (type.includes('dragão') || cr > 10) return 'Predador de Elite: Usa sopro/área sempre que disponível. Mantém distância voando.';
         return 'Instinto de Combate: Ataca quem estiver mais perto. Troca de alvo se receber golpe crítico.';
     }
 
-    /**
-     * Generic ask(): tenta backend; se falhar, gera fallback heuristico em JSON quando o prompt pede.
-     * Usado por NPCHelper e outros geradores.
-     */
-    async ask(prompt) {
+    async ask(prompt, systemContext = '') {
         try {
-            const data = await this._fetch('/ai/ask', { prompt });
+            const data = await this._fetch('/ai/ask', { prompt, context: systemContext });
             if (data && (data.text || data.response)) return data.text || data.response;
-        } catch (_) { /* fallback abaixo */ }
-        return this._localAsk(prompt);
+        } catch (_) {}
+
+        try {
+            const ollamaRes = await this._fetchOllama(prompt, systemContext);
+            if (ollamaRes) return ollamaRes;
+        } catch (_) {}
+
+        return await this._localAsk(prompt);
     }
 
-    _localAsk(prompt) {
-        const p = String(prompt || '').toLowerCase();
-        // Fallback NPC: detecta pedido de JSON e gera um NPC plausivel.
-        if (p.includes('npc') && p.includes('json')) {
-            const races = ['Humano','Elfo','Anão','Halfling','Meio-Orc','Tiefling','Draconato'];
-            const jobs = ['Taverneiro','Mercador','Guarda','Ferreiro','Sacerdote','Caçador','Escriba'];
-            const adjs = ['enigmatico','sereno','irritadiço','melancolico','arrogante','generoso','tímido'];
-            const looks = ['cicatriz no rosto','olhos heterocromaticos','barba grisalha','tatuagens tribais','manto puido'];
-            const motives = ['proteger a familia','vingar uma traição','encontrar um artefato perdido','quitar uma dívida antiga'];
-            const secrets = ['é um espião disfarçado','possui um item amaldiçoado','tem um irmão gemeo criminoso','viu algo que não devia'];
-            const pick = arr => arr[Math.floor(Math.random()*arr.length)];
-            const npc = {
-                name: pick(['Aldric','Mira','Oren','Sela','Bran','Ysolde','Dorin','Kaelen']) + ' ' + pick(['de Pedravale','Sangre-de-Lua','o Velho','Pés-de-Vento','Coração de Aço']),
-                race: pick(races),
-                job: pick(jobs),
-                personality: 'Trato ' + pick(adjs) + ', fala devagar e observa muito.',
-                appearance: pick(looks) + ', estatura mediana, vestes simples.',
-                motivation: pick(motives) + '.',
-                secret: pick(secrets) + '.'
-            };
-            return JSON.stringify(npc);
+    async _fetchOllama(prompt, systemContext) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 6000);
+        try {
+            const res = await fetch(this._ollamaUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    model: this._ollamaModel,
+                    prompt: systemContext ? `${systemContext}\n\nPergunta: ${prompt}` : prompt,
+                    stream: false,
+                    options: { temperature: 0.7 }
+                }),
+                signal: controller.signal
+            });
+            clearTimeout(timer);
+            if (!res.ok) return null;
+            const data = await res.json();
+            return data.response ? data.response.trim() : null;
+        } catch (_) {
+            clearTimeout(timer);
+            return null;
         }
-        // Fallback narrativo curto.
-        return 'O destino sussurra, mas as palavras se perdem na brisa antes que possamos ouvi-las claramente.';
+    }
+
+    async oracleSearch(query, store) {
+        if (!store || !store.state) return "Nenhum arquivo de campanha carregado no Oráculo.";
+        
+        // Otimização v15.9: Despacha para o Web Worker se disponível
+        if (this._worker) {
+            try {
+                if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('tome:ai_processing', { detail: { active: true } }));
+                const workerResult = await this._runInWorker('ORACLE_SEARCH', query, { state: store.state });
+                if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('tome:ai_processing', { detail: { active: false } }));
+                
+                try {
+                    const aiSynthesis = await this._fetchOllama(
+                        `A partir das notas de RPG abaixo, responda concisamente em bom português de fantasia: "${query}"\n\nNotas:\n${workerResult}`
+                    );
+                    if (aiSynthesis) return `✨ **Resposta do Oráculo:**\n${aiSynthesis}\n\n*Fontes Originais:*\n${workerResult}`;
+                } catch(_) {}
+                
+                return workerResult;
+            } catch (err) {
+                if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('tome:ai_processing', { detail: { active: false } }));
+                console.warn('[AIService] Falha na delegação do Worker:', err);
+            }
+        }
+
+        // Fallback Legado (Síncrono na Main Thread - Perigo de gargalo)
+        return "O Oráculo não conseguiu invocar os espíritos auxiliares (Worker) a tempo. Conexão nebulosa...";
+    }
+
+    async _localAsk(prompt) {
+        if (this._worker) {
+            try {
+                if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('tome:ai_processing', { detail: { active: true } }));
+                const res = await this._runInWorker('LOCAL_ASK', prompt);
+                if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('tome:ai_processing', { detail: { active: false } }));
+                return res;
+            } catch(e) {}
+        }
+        return 'O destino sussurra, mas a Main Thread está sobrecarregada demais para ouvir claramente.';
     }
 }

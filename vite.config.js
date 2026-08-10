@@ -11,8 +11,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
-        player: resolve(__dirname, 'player-view.html'),
-        map: resolve(__dirname, 'master-map.html'),
+        player: resolve(__dirname, 'jogador/index.html'),
         reset: resolve(__dirname, 'reset-sw.html')
       }
     }
@@ -21,15 +20,15 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        target: 'http://localhost:8080',
         changeOrigin: true
       },
       '/data': {
-        target: 'http://localhost:8000',
+        target: 'http://localhost:8080',
         changeOrigin: true
       },
       '/public': {
-        target: 'http://localhost:8000',
+        target: 'http://localhost:8080',
         changeOrigin: true
       }
     }

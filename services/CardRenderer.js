@@ -1,3 +1,4 @@
+import { CanvasUtils } from '../ui/utils/CanvasUtils.js';
 /**
  * CARD RENDERER v7.0 — "Premium Physical Edition"
  * Generates stunning, professional-grade tactile physical D&D 5e cards.
@@ -22,7 +23,7 @@ export class CardRenderer {
         ctx.fillRect(0, 0, W, H);
         
         try {
-            const parchment = await this._loadImage('assets/parchment.png');
+            const parchment = await CanvasUtils.loadImage('assets/parchment.png');
             ctx.save();
             ctx.globalAlpha = 0.25;
             ctx.drawImage(parchment, 0, 0, W, H);
@@ -31,7 +32,7 @@ export class CardRenderer {
 
         // 2. White Card Board Container (framed with rounded borders)
         ctx.fillStyle = '#ffffff';
-        this._roundRect(ctx, 12, 12, W - 24, H - 24, 16);
+        CanvasUtils.roundRect(ctx, 12, 12, W - 24, H - 24, 16);
         ctx.fill();
         
         ctx.strokeStyle = '#3E3A35';
@@ -43,12 +44,12 @@ export class CardRenderer {
         const portraitW = W - 24;
         const portraitH = 378;
         ctx.save();
-        this._roundRect(ctx, 12, portraitY, portraitW, portraitH, 16);
+        CanvasUtils.roundRect(ctx, 12, portraitY, portraitW, portraitH, 16);
         ctx.clip();
 
         if (data.portraitData) {
             try {
-                const img = await this._loadImage(data.portraitData);
+                const img = await CanvasUtils.loadImage(data.portraitData);
                 const settings = data.portraitSettings || { x: 0, y: 0, scale: 1 };
                 const baseScale = Math.max(portraitW / img.width, portraitH / img.height);
                 const finalScale = baseScale * (settings.scale || 1);
@@ -61,10 +62,10 @@ export class CardRenderer {
                 
                 ctx.drawImage(img, sx, sy, sw, sh);
             } catch (err) {
-                this._drawPlaceholder(ctx, 12, portraitY, portraitW, portraitH);
+                CanvasUtils.drawPlaceholder(ctx, 12, portraitY, portraitW, portraitH);
             }
         } else {
-            this._drawPlaceholder(ctx, 12, portraitY, portraitW, portraitH);
+            CanvasUtils.drawPlaceholder(ctx, 12, portraitY, portraitW, portraitH);
         }
 
         ctx.restore();
@@ -72,7 +73,7 @@ export class CardRenderer {
         // Draw portrait boundary border
         ctx.strokeStyle = '#3E3A35';
         ctx.lineWidth = 1.5;
-        this._roundRect(ctx, 12, 12, W - 24, portraitH, 16);
+        CanvasUtils.roundRect(ctx, 12, 12, W - 24, portraitH, 16);
         ctx.stroke();
 
         // 4. Top Left Red Level Ribbon (drawn on top of the image)
@@ -203,7 +204,7 @@ export class CardRenderer {
             
             // Red container bar
             ctx.fillStyle = '#C82333';
-            this._roundRect(ctx, 24, rowY, W - 48, 20, 4);
+            CanvasUtils.roundRect(ctx, 24, rowY, W - 48, 20, 4);
             ctx.fill();
             
             // Left circular indicator
@@ -224,7 +225,7 @@ export class CardRenderer {
             
             // Right-aligned Result Badge (White background rectangle)
             ctx.fillStyle = '#ffffff';
-            this._roundRect(ctx, W - 24 - 86, rowY + 2, 82, 16, 2);
+            CanvasUtils.roundRect(ctx, W - 24 - 86, rowY + 2, 82, 16, 2);
             ctx.fill();
             
             ctx.fillStyle = '#2E2B27';
@@ -236,7 +237,7 @@ export class CardRenderer {
 
         // 11. Narrative Passive Ability Block
         ctx.fillStyle = '#2E2B27';
-        this._roundRect(ctx, 24, 568, W - 48, 22, 4);
+        CanvasUtils.roundRect(ctx, 24, 568, W - 48, 22, 4);
         ctx.fill();
         
         ctx.fillStyle = '#ffffff';
@@ -249,7 +250,7 @@ export class CardRenderer {
         ctx.fillStyle = '#F3EFE3';
         ctx.strokeStyle = '#D5D1C3';
         ctx.lineWidth = 1;
-        this._roundRect(ctx, 24, 598, W - 48, 42, 6);
+        CanvasUtils.roundRect(ctx, 24, 598, W - 48, 42, 6);
         ctx.fill();
         ctx.stroke();
         
@@ -300,7 +301,7 @@ export class CardRenderer {
         ctx.fillRect(0, 0, W, H);
         
         try {
-            const parchment = await this._loadImage('assets/parchment.png');
+            const parchment = await CanvasUtils.loadImage('assets/parchment.png');
             ctx.save();
             ctx.globalAlpha = 0.25;
             ctx.drawImage(parchment, 0, 0, W, H);
@@ -310,14 +311,14 @@ export class CardRenderer {
         // 2. Borders
         ctx.strokeStyle = C.border;
         ctx.lineWidth = 3;
-        this._roundRect(ctx, 12, 12, W - 24, H - 24, 16);
+        CanvasUtils.roundRect(ctx, 12, 12, W - 24, H - 24, 16);
         ctx.stroke();
         ctx.lineWidth = 1;
-        this._roundRect(ctx, 18, 18, W - 36, H - 36, 12);
+        CanvasUtils.roundRect(ctx, 18, 18, W - 36, H - 36, 12);
         ctx.stroke();
 
         // 3. Compass Rose/Mystical Rune background graphic (soft overlay)
-        this._drawMysticalCompass(ctx, W / 2, H / 2, 180, C.accentGold);
+        CanvasUtils.drawMysticalCompass(ctx, W / 2, H / 2, 180, C.accentGold);
 
         // 4. Back Header Title
         ctx.fillStyle = C.textDark;
@@ -325,7 +326,7 @@ export class CardRenderer {
         ctx.textAlign = 'center';
         ctx.fillText('HISTÓRIA & POSSES', W / 2, 70);
 
-        this._drawTacticalDivider(ctx, W / 2, 85, W - 160, C.border, C.accentGold);
+        CanvasUtils.drawTacticalDivider(ctx, W / 2, 85, W - 160, C.border, C.accentGold);
 
         // 5. Narrative Backstory Box
         ctx.font = '13px "Outfit"';
@@ -341,14 +342,14 @@ export class CardRenderer {
         const vaultH = 175;
 
         // Wrap backstory with safe limit to prevent overlap with the bottom box
-        this._wrapText(ctx, bioText, W / 2, backstoryY, W - 90, 20, vaultY - 30);
+        CanvasUtils.wrapText(ctx, bioText, W / 2, backstoryY, W - 90, 20, vaultY - 30);
         
         ctx.fillStyle = C.bgAccent;
-        this._roundRect(ctx, 35, vaultY, vaultW, vaultH, 8);
+        CanvasUtils.roundRect(ctx, 35, vaultY, vaultW, vaultH, 8);
         ctx.fill();
         ctx.strokeStyle = C.border;
         ctx.lineWidth = 2;
-        this._roundRect(ctx, 35, vaultY, vaultW, vaultH, 8);
+        CanvasUtils.roundRect(ctx, 35, vaultY, vaultW, vaultH, 8);
         ctx.stroke();
 
         // Vertical divider in the center of the vault box
@@ -365,7 +366,7 @@ export class CardRenderer {
         ctx.font = 'bold 10px "Cinzel"';
         ctx.textAlign = 'center';
         ctx.fillText('TESOURO & IDIOMAS', leftCenterX, vaultY + 22);
-        this._drawDivider(ctx, leftCenterX - 70, vaultY + 28, 140);
+        CanvasUtils.drawDivider(ctx, leftCenterX - 70, vaultY + 28, 140);
 
         // Coins row
         ctx.font = 'bold 9px "Outfit"';
@@ -383,7 +384,7 @@ export class CardRenderer {
         ctx.fillStyle = C.textDark;
         let profText = data.otherProfs || 'Nenhuma proficiência adicional registrada.';
         if (profText.length > 70) profText = profText.substring(0, 67) + '...';
-        this._wrapText(ctx, profText, leftCenterX, vaultY + 82, 170, 12, vaultY + vaultH - 15);
+        CanvasUtils.wrapText(ctx, profText, leftCenterX, vaultY + 82, 170, 12, vaultY + vaultH - 15);
 
         // ═ RIGHT COLUMN: POSSES & ITENS ═
         const rightCenterX = W - 35 - (vaultW / 4);
@@ -391,7 +392,7 @@ export class CardRenderer {
         ctx.font = 'bold 10px "Cinzel"';
         ctx.textAlign = 'center';
         ctx.fillText('POSSES & ITENS', rightCenterX, vaultY + 22);
-        this._drawDivider(ctx, rightCenterX - 70, vaultY + 28, 140);
+        CanvasUtils.drawDivider(ctx, rightCenterX - 70, vaultY + 28, 140);
 
         // Dynamic items list (Render up to 5 items)
         const items = (data.equipment?.items || []).filter(it => it.name && it.name.trim());
@@ -425,293 +426,6 @@ export class CardRenderer {
     }
 
     // --- PREMIUM DRAWING HELPERS ---
-
-    static _drawVerticalBanner(ctx, x, y, w, h, level, color) {
-        ctx.save();
-        ctx.fillStyle = color;
-        ctx.strokeStyle = '#2E2B27';
-        ctx.lineWidth = 2;
-
-        // Draw ribbon shape with notch at bottom
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        ctx.lineTo(x + w, y);
-        ctx.lineTo(x + w, y + h);
-        ctx.lineTo(x + w / 2, y + h - 12);
-        ctx.lineTo(x, y + h);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        // Level Number
-        ctx.fillStyle = '#ffffff';
-        ctx.textAlign = 'center';
-        ctx.font = 'bold 18px "Outfit"';
-        ctx.fillText(level, x + w / 2, y + 36);
-
-        // Circular Target glyph below level
-        ctx.strokeStyle = 'rgba(255,255,255,0.7)';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(x + w / 2, y + 56, 8, 0, Math.PI * 2);
-        ctx.stroke();
-
-        ctx.fillStyle = 'rgba(255,255,255,0.9)';
-        ctx.beginPath();
-        ctx.arc(x + w / 2, y + 56, 3, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.restore();
-    }
-
-    static _drawStatusBeads(ctx, x, y, colorRed, colorGold) {
-        ctx.save();
-        // 4 stacked mechanical beads
-        for (let i = 0; i < 4; i++) {
-            const cy = y + i * 16;
-            
-            // Outer ring
-            ctx.strokeStyle = '#2E2B27';
-            ctx.lineWidth = 1.5;
-            ctx.fillStyle = '#ffffff';
-            ctx.beginPath();
-            ctx.arc(x, cy, 5, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
-
-            // Inner colored core
-            ctx.fillStyle = i === 3 ? colorGold : colorRed;
-            ctx.beginPath();
-            ctx.arc(x, cy, 2.5, 0, Math.PI * 2);
-            ctx.fill();
-        }
-        ctx.restore();
-    }
-
-    static _drawTacticalDivider(ctx, cx, cy, w, colorBorder, colorCenter) {
-        ctx.save();
-        ctx.strokeStyle = colorBorder;
-        ctx.lineWidth = 1.5;
-
-        // Draw elegant split line
-        ctx.beginPath();
-        ctx.moveTo(cx - w / 2, cy);
-        ctx.lineTo(cx - 15, cy);
-        ctx.moveTo(cx + 15, cy);
-        ctx.lineTo(cx + w / 2, cy);
-        ctx.stroke();
-
-        // Center terracotta diamond
-        ctx.fillStyle = colorCenter;
-        ctx.strokeStyle = colorBorder;
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(cx, cy - 6);
-        ctx.lineTo(cx + 6, cy);
-        ctx.lineTo(cx, cy + 6);
-        ctx.lineTo(cx - 6, cy);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        ctx.restore();
-    }
-
-    static _drawActionPill(ctx, x, y, w, h, text, bgColor, textColor) {
-        ctx.save();
-        
-        // Draw pill button
-        ctx.fillStyle = bgColor;
-        ctx.strokeStyle = '#2E2B27';
-        ctx.lineWidth = 2;
-        this._roundRect(ctx, x, y, w, h, h / 2);
-        ctx.fill();
-        ctx.stroke();
-
-        // White Text
-        ctx.fillStyle = textColor;
-        ctx.textAlign = 'center';
-        ctx.font = 'bold 11px "Outfit"';
-        ctx.fillText(text, x + w / 2, y + h / 2 + 4);
-
-        ctx.restore();
-    }
-
-    static _drawCircularHPBadge(ctx, cx, cy, w, h, curHP, maxHP, bgColor, textColor, accentColor) {
-        ctx.save();
-
-        // Draw pill background
-        ctx.fillStyle = bgColor;
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 1.5;
-        this._roundRect(ctx, cx, cy, w, h, 8);
-        ctx.fill();
-        ctx.stroke();
-
-        // Draw double black outer border
-        ctx.strokeStyle = '#2E2B27';
-        ctx.lineWidth = 2;
-        this._roundRect(ctx, cx, cy, w, h, 8);
-        ctx.stroke();
-
-        // Text display: HP Value / Max HP
-        ctx.fillStyle = textColor;
-        ctx.textAlign = 'center';
-        ctx.font = 'bold 16px "Outfit"';
-        ctx.fillText(curHP, cx + w / 2, cy + 22);
-
-        ctx.fillStyle = accentColor;
-        ctx.font = 'bold 8px "Outfit"';
-        ctx.fillText(`MAX: ${maxHP}`, cx + w / 2, cy + 34);
-
-        ctx.restore();
-    }
-
-    static _drawMysticalCompass(ctx, cx, cy, radius, color) {
-        ctx.save();
-        ctx.strokeStyle = color;
-        ctx.globalAlpha = 0.08;
-        ctx.lineWidth = 1.5;
-
-        // Multiple concentric rings
-        ctx.beginPath();
-        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-        ctx.arc(cx, cy, radius - 20, 0, Math.PI * 2);
-        ctx.arc(cx, cy, radius - 60, 0, Math.PI * 2);
-        ctx.stroke();
-
-        // Crosshairs
-        ctx.beginPath();
-        ctx.moveTo(cx - radius - 10, cy);
-        ctx.lineTo(cx + radius + 10, cy);
-        ctx.moveTo(cx, cy - radius - 10);
-        ctx.lineTo(cx, cy + radius + 10);
-        ctx.stroke();
-
-        // Points of interest
-        for (let i = 0; i < 8; i++) {
-            const angle = (i * Math.PI) / 4;
-            const px = cx + Math.cos(angle) * (radius - 10);
-            const py = cy + Math.sin(angle) * (radius - 10);
-            ctx.beginPath();
-            ctx.arc(px, py, 3, 0, Math.PI * 2);
-            ctx.stroke();
-        }
-
-        ctx.restore();
-    }
-
-    static _drawBadge(ctx, x, y, val, label, color) {
-        ctx.fillStyle = 'white';
-        this._roundRect(ctx, x, y, 45, 45, 4);
-        ctx.fill();
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        ctx.fillStyle = color;
-        ctx.font = 'bold 8px "Outfit"';
-        ctx.textAlign = 'center';
-        ctx.fillText(label, x + 22, y + 12);
-        ctx.font = 'bold 18px "Outfit"';
-        ctx.fillText(val, x + 22, y + 35);
-    }
-
-    static _drawPlaceholder(ctx, x, y, w, h) {
-        ctx.fillStyle = '#E8E5DA';
-        ctx.fillRect(x, y, w, h);
-        ctx.fillStyle = '#6E6A63';
-        ctx.font = '48px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('👤', x + w / 2, y + h / 2 + 15);
-    }
-
-    static _drawDivider(ctx, x, y, w) {
-        ctx.strokeStyle = this.COLORS.borderLight;
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        ctx.lineTo(x + w, y);
-        ctx.stroke();
-    }
-
-    static _wrapText(ctx, text, x, y, maxWidth, lineHeight, maxY = null) {
-        const paragraphs = text.split('\n');
-        
-        for (let p of paragraphs) {
-            if (maxY && y > maxY) {
-                ctx.fillText('...', x, y - lineHeight + 12);
-                break;
-            }
-            const words = p.split(' ');
-            let line = '';
-            
-            for (let n = 0; n < words.length; n++) {
-                if (maxY && y > maxY) {
-                    ctx.fillText('...', x, y - lineHeight + 12);
-                    return;
-                }
-                let word = words[n];
-                if (ctx.measureText(word).width > maxWidth) {
-                    if (line) {
-                        ctx.fillText(line.trim(), x, y);
-                        line = '';
-                        y += lineHeight;
-                    }
-                    let segment = '';
-                    for (let char of word) {
-                        if (maxY && y > maxY) {
-                            ctx.fillText('...', x, y - lineHeight + 12);
-                            return;
-                        }
-                        const testSegment = segment + char;
-                        if (ctx.measureText(testSegment).width > maxWidth) {
-                            ctx.fillText(segment, x, y);
-                            segment = char;
-                            y += lineHeight;
-                        } else {
-                            segment = testSegment;
-                        }
-                    }
-                    line = segment + ' ';
-                } else {
-                    const testLine = line + word + ' ';
-                    const metrics = ctx.measureText(testLine);
-                    if (metrics.width > maxWidth) {
-                        ctx.fillText(line.trim(), x, y);
-                        line = word + ' ';
-                        y += lineHeight;
-                    } else {
-                        line = testLine;
-                    }
-                }
-            }
-            if (line) {
-                ctx.fillText(line.trim(), x, y);
-                y += lineHeight;
-            }
-        }
-    }
-
-    static _roundRect(ctx, x, y, w, h, r) {
-        ctx.beginPath();
-        ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y);
-        ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-        ctx.lineTo(x + w, y + h - r);
-        ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-        ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-        ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y);
-        ctx.closePath();
-    }
-
-    static _loadImage(src) {
-        return new Promise((res, rej) => {
-            const img = new Image();
-            img.onload = () => res(img);
-            img.onerror = rej;
-            img.src = src;
-        });
-    }
 
     static download(canvas, filename) {
         const link = document.createElement('a');

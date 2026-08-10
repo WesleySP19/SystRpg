@@ -1,4 +1,5 @@
-import { Component } from '../core/Component.js';
+import { ReactiveComponent } from '../core/ReactiveComponent.js';
+import { html } from 'htm/preact';
 import { TOME } from '../../core/Registry.js';
 import { Toast } from '../components/Toast.js';
 
@@ -6,7 +7,7 @@ import { Toast } from '../components/Toast.js';
  * DM SHIELD v1.0
  * AI-assisted tools for scene description and worldbuilding.
  */
-export class DMShield extends Component {
+export class DMShield extends ReactiveComponent {
     constructor(opts) {
         super(opts);
         this._lastDescription = "";
@@ -14,7 +15,7 @@ export class DMShield extends Component {
     }
 
     template() {
-        return `
+        return html`
             <div class="page" style="max-width:900px; margin:0 auto;">
                 <div class="section-header">
                     <div>
@@ -29,7 +30,7 @@ export class DMShield extends Component {
                         <h3 style="font-size:1rem; margin-bottom:15px;">Gerar Descrição de Cena</h3>
                         <div class="form-group">
                             <label class="form-label">O que os heróis veem?</label>
-                            <input type="text" id="scene-input" class="form-input" placeholder="Ex: Uma cripta antiga, uma taverna cheia...">
+                            <input type="text" id="scene-input" class="form-input" placeholder="Ex: Uma cripta antiga, uma taverna cheia..." />
                         </div>
                         <div class="form-group">
                             <label class="form-label">Tom da Narração</label>

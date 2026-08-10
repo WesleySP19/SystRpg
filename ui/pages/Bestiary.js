@@ -261,35 +261,55 @@ export class Bestiary extends Component {
             ? `<img src="${img}" alt="${m.name}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">`
             : '';
 
+        const levelStr = String(m.level || m.cr || 1);
+        const levelNum = levelStr.replace(/\D/g, '') || 1;
+
         return `
             <div class="card bestiary-card-premium"
                  style="animation: fadeIn 0.4s ease-out ${delay}s both;"
                  data-action="viewCreature" data-name="${m.name}">
-                <div class="bc-portrait">
-                    ${isBoss ? '<span class="bc-badge boss">Apocalíptico</span>' : ''}
+                
+                <div class="bc-inner">
+                    <!-- Badges -->
+                    <span class="bc-badge level">Nível ${levelNum}</span>
+                    ${isBoss ? '<span class="bc-badge boss">Boss</span>' : ''}
                     ${isCustom ? '<span class="bc-badge forged">Forjado</span>' : ''}
-                    ${portraitImg}
-                    <span class="bc-emoji" style="${img ? 'display:none;' : ''}">${m.emoji || '🐾'}</span>
-                    <div class="bc-vignette"></div>
-                </div>
-                <div class="bc-body">
-                    <h4 class="bc-name">${m.name}</h4>
-                    <div class="bc-type">${m.type || 'Monstro'}</div>
-                    <div class="bc-stats-row">
-                        <span class="bc-pill ac"><i class="fa-solid fa-shield-halved"></i>${m.ac}</span>
-                        <span class="bc-pill hp"><i class="fa-solid fa-heart"></i>${m.hp}</span>
-                        <span class="bc-pill" style="color:#4ade80;"><i class="fa-solid fa-person-running"></i>${MonsterArt.getSpeed(m).replace(' ft.', '')}</span>
+
+                    <!-- Top Banner -->
+                    <div class="bc-top-banner">
+                        <h4 class="bc-name">${m.name}</h4>
+                    </div>
+                    
+                    <!-- Full Bleed Image (Inside Inner) -->
+                    <div class="bc-portrait">
+                        ${portraitImg}
+                        <span class="bc-emoji" style="${img ? 'display:none;' : ''}">${m.emoji || '🐾'}</span>
+                    </div>
+
+                    <!-- Bottom Banner (Type & Actions) -->
+                    <div class="bc-bottom-banner creature-action-btn">
+                        <div class="bc-type">${m.type || 'Monstro'}</div>
+                        <div class="bc-actions-bar">
+                            <button class="btn btn-sm" style="border: 2px solid #1a1a1a; font-weight: 900; color: #1a1a1a; background: #fff; box-shadow: 2px 2px 0 #1a1a1a; font-family: 'Outfit', sans-serif;" onclick="event.stopPropagation(); this.closest('.bestiary-card-premium').click();">
+                                VER FICHA
+                            </button>
+                            <div style="display:flex; gap:6px;">
+                                <button class="btn btn-sm" style="background:#1a1a1a; color:#fff; border: 2px solid #1a1a1a; box-shadow: 2px 2px 0 #1a1a1a;" data-action="spawnCreature" data-name="${m.name}" title="Invocar no Mapa">
+                                    <i class="fa-solid fa-swords"></i>
+                                </button>
+                                ${isCustom ? `<button class="btn btn-sm" style="background:#cc1111; color:#fff; border: 2px solid #1a1a1a; box-shadow: 2px 2px 0 #1a1a1a;" data-action="deleteCustomMonster" data-id="${m.id}"><i class="fa-solid fa-trash-can"></i></button>` : ''}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Floating Stats Box (Bottom Right) -->
+                    <div class="bc-stats-box">
+                        <div class="stat-line ac"><i class="fa-solid fa-shield-halved"></i> ${m.ac}</div>
+                        <div class="stat-divider"></div>
+                        <div class="stat-line hp"><i class="fa-solid fa-heart"></i> ${m.hp}</div>
                     </div>
                 </div>
-                <div class="bc-actions-bar creature-action-btn">
-                    <span style="font-size:0.6rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.08em;">Ver ficha</span>
-                    <div style="display:flex; gap:6px;">
-                        <button class="btn btn-ghost btn-sm" style="padding:4px 8px; font-size:0.8rem; border:1px solid rgba(197,160,89,0.3);" data-action="spawnCreature" data-name="${m.name}" title="Invocar">
-                            <i class="fa-solid fa-swords"></i>
-                        </button>
-                        ${isCustom ? `<button class="btn btn-danger btn-sm" style="padding:4px 8px;" data-action="deleteCustomMonster" data-id="${m.id}"><i class="fa-solid fa-trash-can"></i></button>` : ''}
-                    </div>
-                </div>
+
             </div>
         `;
     }
@@ -336,9 +356,15 @@ export class Bestiary extends Component {
             ? `<div class="sb-trait-title">${notes.split(/[.!]/)[0]}</div><p>${notes}</p>`
             : `<p><strong>Percepção Passiva</strong> ${10 + getMod(stats.wis)} · <strong>Idiomas</strong> Comum</p>`;
 
+        const descriptionBlock = (m.description || m.lore) ? `
+            <div style="padding: 15px 25px 0; font-family: 'Cinzel', serif; font-style: italic; font-size: 0.95rem; color: #444; text-align: center; line-height: 1.5; border-bottom: 2px dashed rgba(26,26,26,0.2); padding-bottom: 15px; margin-bottom: 10px;">
+                "${m.description || m.lore}"
+            </div>
+        ` : '';
+
         return `
-            <div class="animate-fadeIn" style="max-width:960px; margin:0 auto;">
-                <button class="btn btn-ghost" style="margin-bottom:20px;" data-action="backToGrid">
+            <div class="animate-fadeIn" style="max-width:960px; margin:0 auto; padding-bottom:40px;">
+                <button class="btn" style="background:#fff; border:3px solid #1a1a1a; box-shadow:4px 4px 0 #1a1a1a; color:#1a1a1a; font-weight:900; font-family:'Outfit',sans-serif; text-transform:uppercase; margin-bottom:20px; transition:transform 0.1s, box-shadow 0.1s;" onmousedown="this.style.transform='translate(2px,2px)';this.style.boxShadow='0 0 0 #1a1a1a'" onmouseup="this.style.transform='';this.style.boxShadow='4px 4px 0 #1a1a1a'" data-action="backToGrid">
                     <i class="fa-solid fa-arrow-left"></i> Voltar ao Bestiário
                 </button>
 
@@ -347,6 +373,7 @@ export class Bestiary extends Component {
                         <h1 class="sb-name">${m.name}</h1>
                         <p class="sb-subtitle">${MonsterArt.getSubtitle(m, this._selectedLevel)}</p>
                     </header>
+                    ${descriptionBlock}
 
                     <div class="sb-class-bar">
                         <span>${MonsterArt.getClassification(m)}</span>
@@ -382,7 +409,7 @@ export class Bestiary extends Component {
                             <span>CA de teste:</span>
                             <input type="number" id="bestiary-test-ac" value="13" min="1" max="30">
                         </div>
-                        <button class="btn ${isBoss ? 'btn-danger' : 'btn-primary'}" data-action="spawnFromDetail">
+                        <button class="btn" style="background:${isBoss ? '#cc1111' : '#eb5e28'}; color:#fff; border:3px solid #1a1a1a; box-shadow:4px 4px 0 #1a1a1a; font-weight:900; font-family:'Outfit',sans-serif; text-transform:uppercase; transition:transform 0.1s, box-shadow 0.1s;" onmousedown="this.style.transform='translate(2px,2px)';this.style.boxShadow='0 0 0 #1a1a1a'" onmouseup="this.style.transform='';this.style.boxShadow='4px 4px 0 #1a1a1a'" data-action="spawnFromDetail">
                             <i class="fa-solid fa-swords"></i> Invocação Direta
                         </button>
                     </footer>
@@ -767,19 +794,24 @@ export class Bestiary extends Component {
     }
 
     _addToStore(m) {
-        TOME.store.update(s => {
-            const newMonster = {
-                ...m,
-                id: 'm-' + Date.now(),
-                cr: this._selectedLevel.replace('Nível ', ''),
-                hp_max: m.hp,
-                hp: { current: m.hp, max: m.hp },
-                img: m.img || MonsterArt.getImage(m) || '',
-                originalData: { ...m, cr: this._selectedLevel }
-            };
-            s.monsters = [...(s.monsters || []), newMonster];
-        });
-        Toast.show(`${m.name} invocado na campanha!`, 'success');
+        let entity = {
+            id: 'm-' + Date.now(),
+            name: m.name,
+            cr: this._selectedLevel.replace('Nível ', ''),
+            hp_max: m.hp,
+            hp: m.hp, // hp atual
+            ac: m.ac || 10,
+            emoji: m.emoji || '👹',
+            img: m.img || MonsterArt.getImage(m) || '',
+            size: m.size || 'medium',
+            speed: m.speed || '30 ft.',
+            type: m.type || 'monster',
+            originalData: { ...m, cr: this._selectedLevel }
+        };
+
+        if (window.TOME && window.TOME.events) {
+            window.TOME.events.emit('MONSTER_INVOKED', entity);
+        }
     }
 
     addCustomMonster() {

@@ -444,4 +444,11 @@ export class CardGenerator extends Component {
             img.src = base64Str;
         });
     }
+
+    onUnmount() {
+        if (this._redrawTimer) {
+            clearTimeout(this._redrawTimer);
+            this._redrawTimer = null;
+        }
+    }
 }

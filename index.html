@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Mesa do Mestre — Plataforma completa de RPG para D&D 5e. Combate, fichas, loot e IA narrativa.">
-    <title>Mesa do Mestre v12.3.5</title>
+    <meta name="description" content="Mesa do Mestre — Plataforma completa de RPG para D&D 5e.">
+    <title>TOME V18.5 — Premium VTT</title>
     <link rel="icon" href="assets/logo.png">
 
     <!-- Fonts -->
@@ -12,17 +12,42 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Outfit:wght@300;400;600;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Tailwind CSS (V18.5) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        accent: '#c5a059',
+                        bgbase: '#1a1a1a'
+                    },
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                        serif: ['Cinzel', 'serif']
+                    }
+                }
+            }
+        }
+    </script>
 
     <!-- Design System -->
-    <link rel="stylesheet" href="assets/styles.css">
-    <link rel="stylesheet" href="assets/sheet-theme.css">
-    <link rel="stylesheet" href="assets/tmap.css">
-    <link rel="stylesheet" href="assets/bestiary-statblock.css">
-    <link rel="stylesheet" href="assets/match-history.css">
+    <link rel="stylesheet" href="assets/tome-master.css?v=32">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#c5a059">
 
-    <!-- Versão e cache são gerenciados pelo Service Worker (service-worker.js) -->
+    <script type="importmap">
+    {
+      "imports": {
+        "@preact/signals": "https://esm.sh/@preact/signals@1.2.2?external=preact",
+        "preact": "https://esm.sh/preact@10.19.3",
+        "preact/hooks": "https://esm.sh/preact@10.19.3/hooks",
+        "htm/preact": "https://esm.sh/htm@3.1.1/preact?external=preact",
+        "konva": "https://esm.sh/konva@9.3.15"
+      }
+    }
+    </script>    <!-- Versão e cache são gerenciados pelo Service Worker (service-worker.js) -->
     <script>
     // Limpa apenas se há um parâmetro ?reset=1 na URL (link de emergência)
     if (new URLSearchParams(location.search).get('reset') === '1') {
@@ -53,12 +78,12 @@
     <!-- Discreet Floating Dice Roller -->
     <div class="dice-roller-container">
         <div class="dice-roller-tray" id="dice-tray">
-            <button class="dice-btn" onclick="rollDice(4)">d4</button>
-            <button class="dice-btn" onclick="rollDice(6)">d6</button>
-            <button class="dice-btn" onclick="rollDice(8)">d8</button>
-            <button class="dice-btn" onclick="rollDice(10)">d10</button>
-            <button class="dice-btn" onclick="rollDice(12)">d12</button>
-            <button class="dice-btn" onclick="rollDice(20)">d20</button>
+            <button class="dice-btn" onclick="window.TOME.events.emit('DICE_ROLL_REQUESTED', 4)">d4</button>
+            <button class="dice-btn" onclick="window.TOME.events.emit('DICE_ROLL_REQUESTED', 6)">d6</button>
+            <button class="dice-btn" onclick="window.TOME.events.emit('DICE_ROLL_REQUESTED', 8)">d8</button>
+            <button class="dice-btn" onclick="window.TOME.events.emit('DICE_ROLL_REQUESTED', 10)">d10</button>
+            <button class="dice-btn" onclick="window.TOME.events.emit('DICE_ROLL_REQUESTED', 12)">d12</button>
+            <button class="dice-btn" onclick="window.TOME.events.emit('DICE_ROLL_REQUESTED', 20)">d20</button>
         </div>
         <button class="dice-fab" onclick="document.getElementById('dice-tray').classList.toggle('active')">
             <i class="fa-solid fa-dice-d20"></i>
@@ -80,141 +105,44 @@
         import { AuthScreen } from './ui/components/AuthScreen.js';
         import { IndexedDBService } from './services/IndexedDBService.js';
         import { TelemetryService } from './services/TelemetryService.js';
+        import { FXEngine } from './services/FXEngine.js';
+        (async () => {
+            if (window.location.search.includes('reset=1')) {
+                localStorage.removeItem('DM_JWT_TOKEN');
+                localStorage.removeItem('DM_ACTIVE_TABLE');
+                window.location.search = '';
+                return;
+            }
 
-        async function bootstrap() {
-            try {
-                // Validação de Segurança (Acesso do Mestre e Mesa)
-                const sessionId = localStorage.getItem('DM_SESSION_ID');
-                const activeTable = localStorage.getItem('DM_ACTIVE_TABLE');
-                
-                if (!sessionId || !activeTable) {
-                    const auth = new AuthScreen({
-                        onLogin: () => startApp()
-                    });
-                    auth.mount();
-                    return; // Bloqueia o carregamento até logar e escolher mesa
-                }
+            // Carrega a lógica de inicialização de forma modular
+            const { startApp } = await import('./ui/Boot.js');
 
-                startApp();
+            const token = localStorage.getItem('DM_JWT_TOKEN');
+            if (!token) {
+                const { AuthScreen } = await import('./ui/components/AuthScreen.js');
+                const auth = new AuthScreen({ 
+                    element: document.getElementById('view-target'),
+                    onLogin: () => startApp()
+                });
+                auth.mount();
+                return; // Bloqueia o carregamento até logar e escolher mesa
+            }
 
-                async function startApp() {
-                    // Garantir que temos um registro de início
-                    if (!localStorage.getItem('DM_SESSION_START')) {
-                        localStorage.setItem('DM_SESSION_START', Date.now().toString());
-                    }
-
-                    // Initialize Telemetry and FPS tracking
-                    try {
-                        let sentryDsn = null;
-                        try {
-                            const configRes = await fetch('/api/config');
-                            if (configRes.ok) {
-                                const config = await configRes.json();
-                                sentryDsn = config.sentryDsn;
-                            }
-                        } catch (cfgErr) {
-                            console.log('[Boot] Não foi possível obter configuração do servidor, usando fallback local.');
-                        }
-
-                        await TelemetryService.init(sentryDsn);
-
-                        // Monitora a taxa de quadros (FPS) do Canvas em tempo real
-                        TelemetryService.initFpsMonitor();
-                    } catch (e) {
-                        console.warn('[Boot] Falha ao inicializar TelemetryService:', e);
-                    }
-
-                    // 0. Initialize IndexedDB
-                    try {
-                        const idb = new IndexedDBService();
-                        await idb.init();
-                        TOME.db = idb;
-                        window.TOME.db = idb;
-                        console.log('[Boot] IndexedDB inicializado.');
-                    } catch (e) {
-                        console.warn('[Boot] Falha ao inicializar IndexedDB:', e);
-                    }
-
-                    // 0.5. Initialize WebSockets (GM Side)
-                    try {
-                        if (typeof io !== 'undefined') {
-                            const socket = io();
-                            window.TOME.socket = socket;
-                            socket.on('connect', () => {
-                                console.log('[Boot] GM Socket conectado ao servidor.');
-                                if (activeTable) {
-                                    socket.emit('joinRoom', { mesaId: activeTable });
-                                    console.log(`[Boot] GM entrou na sala: ${activeTable}`);
-                                }
-                            });
-                        }
-                    } catch (e) {
-                        console.warn('[Boot] Falha ao inicializar Socket.io:', e);
-                    }
-
-                    // 1. Register services
-                    TOME.registerService('audio', new AudioService());
-                    TOME.registerService('ai', new AIService());
-
-                    const persistence = new PersistenceService();
-                    TOME.registerService('persistence', persistence);
-
-                    // 2. Load persisted state (nao bloquear UI se falhar)
-                    try {
-                        await persistence.init();
-                        await persistence.load();
-                        persistence.startAutoSave();
-                    } catch (e) { console.warn('[Boot] persistence skipped:', e); }
-
-                    // 3. Mount UI
-                    const sidebar = new Sidebar({
-                        store: TOME.store,
-                        element: document.getElementById('sidebar-target')
-                    });
-
-                    const dashboard = new Dashboard({
-                        store: TOME.store,
-                        element: document.getElementById('view-target')
-                    });
-
-                    sidebar.mount();
-                    dashboard.mount();
-
-                    // 4. Global dice function
-                    window.rollDice = function(sides) {
-                        const result = Dice.roll(`1d${sides}`);
-                        import('./ui/components/Toast.js').then(m => {
-                            m.Toast.show(`d${sides}: ${result.total}`, 'info');
-                        }).catch(() => alert(`d${sides}: ${result.total}`));
-                    };
-
-                    // 5. Service Worker (Ativado para Modo Offline)
-                    if ('serviceWorker' in navigator) {
-                        navigator.serviceWorker.register('./service-worker.js')
-                            .then(reg => console.log('[Boot] SW Ativo'))
-                            .catch(e => console.warn('[Boot] SW Falhou:', e));
-                    }
-
-                    console.log('Mesa do Mestre - online.');
-                }
-
-            } catch (error) {
+            startApp().catch(error => {
                 console.error('[Boot] Falhou:', error);
                 document.getElementById('view-target').innerHTML = `
                     <div style="padding:3rem; color:#f43f5e; text-align:center; font-family:system-ui;">
                         <h2>Erro de Inicializacao</h2>
                         <p style="color:#7a7a8e;">${error && error.message ? error.message : error}</p>
                         <p style="margin-top:20px;">
-                          <a href="/index.html?reset=1" style="color:#fbbf24; text-decoration:underline;">
+                        <a href="/index.html?reset=1" style="color:#fbbf24; text-decoration:underline;">
                             Limpar cache e tentar novamente
-                          </a>
+                        </a>
                         </p>
                     </div>
                 `;
-            }
-        }
-
-        bootstrap();
+            });
+        })();
     </script>
 </body>
 </html>

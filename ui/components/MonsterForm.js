@@ -1,4 +1,5 @@
-import { Component } from '../core/Component.js';
+import { ReactiveComponent } from '../core/ReactiveComponent.js';
+import { html } from 'htm/preact';
 import { TOME } from '../../core/Registry.js';
 import { Toast } from '../components/Toast.js';
 import { MonsterData } from '../../data/MonsterData.js';
@@ -7,7 +8,7 @@ import { MonsterData } from '../../data/MonsterData.js';
  * BESTIARY & MONSTER FORM v6.5 — "Legacy Grimoire" Edition
  * Redesigned to match the Parchment & Ink aesthetic.
  */
-export class MonsterForm extends Component {
+export class MonsterForm extends ReactiveComponent {
     constructor(opts) {
         super(opts);
         this._view = 'library';
@@ -51,7 +52,7 @@ export class MonsterForm extends Component {
     }
 
     template() {
-        return `
+        return html`
             <div class="page legacy-sheet-container" style="max-width:1200px; margin: 0 auto;">
                 <div class="section-header" style="border-bottom: var(--sheet-border-thick); padding-bottom:15px; margin-bottom:30px;">
                     <div>
@@ -91,20 +92,20 @@ export class MonsterForm extends Component {
         const crGroups = Object.keys(MonsterData);
         const list = MonsterData[this._selectedCR] || [];
 
-        return `
+        return html`
             <div style="display:flex; flex-direction:column; gap:20px;">
                 <!-- Category Tabs (Horizontal Scroll) -->
                 <div style="display:flex; gap:10px; overflow-x:auto; padding-bottom:15px; border-bottom:var(--sheet-border-thin);">
-                    ${crGroups.map(cr => `
+                    ${crGroups.map(cr => html`
                         <button class="level-tab ${this._selectedCR === cr ? 'active' : ''}" 
                                 style="font-family:var(--sheet-font-header); font-size:0.7rem; border: var(--sheet-border-thin); background:white; padding:5px 15px; border-radius:4px; cursor:pointer; ${cr === 'BOSS' ? 'color:red; border-color:red;' : ''}"
                                 data-action="setCR" data-cr="${cr}">${cr}</button>
-                    `).join('')}
+                    `)}
                 </div>
 
                 <!-- Creature Grid -->
                 <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap:20px; max-height: 70vh; overflow-y: auto; padding-right:15px;">
-                    ${list.map(m => `
+                    ${list.map(m => html`
                         <div class="card" style="background:white; border:var(--sheet-border-thick); border-radius:8px; padding:0; overflow:hidden; position:relative; transition: transform 0.2s;">
                             <div style="height:120px; background:var(--sheet-accent-blue); display:flex; align-items:center; justify-content:center; font-size:4rem; border-bottom:var(--sheet-border-thin);">
                                 ${m.emoji || '🐾'}
@@ -122,51 +123,51 @@ export class MonsterForm extends Component {
                                 </button>
                             </div>
                         </div>
-                    `).join('')}
+                    `)}
                 </div>
             </div>
         `;
     }
 
     _renderCreator() {
-        return `
+        return html`
             <div style="max-width:800px; margin:0 auto; background:white; border:var(--sheet-border-thick); padding:30px; border-radius:10px; box-shadow:var(--shadow-sm);">
                 <form id="monster-form" style="display:flex; flex-direction:column; gap:20px;">
                     <div style="display:grid; grid-template-columns: 2fr 1fr; gap:20px;">
                         <div>
                             <label class="attr-label">NOME DA CRIATURA</label>
-                            <input class="legacy-input" type="text" name="name" required placeholder="Ex: Dragão de Ossos" style="width:100%; font-size:1.2rem;">
+                            <input class="legacy-input" type="text" name="name" required placeholder="Ex: Dragão de Ossos" style="width:100%; font-size:1.2rem;" />
                         </div>
                         <div>
                             <label class="attr-label">NÍVEL / CR</label>
-                            <input class="legacy-input" type="text" name="cr" placeholder="Nível 5" style="width:100%;">
+                            <input class="legacy-input" type="text" name="cr" placeholder="Nível 5" style="width:100%;" />
                         </div>
                     </div>
 
                     <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:20px;">
                         <div>
                             <label class="attr-label">TIPO</label>
-                            <input class="legacy-input" type="text" name="type" placeholder="Morto-Vivo" style="width:100%;">
+                            <input class="legacy-input" type="text" name="type" placeholder="Morto-Vivo" style="width:100%;" />
                         </div>
                         <div>
                             <label class="attr-label">CLASSE DE ARMADURA</label>
-                            <input class="legacy-input" type="number" name="ac" value="10" style="width:100%;">
+                            <input class="legacy-input" type="number" name="ac" value="10" style="width:100%;" />
                         </div>
                         <div>
                             <label class="attr-label">PONTOS DE VIDA</label>
-                            <input class="legacy-input" type="number" name="hp_max" value="30" style="width:100%;">
+                            <input class="legacy-input" type="number" name="hp_max" value="30" style="width:100%;" />
                         </div>
                     </div>
 
                     <div>
                         <label class="attr-label">ATRIBUTOS</label>
                         <div style="display:grid; grid-template-columns: repeat(6, 1fr); gap:10px;">
-                            <div style="text-align:center;"><label style="font-size:0.6rem; font-weight:800;">FOR</label><input class="legacy-input" type="number" name="stat_str" value="10" style="text-align:center;"></div>
-                            <div style="text-align:center;"><label style="font-size:0.6rem; font-weight:800;">DES</label><input class="legacy-input" type="number" name="stat_dex" value="10" style="text-align:center;"></div>
-                            <div style="text-align:center;"><label style="font-size:0.6rem; font-weight:800;">CON</label><input class="legacy-input" type="number" name="stat_con" value="10" style="text-align:center;"></div>
-                            <div style="text-align:center;"><label style="font-size:0.6rem; font-weight:800;">INT</label><input class="legacy-input" type="number" name="stat_int" value="10" style="text-align:center;"></div>
-                            <div style="text-align:center;"><label style="font-size:0.6rem; font-weight:800;">SAB</label><input class="legacy-input" type="number" name="stat_wis" value="10" style="text-align:center;"></div>
-                            <div style="text-align:center;"><label style="font-size:0.6rem; font-weight:800;">CAR</label><input class="legacy-input" type="number" name="stat_cha" value="10" style="text-align:center;"></div>
+                            <div style="text-align:center;"><label style="font-size:0.6rem; font-weight:800;">FOR</label><input class="legacy-input" type="number" name="stat_str" value="10" style="text-align:center;" /></div>
+                            <div style="text-align:center;"><label style="font-size:0.6rem; font-weight:800;">DES</label><input class="legacy-input" type="number" name="stat_dex" value="10" style="text-align:center;" /></div>
+                            <div style="text-align:center;"><label style="font-size:0.6rem; font-weight:800;">CON</label><input class="legacy-input" type="number" name="stat_con" value="10" style="text-align:center;" /></div>
+                            <div style="text-align:center;"><label style="font-size:0.6rem; font-weight:800;">INT</label><input class="legacy-input" type="number" name="stat_int" value="10" style="text-align:center;" /></div>
+                            <div style="text-align:center;"><label style="font-size:0.6rem; font-weight:800;">SAB</label><input class="legacy-input" type="number" name="stat_wis" value="10" style="text-align:center;" /></div>
+                            <div style="text-align:center;"><label style="font-size:0.6rem; font-weight:800;">CAR</label><input class="legacy-input" type="number" name="stat_cha" value="10" style="text-align:center;" /></div>
                         </div>
                     </div>
 
