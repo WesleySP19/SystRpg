@@ -22,85 +22,6 @@ export class DMShield extends ReactiveComponent {
 
         return html`
             <div class="page" style="max-width: 1300px; padding: 20px; animation: fadeIn 0.4s ease-out;">
-                <style>
-                    /* Custom scrollbar for tables & threats */
-                    .custom-scroll::-webkit-scrollbar {
-                        width: 6px;
-                        height: 6px;
-                    }
-                    .custom-scroll::-webkit-scrollbar-track {
-                        background: rgba(0,0,0,0.15);
-                        border-radius: 4px;
-                    }
-                    .custom-scroll::-webkit-scrollbar-thumb {
-                        background: rgba(197, 160, 89, 0.4);
-                        border-radius: 4px;
-                    }
-                    .custom-scroll::-webkit-scrollbar-thumb:hover {
-                        background: rgba(197, 160, 89, 0.7);
-                    }
-
-                    /* Tables Style */
-                    .shield-table {
-                        width: 100%;
-                        border-collapse: collapse;
-                        font-family: 'Outfit', sans-serif;
-                    }
-                    .shield-table th {
-                        font-family: 'Cinzel', serif;
-                        color: var(--accent);
-                        border-bottom: 2px solid rgba(197, 160, 89, 0.3);
-                        padding: 10px 8px;
-                        text-align: left;
-                    }
-                    .shield-table td {
-                        padding: 10px 8px;
-                        border-bottom: 1px solid rgba(255,255,255,0.05);
-                        transition: background-color 0.15s ease;
-                    }
-                    .shield-table tr:hover td {
-                        background-color: rgba(255, 255, 255, 0.02);
-                    }
-
-                    /* Glowing threat banners */
-                    .letalidade-banner {
-                        transition: all 0.3s ease;
-                        border-radius: 12px;
-                    }
-                    
-                    /* Keyframes for pulsars */
-                    @keyframes pulseTrivial {
-                        0% { box-shadow: 0 0 8px rgba(255,255,255,0.05); }
-                        50% { box-shadow: 0 0 16px rgba(255,255,255,0.15); }
-                        100% { box-shadow: 0 0 8px rgba(255,255,255,0.05); }
-                    }
-                    @keyframes pulseFacil {
-                        0% { box-shadow: 0 0 8px rgba(46,204,113,0.15); }
-                        50% { box-shadow: 0 0 18px rgba(46,204,113,0.35); }
-                        100% { box-shadow: 0 0 8px rgba(46,204,113,0.15); }
-                    }
-                    @keyframes pulseMedio {
-                        0% { box-shadow: 0 0 8px rgba(52,152,219,0.15); }
-                        50% { box-shadow: 0 0 18px rgba(52,152,219,0.35); }
-                        100% { box-shadow: 0 0 8px rgba(52,152,219,0.15); }
-                    }
-                    @keyframes pulseDificil {
-                        0% { box-shadow: 0 0 8px rgba(241,196,15,0.15); }
-                        50% { box-shadow: 0 0 18px rgba(241,196,15,0.40); }
-                        100% { box-shadow: 0 0 8px rgba(241,196,15,0.15); }
-                    }
-                    @keyframes pulseMortal {
-                        0% { box-shadow: 0 0 10px rgba(231,76,60,0.25); }
-                        50% { box-shadow: 0 0 22px rgba(231,76,60,0.55); }
-                        100% { box-shadow: 0 0 10px rgba(231,76,60,0.25); }
-                    }
-
-                    .glow-trivial { animation: pulseTrivial 2.5s infinite ease-in-out; }
-                    .glow-facil { animation: pulseFacil 2.5s infinite ease-in-out; }
-                    .glow-medio { animation: pulseMedio 2.5s infinite ease-in-out; }
-                    .glow-dificil { animation: pulseDificil 2.5s infinite ease-in-out; }
-                    .glow-mortal { animation: pulseMortal 2.5s infinite ease-in-out; }
-                </style>
                 <div class="border-b border-[rgba(197,160,89,0.3)] pb-5 mb-8">
                     <div>
                         <h2 class="font-serif text-accent text-3xl font-bold shadow-[0_0_10px_rgba(197,160,89,0.5)]">
@@ -115,7 +36,7 @@ export class DMShield extends ReactiveComponent {
                     <div class="flex flex-col gap-6">
                         
                         <!-- CORE TABLES TABS -->
-                        <div class="bg-[rgba(0,0,0,0.4)] backdrop-blur-md border border-[rgba(255,255,255,0.05)] p-6 rounded-2xl">
+                        <div class="card glass-accent">
                             <div class="custom-scroll flex gap-2 mb-5 border-b border-[rgba(255,255,255,0.06)] pb-3 overflow-x-auto">
                                 <button class="btn btn-sm ${this._selectedTable === 'dc' ? 'btn-primary' : 'btn-ghost'} rounded-full px-4 py-1.5 whitespace-nowrap" data-action="setTable" data-tab="dc">
                                     <i class="fa-solid fa-chart-line mr-2"></i> Graus de CD
@@ -142,7 +63,7 @@ export class DMShield extends ReactiveComponent {
                         </div>
 
                         <!-- ENCOUNTER CALCULATOR -->
-                        <div class="bg-[rgba(0,0,0,0.4)] backdrop-blur-md p-6 rounded-2xl border-t-4 border-accent">
+                        <div class="card glass-accent border-t-4 border-accent">
                             <div class="font-serif text-accent text-xl font-bold mb-4">
                                 <i class="fa-solid fa-calculator mr-2"></i> Analisador de Margem de Encontro
                             </div>
@@ -155,7 +76,7 @@ export class DMShield extends ReactiveComponent {
                         </div>
 
                         <!-- XP & SUMMONED MONSTERS PANEL -->
-                        <div class="card glass-accent" style="padding:25px; border-radius:16px; border-top:3px solid var(--accent); display:flex; flex-direction:column; gap:20px;">
+                        <div class="card glass-accent border-t-4 border-accent flex flex-col gap-5">
                             <div style="font-family:'Cinzel'; color:var(--accent); font-size:1.1rem; font-weight:700; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
                                 <span><i class="fa-solid fa-award" style="margin-right:8px;"></i> Painel de Ordem e Recompensas</span>
                                 <span style="font-size:0.7rem; color:var(--text-dim); font-family:'Roboto'; font-weight:normal;">XP & Efeitos</span>
@@ -220,7 +141,7 @@ export class DMShield extends ReactiveComponent {
                         </div>
 
                         <!-- RECENT EVENTS / LOG -->
-                        <div class="card glass-accent" style="padding:25px; border-radius:16px;">
+                        <div class="card glass-accent">
                             <div style="font-family:'Cinzel'; color:var(--accent); font-size:1.1rem; font-weight:700; margin-bottom:15px;">
                                 <i class="fa-solid fa-scroll" style="margin-right:8px;"></i> Relatório de Crônicas Rápidas
                             </div>
@@ -244,7 +165,7 @@ export class DMShield extends ReactiveComponent {
                     <div style="display:flex; flex-direction:column; gap:25px;">
                         
                         <!-- INITIATIVE TRACKER -->
-                        <div class="card glass-accent" style="padding:25px; border-radius:16px; border-top:3px solid var(--accent);">
+                        <div class="card glass-accent border-t-4 border-accent">
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
                                 <div style="font-family:'Cinzel'; color:var(--accent); font-size:1.1rem; font-weight:700;">
                                     <i class="fa-solid fa-bolt" style="margin-right:6px;"></i> Fila de Iniciativa
@@ -259,7 +180,7 @@ export class DMShield extends ReactiveComponent {
                         </div>
 
                         <!-- PARTY RESOURCES -->
-                        <div class="card glass-accent" style="padding:25px; border-radius:16px;">
+                        <div class="card glass-accent">
                             <div style="font-family:'Cinzel'; color:var(--accent); font-size:1.1rem; font-weight:700; margin-bottom:15px;">
                                 <i class="fa-solid fa-suitcase" style="margin-right:8px;"></i> Consumíveis do Grupo
                             </div>
@@ -284,7 +205,7 @@ export class DMShield extends ReactiveComponent {
                         </div>
 
                         <!-- CONCENTRATION -->
-                        <div class="card glass-accent" style="padding:25px; border-radius:16px;">
+                        <div class="card glass-accent">
                             <div style="font-family:'Cinzel'; color:var(--accent); font-size:1.1rem; font-weight:700; margin-bottom:15px;">
                                 <i class="fa-solid fa-brain" style="margin-right:8px;"></i> Foco & Concentração
                             </div>

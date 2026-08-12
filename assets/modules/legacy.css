@@ -8,32 +8,7 @@
    Clean, Professional, and High-Contrast Fantasy Design
    ================================================================ */
 
-:root {
-    /* Color Palette - D&D 5e Epic Fantasy Premium (V17 HSL Obsidian) */
-    --bg-main: #020202; /* Pure Obsidian */
-    --bg-surface: rgba(10, 10, 10, 0.85);
-    --accent: hsl(46, 65%, 52%); /* True True Gold */
-    --accent-bright: hsl(46, 85%, 75%);
-    --accent-dark: hsl(46, 75%, 30%);
-    --dnd-red: hsl(348, 70%, 35%);
-    --dnd-red-bright: hsl(348, 83%, 47%); /* Crimson Blood */
-    --dnd-parchment-bg: #faf6eb;
-    --text-main: #f8fafc;
-    --text-dim: #94a3b8;
-    --parchment: #fcfaf2;
-    --ink: #0f172a;
-    --danger: hsl(348, 83%, 47%);
-    --success: hsl(142, 71%, 45%);
-    --info: hsl(221, 83%, 53%);
-    
-    /* Layout & Shadow Tokens */
-    --sidebar-w: 275px;
-    --radius: 14px;
-    --shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.85);
-    --shadow-accent: 0 0 25px rgba(212, 175, 55, 0.25);
-    --glow-gold: 0 0 15px rgba(212, 175, 55, 0.4);
-    --glow-red: 0 0 15px rgba(153, 27, 27, 0.5);
-}
+/* Removed :root variables - migrated to theme.css V19 */
 
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -45,32 +20,7 @@
 }
 ::-webkit-scrollbar-thumb:hover { background-color: rgba(197, 160, 89, 0.6); }
 
-.glass {
-    background: rgba(12, 12, 12, 0.65);
-    backdrop-filter: blur(30px) saturate(140%);
-    -webkit-backdrop-filter: blur(30px) saturate(140%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-top: 1px solid rgba(255, 255, 255, 0.15);
-    border-left: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.95);
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.glass:hover {
-    background: rgba(18, 18, 18, 0.7);
-    border-color: rgba(255, 255, 255, 0.12);
-}
-
-.glass-accent {
-    background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(10, 10, 10, 0.85) 100%);
-    backdrop-filter: blur(30px) saturate(150%);
-    -webkit-backdrop-filter: blur(30px) saturate(150%);
-    border: 1px solid rgba(212, 175, 55, 0.3);
-    border-top: 1px solid rgba(212, 175, 55, 0.5);
-    border-left: 1px solid rgba(212, 175, 55, 0.4);
-    box-shadow: 0 20px 40px rgba(0,0,0,0.95), var(--shadow-accent);
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
+/* .glass and .glass-accent moved to theme.css */
 
 /* Utilitário para contenção de logo */
 .tome-logo-constrained {
@@ -332,41 +282,7 @@ body {
 /* Handled by sheet-theme.css */
 
 
-/* --- Global Buttons --- */
-.btn {
-    padding: 10px 24px;
-    border-radius: 6px;
-    font-weight: 600;
-    font-size: 0.85rem;
-    cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    border: 1px solid transparent;
-    font-family: 'Outfit', sans-serif;
-}
-
-.btn-primary {
-    background: var(--accent);
-    color: #fff;
-    border-color: #b58e45;
-}
-
-.btn-primary:hover {
-    background: var(--accent-bright);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(197, 160, 89, 0.3);
-}
-
-.btn-ghost {
-    background: rgba(255, 255, 255, 0.02);
-    color: var(--text-dim);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.btn-ghost:hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: #fff;
-    border-color: rgba(255, 255, 255, 0.15);
-}
+/* Core UI buttons migrated to theme.css */
 
 /* --- Premium Action Buttons --- */
 .btn-magic {

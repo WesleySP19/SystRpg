@@ -941,7 +941,7 @@ export class SessionJournal extends ReactiveComponent {
                                 </div>
                                 <div style="color:#222; margin-top:2px;">${e.content}</div>
                             </div>
-                        `).join('') || '<div style="font-size:11px; color:#555; font-style:italic;">Nenhum evento registrado nesta linha do tempo...</div>'}
+                        `).join('') || html`<div style="font-size:11px; color:#555; font-style:italic;">Nenhum evento registrado nesta linha do tempo...</div>`}
                     </div>
                 </div>
 

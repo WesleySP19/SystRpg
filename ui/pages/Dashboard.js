@@ -1,4 +1,5 @@
 import { Component } from '../core/Component.js';
+import { html } from 'htm/preact';
 import { TOME } from '../../core/Registry.js';
 import { MatchHistoryService } from '../../services/MatchHistoryService.js';
 import { MainPanel } from '../components/MainPanel.js';

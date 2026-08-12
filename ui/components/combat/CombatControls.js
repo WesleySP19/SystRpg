@@ -5,9 +5,9 @@ export function CombatControls({ store, combatants, turnIndex, round }) {
     const handleNextTurn = () => {
         if (!combatants || combatants.length === 0) return;
         store.update(s => {
-            s.turnIndex = (s.turnIndex + 1) % s.combatants.length;
-            if (s.turnIndex === 0) {
-                s.round = (s.round || 1) + 1;
+            s.initiativeIndex = (s.initiativeIndex + 1) % s.initiativeOrder.length;
+            if (s.initiativeIndex === 0) {
+                s.combatRound = (s.combatRound || 1) + 1;
             }
         });
     };
@@ -15,9 +15,9 @@ export function CombatControls({ store, combatants, turnIndex, round }) {
     const handleClearCombat = () => {
         if (confirm('Deseja realmente limpar a arena?')) {
             store.update(s => {
-                s.combatants = [];
-                s.turnIndex = 0;
-                s.round = 1;
+                s.initiativeOrder = [];
+                s.initiativeIndex = 0;
+                s.combatRound = 1;
             });
         }
     };

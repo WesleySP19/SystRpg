@@ -74,10 +74,12 @@ export class LootGenerator extends ReactiveComponent {
   }
 
   close = () => {
-    this.unmount();
-    if (this.target && this.target.parentNode) {
-      this.target.parentNode.removeChild(this.target);
+    if (this.element && this.element.parentNode) {
+      if (this.element.parentNode.parentNode) {
+        this.element.parentNode.parentNode.removeChild(this.element.parentNode);
+      }
     }
+    this.unmount();
   }
 
   _getSuggestedTier(monsters) {

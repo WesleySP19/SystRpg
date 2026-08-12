@@ -48,7 +48,7 @@ export class NPCHelper extends ReactiveComponent {
                         </div>
                     </div>
                     <button class="btn btn-primary btn-block" data-action="generateNPC" ${this._loading ? 'disabled' : ''}>
-                        ${this._loading ? '<i class="fa-solid fa-spinner fa-spin"></i> Consultando Grimório...' : '<i class="fa-solid fa-wand-sparkles"></i> Gerar Novo NPC'}
+                        ${this._loading ? html`<i class="fa-solid fa-spinner fa-spin"></i> Consultando Grimório...` : html`<i class="fa-solid fa-wand-sparkles"></i> Gerar Novo NPC`}
                     </button>
                 </div>
 

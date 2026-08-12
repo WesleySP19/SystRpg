@@ -1,1 +1,171 @@
-/* Tema Customizado V17.9 */
+/* ================================================================
+   TOME PRO - "The Atomic Engine" UI V19.2.1
+   Design Tokens & Core Themes
+================================================================ */
+
+:root {
+    /* Base Colors - Obsidian Dark */
+    --bg-main: #020202; /* Pure Obsidian */
+    --bg-surface: #0a0c12; /* Interface background */
+    --bg-surface-elevated: #151720;
+    
+    /* Tome Gold Accent */
+    --accent: #c5a059;
+    --accent-bright: #e5c17b;
+    --accent-dark: #8b6d3b;
+    --tome-gold: #c5a059;
+
+    /* Semantic Colors */
+    --danger: #ef4444;    /* Crimson Red */
+    --danger-dim: rgba(239, 68, 68, 0.15);
+    --success: #22c55e;   /* Emerald Green */
+    --success-dim: rgba(34, 197, 94, 0.15);
+    --info: #3b82f6;      /* Sapphire Blue */
+    --info-dim: rgba(59, 130, 246, 0.15);
+    --warning: #f59e0b;   /* Amber */
+    --warning-dim: rgba(245, 158, 11, 0.15);
+
+    /* Text */
+    --text-main: #f8fafc;
+    --text-dim: #94a3b8;
+    --text-muted: #64748b;
+
+    /* Effects & Shadows */
+    --radius: 12px;
+    --shadow-main: 0 15px 35px -5px rgba(0, 0, 0, 0.85);
+    --shadow-accent: 0 0 25px rgba(197, 160, 89, 0.25);
+    --glow-gold: 0 0 15px rgba(197, 160, 89, 0.4);
+    --glow-red: 0 0 15px rgba(239, 68, 68, 0.5);
+    
+    /* Z-Index Hierarchy */
+    --z-sidebar: 100;
+    --z-modal: 9999;
+    --z-dice: 9990;
+    --z-tooltip: 10000;
+}
+
+body {
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    font-family: 'Outfit', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Glassmorphism Classes V19 */
+.glass {
+    background: rgba(12, 14, 20, 0.65);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.8);
+    border-radius: var(--radius);
+}
+
+.glass-accent {
+    background: linear-gradient(135deg, rgba(197, 160, 89, 0.08) 0%, rgba(10, 12, 16, 0.85) 100%);
+    backdrop-filter: blur(20px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    border: 1px solid rgba(197, 160, 89, 0.25);
+    border-top: 1px solid rgba(197, 160, 89, 0.4);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.95), var(--shadow-accent);
+    border-radius: var(--radius);
+}
+
+.card {
+    background: var(--bg-surface);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius);
+    padding: 16px;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card:hover {
+    border-color: rgba(197, 160, 89, 0.3);
+}
+
+/* Base Buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    font-family: 'Outfit', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid transparent;
+}
+
+.btn-primary {
+    background: var(--accent);
+    color: #000;
+    border-color: var(--accent-dark);
+}
+
+.btn-primary:hover {
+    background: var(--accent-bright);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(197, 160, 89, 0.4);
+}
+
+.btn-ghost {
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--text-dim);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.btn-ghost:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn-danger {
+    background: var(--danger-dim);
+    color: #fca5a5;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.btn-danger:hover {
+    background: rgba(239, 68, 68, 0.25);
+    color: #fff;
+    border-color: var(--danger);
+}
+
+.btn-magic {
+    background: linear-gradient(135deg, #c5a059 0%, #e5c17b 50%, #c5a059 100%);
+    background-size: 200% 100%;
+    color: #000;
+    padding: 12px 28px;
+    border-radius: 8px;
+    font-family: 'Cinzel', serif;
+    font-weight: 800;
+    box-shadow: 0 4px 20px rgba(197, 160, 89, 0.3);
+}
+
+.btn-magic:hover {
+    background-position: 100% 0;
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 8px 30px rgba(197, 160, 89, 0.5);
+}
+
+/* Custom Scrollbar for V19 */
+.custom-scroll::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+.custom-scroll::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.15);
+    border-radius: 4px;
+}
+.custom-scroll::-webkit-scrollbar-thumb {
+    background: rgba(197, 160, 89, 0.4);
+    border-radius: 4px;
+}
+.custom-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgba(197, 160, 89, 0.7);
+}

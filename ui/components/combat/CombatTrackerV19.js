@@ -15,10 +15,10 @@ export class CombatTrackerV19 extends ReactiveComponent {
     }
 
     template() {
-        const { combatants, turnIndex, round } = this.store.state;
-        const currentCombatants = combatants || [];
-        const currentRound = round || 1;
-        const currentIndex = turnIndex || 0;
+        const { initiativeOrder, initiativeIndex, combatRound } = this.store.state;
+        const currentCombatants = initiativeOrder || [];
+        const currentRound = combatRound || 1;
+        const currentIndex = initiativeIndex || 0;
 
         return html`
             <div class="page" style="max-width: 1500px; padding-bottom:100px; animation: fadeIn 0.3s ease-out;">

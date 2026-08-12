@@ -2,6 +2,7 @@ import { Component } from '../core/Component.js';
 import { TacticalMapEngine } from './TacticalMapEngine.js';
 import { MonsterArt } from '../../services/MonsterArt.js';
 import { Toast } from './Toast.js';
+import { InitiativeMonitor } from './InitiativeMonitor.js';
 
 export class TacticalEyeModal extends Component {
     constructor(opts) {
@@ -21,15 +22,22 @@ export class TacticalEyeModal extends Component {
             <div class="tactical-eye-modal animate-fadeIn" style="position: fixed; inset: 0; background: #080a0d; z-index: 10000; overflow: hidden; display: flex;">
                 
                 <!-- Drawer Lateral (Sidebar) -->
-                <div style="width: ${this.sidebarOpen ? '280px' : '0'}; background: rgba(15,20,28,0.95); border-right: ${this.sidebarOpen ? '1px solid rgba(197, 160, 89, 0.4)' : 'none'}; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; overflow: hidden; box-shadow: 2px 0 15px rgba(0,0,0,0.5); z-index: 20;">
-                    <div style="padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; min-width: 280px;">
-                        <h3 style="margin: 0; font-family: 'Cinzel', serif; font-size: 1.1rem; color: var(--accent);">Gaveta de Tokens</h3>
+                <div style="width: ${this.sidebarOpen ? '420px' : '0'}; background: rgba(15,20,28,0.95); border-right: ${this.sidebarOpen ? '1px solid rgba(197, 160, 89, 0.4)' : 'none'}; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; overflow: hidden; box-shadow: 2px 0 15px rgba(0,0,0,0.5); z-index: 20;">
+                    <div style="padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; min-width: 420px;">
+                        <h3 style="margin: 0; font-family: 'Cinzel', serif; font-size: 1.1rem; color: var(--accent);">Gaveta Tática</h3>
                         <button class="btn btn-ghost" data-action="toggleSidebar" style="padding: 4px; color: #94a3b8;"><i class="fa-solid fa-times"></i></button>
                     </div>
-                    <div style="padding: 15px; flex: 1; overflow-y: auto; min-width: 280px;" class="custom-scroll">
-                        <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 10px; text-transform: uppercase;">Em Combate</div>
-                        <div id="drawer-tokens" style="display: flex; flex-direction: column; gap: 8px;">
-                            ${this._renderDrawerTokens()}
+                    
+                    <div style="display: flex; flex-direction: column; flex: 1; overflow: hidden; min-width: 420px;">
+                        <div style="padding: 10px 15px; border-bottom: 1px solid rgba(255,255,255,0.05); max-height: 150px; overflow-y: auto;" class="custom-scroll">
+                            <div style="font-size: 0.7rem; color: #94a3b8; margin-bottom: 5px; text-transform: uppercase; font-weight: bold;">Posicionamento (Colocar no Mapa)</div>
+                            <div id="drawer-tokens" style="display: flex; flex-direction: column; gap: 4px;">
+                                ${this._renderDrawerTokens()}
+                            </div>
+                        </div>
+
+                        <div id="tactical-initiative-container" style="flex: 1; overflow: hidden; position: relative; background: rgba(0,0,0,0.2);">
+                            <!-- Initiative Monitor mounts here -->
                         </div>
                     </div>
                 </div>
@@ -151,6 +159,15 @@ export class TacticalEyeModal extends Component {
         if (this.mapUrl) this.mapEngine.setMapUrl(this.mapUrl);
         if (this.grid) this.mapEngine.setGrid(true, '1.5m');
         if (this.fog) this.mapEngine.setFog({ enabled: true, paths: this.fogPaths });
+
+        // Monta o InitiativeMonitor na gaveta!
+        const initContainer = this.$('#tactical-initiative-container');
+        if (initContainer) {
+            initContainer.innerHTML = '';
+            this._initiativeMonitor = new InitiativeMonitor({ store: this.store });
+            this._initiativeMonitor.mount(initContainer);
+            this._initiativeMonitor.element.parentNode.__component = this._initiativeMonitor;
+        }
 
         // Event Listeners for Map Engine Events
         this._cameraUpdateHandler = (e) => {

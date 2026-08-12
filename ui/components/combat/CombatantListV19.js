@@ -33,17 +33,17 @@ export function CombatantListV19({ store, combatants, turnIndex }) {
         if (isNaN(dragIndex) || dragIndex === dropIndex) return;
 
         store.update(s => {
-            const arr = [...s.combatants];
+            const arr = [...s.initiativeOrder];
             const item = arr.splice(dragIndex, 1)[0];
             arr.splice(dropIndex, 0, item);
-            s.combatants = arr;
-            // Adjust turnIndex
-            if (s.turnIndex === dragIndex) {
-                s.turnIndex = dropIndex;
-            } else if (s.turnIndex > dragIndex && s.turnIndex <= dropIndex) {
-                s.turnIndex--;
-            } else if (s.turnIndex < dragIndex && s.turnIndex >= dropIndex) {
-                s.turnIndex++;
+            s.initiativeOrder = arr;
+            // Adjust initiativeIndex
+            if (s.initiativeIndex === dragIndex) {
+                s.initiativeIndex = dropIndex;
+            } else if (s.initiativeIndex > dragIndex && s.initiativeIndex <= dropIndex) {
+                s.initiativeIndex--;
+            } else if (s.initiativeIndex < dragIndex && s.initiativeIndex >= dropIndex) {
+                s.initiativeIndex++;
             }
         });
     };
@@ -53,7 +53,7 @@ export function CombatantListV19({ store, combatants, turnIndex }) {
         if (isNaN(val)) return;
         
         store.update(s => {
-            const c = s.combatants.find(x => x.id === id);
+            const c = s.initiativeOrder.find(x => x.id === id);
             if (c) {
                 const oldHp = typeof c.hp === 'number' ? c.hp : (c.hp?.current || 0);
                 
@@ -81,7 +81,7 @@ export function CombatantListV19({ store, combatants, turnIndex }) {
 
     const handleDeathSave = (id, type, value) => {
         store.update(s => {
-            const c = s.combatants.find(x => x.id === id);
+            const c = s.initiativeOrder.find(x => x.id === id);
             if (c && c.deathSaves) {
                 c.deathSaves[type] = value;
                 if (c.deathSaves.failures >= 3 && !c.isDead) {
@@ -96,9 +96,9 @@ export function CombatantListV19({ store, combatants, turnIndex }) {
 
     const handleRemove = (id) => {
         store.update(s => {
-            s.combatants = s.combatants.filter(x => x.id !== id);
-            if (s.turnIndex >= s.combatants.length) {
-                s.turnIndex = Math.max(0, s.combatants.length - 1);
+            s.initiativeOrder = s.initiativeOrder.filter(x => x.id !== id);
+            if (s.initiativeIndex >= s.initiativeOrder.length) {
+                s.initiativeIndex = Math.max(0, s.initiativeOrder.length - 1);
             }
         });
     };

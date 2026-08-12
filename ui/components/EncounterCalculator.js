@@ -1,7 +1,9 @@
+import { html } from 'htm/preact';
+
 export function calculateEncounterDifficulty(context) {
     const { players, monsters } = context.store.state;
     if (!players?.length || !monsters?.length) {
-        return `
+        return html`
             <div style="padding:25px; text-align:center; color:var(--text-dim); display:flex; flex-direction:column; align-items:center; gap:8px;">
                 <i class="fa-solid fa-feather-pointed fa-2x" style="opacity:0.2;"></i>
                 <span>Adicione aventureiros e monstros para computar a taxa de perigo.</span>
@@ -68,7 +70,7 @@ export function calculateEncounterDifficulty(context) {
     else if (adjustedXP >= medTotal) { diff = "Médio ⚔️"; color = "var(--info)"; glowClass = "glow-medio"; bgGradient = "linear-gradient(to right, rgba(52,152,219,0.08), rgba(52,152,219,0.2))"; }
     else if (adjustedXP >= easyTotal) { diff = "Fácil 🛡️"; color = "var(--success)"; glowClass = "glow-facil"; bgGradient = "linear-gradient(to right, rgba(46,204,113,0.08), rgba(46,204,113,0.2))"; }
 
-    return `
+    return html`
         <div class="letalidade-banner ${glowClass}" style="background:${bgGradient}; padding:20px; display:flex; justify-content:space-between; align-items:center; border-left:4px solid ${color}; transition: all 0.3s ease;">
             <div>
                 <div style="font-size:0.65rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px;">Letalidade Avaliada</div>

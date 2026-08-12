@@ -46,7 +46,7 @@ export class CampaignManager extends ReactiveComponent {
                     </div>
                 </div>
 
-                <div class="gap-6 items-start" style="display: grid; grid-template-columns: 320px 1fr;">
+                <div class="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6 items-start min-w-0">
                     <div class="flex flex-col gap-5">
                         <!-- ACTIVE SESSION SELECTOR -->
                         <div id="session-control-card" class="card glass-accent p-6 rounded-2xl flex flex-col gap-4 border border-tomeGold/20 shadow-[0_15px_40px_rgba(0,0,0,0.6)] relative overflow-hidden">
@@ -184,9 +184,9 @@ export class CampaignManager extends ReactiveComponent {
                         <!-- COMMAND PANEL -->
                         <div id="command-ui">
                             ${selected ? this._renderCommandPanel(selected) : html`
-                                <div class="card empty-state min-h-[200px] glass rounded-2xl flex flex-col items-center justify-center gap-3 border border-dashed border-tomeGold/30">
+                                <div class="card glass-accent min-h-[200px] rounded-2xl flex flex-col items-center justify-center gap-3 border border-dashed border-tomeGold/30">
                                     <i class="fa-solid fa-user-plus text-[2.5rem] text-tomeGold/20"></i>
-                                    <p class="text-xs text-slate-500 font-cinzel uppercase tracking-wide">Selecione um herói ao lado para gerenciar</p>
+                                    <p class="text-xs text-slate-400 font-cinzel uppercase tracking-wide">Selecione um herói ao lado para gerenciar</p>
                                 </div>
                             `}
                         </div>
@@ -356,12 +356,12 @@ export class CampaignManager extends ReactiveComponent {
             <div class="flex flex-col gap-6 animate-fade-in font-sans">
                 
                 <!-- TOP CARD HEADER WITH XP PROGRESS TRACKER -->
-                <div class="card glass-accent p-8 rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.6)] border-tomeGold/40">
+                <div class="card glass-accent p-8">
                     <div class="flex gap-6 items-center flex-wrap">
-                        <div class="token-avatar w-[90px] h-[90px] border-[3px] border-tomeGold font-cinzel text-3xl shadow-[0_0_15px_rgba(197,160,89,0.3)] bg-black/60 flex items-center justify-center">${p.name.substring(0,2)}</div>
+                        <div class="token-avatar w-[90px] h-[90px] border-[3px] border-tomeGold font-cinzel text-3xl shadow-[0_0_15px_rgba(197,160,89,0.3)] bg-black/80 flex items-center justify-center">${p.name.substring(0,2)}</div>
                         <div class="flex-1 min-w-[250px]">
                             <h1 class="m-0 text-4xl font-cinzel text-tomeGold drop-shadow-md tracking-wide">${p.name}</h1>
-                            <p class="text-slate-400 text-[0.95rem] mt-1.5 font-semibold uppercase tracking-wide"><i class="fa-solid fa-wand-magic-sparkles text-tomeGold"></i> ${p.race} ${p.class} • Nível ${lvl}</p>
+                            <p class="text-slate-300 text-[0.95rem] mt-1.5 font-semibold uppercase tracking-wide"><i class="fa-solid fa-wand-magic-sparkles text-tomeGold"></i> ${p.race} ${p.class} • Nível ${lvl}</p>
                         </div>
                         <div class="text-right">
                             <div class="text-[0.65rem] text-tomeGold font-extrabold tracking-[1.5px] uppercase">Experiência Acumulada</div>
@@ -370,13 +370,13 @@ export class CampaignManager extends ReactiveComponent {
                     </div>
 
                     <!-- PROGRESS BAR -->
-                    <div class="mt-6 glass p-4 rounded-xl border-transparent">
-                        <div class="flex justify-between text-xs text-slate-400 mb-2 font-bold">
+                    <div class="mt-6 bg-black/40 p-4 rounded-xl border border-white/5 shadow-inner">
+                        <div class="flex justify-between text-xs text-slate-300 mb-2 font-bold">
                             <span class="text-tomeGold">Nível ${lvl}</span>
                             <span class="text-white">${currentXP} / ${nextXP} XP (${Math.round(progress)}%)</span>
                             <span class="opacity-60">Nível ${lvl + 1}</span>
                         </div>
-                        <div class="h-2.5 bg-black/50 rounded border border-tomeGold/25 overflow-hidden">
+                        <div class="h-2.5 bg-black/80 rounded border border-tomeGold/25 overflow-hidden">
                             <div class="h-full bg-gradient-to-r from-tomeGold to-yellow-400 shadow-[0_0_10px_rgba(197,160,89,0.5)] transition-all duration-500 ease-out" style="width:${progress}%;"></div>
                         </div>
                     </div>
@@ -606,7 +606,7 @@ export class CampaignManager extends ReactiveComponent {
         const h = Math.floor(totalSec / 3600);
         const m = Math.floor((totalSec % 3600) / 60);
         const s = totalSec % 60;
-        return html`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+        return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
     }
 
     _getActiveSessionStatus() {
