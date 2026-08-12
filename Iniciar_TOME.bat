@@ -1,5 +1,5 @@
 @echo off
-title TOME v18.5 - VTT Premium Edition (Obsidian & Gold)
+title TOME V19 - VTT Premium Edition (Obsidian & Gold)
 cls
 cd /d "%~dp0"
 

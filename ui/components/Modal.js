@@ -62,24 +62,28 @@ export class Modal extends Component {
         const color = this._type === 'danger' ? 'var(--danger)' : 'var(--primary)';
         const icon = this._type === 'danger' ? 'fa-triangle-exclamation' : 
                      this._type === 'confirm' ? 'fa-circle-question' : 'fa-circle-info';
+        
+        const borderClass = this._type === 'danger' ? 'border-red-500' : 'border-tomeGold';
+        const iconClass = this._type === 'danger' ? 'text-red-500' : 'text-tomeGold';
+        const btnClass = this._type === 'danger' ? 'bg-red-500 hover:bg-red-600' : 'bg-tomeGold hover:bg-tomeGold-bright';
 
         return `
-            <div class="modal-overlay animate-fade" style="position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(8px); z-index:20000; display:flex; align-items:center; justify-content:center; padding:20px;">
-                <div class="modal-card glass-accent" style="width:min(90%, 500px); border-top:4px solid ${color}; padding:0; overflow:hidden; animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);">
-                    <div class="modal-header" style="padding:20px; border-bottom:1px solid rgba(255,255,255,0.05); display:flex; align-items:center; gap:12px;">
-                        <i class="fa-solid ${icon}" style="color:${color}; font-size:1.2rem;"></i>
-                        <h2 style="margin:0; font-family:'Cinzel', serif; font-size:1.1rem; letter-spacing:1px;">${this._title}</h2>
+            <div class="modal-overlay fixed inset-0 bg-black/80 backdrop-blur-md z-[20000] flex items-center justify-center p-5 animate-in fade-in duration-300">
+                <div class="modal-card relative w-full max-w-[500px] border-t-4 ${borderClass} bg-obsidian-900/95 shadow-[0_20px_50px_rgba(0,0,0,0.8)] rounded-xl overflow-hidden animate-in zoom-in-95 duration-300">
+                    <div class="modal-header px-6 py-5 border-b border-white/5 flex items-center gap-3">
+                        <i class="fa-solid ${icon} ${iconClass} text-xl"></i>
+                        <h2 class="m-0 font-cinzel text-lg font-bold tracking-wide text-slate-100">${this._title}</h2>
                     </div>
                     
-                    <div class="modal-body" style="padding:25px; font-size:0.9rem; color:var(--text-bright); line-height:1.6;">
+                    <div class="modal-body px-7 py-6 text-sm text-slate-300 leading-relaxed font-sans">
                         ${this._content.replace(/\n/g, '<br>')}
                     </div>
                     
-                    <div class="modal-footer" style="padding:15px 25px; background:rgba(0,0,0,0.2); display:flex; justify-content:flex-end; gap:10px;">
+                    <div class="modal-footer px-7 py-4 bg-black/40 flex justify-end gap-3">
                         ${this._type === 'confirm' || this._type === 'danger' ? `
-                            <button class="btn btn-ghost btn-sm" data-action="cancel">CANCELAR</button>
+                            <button class="px-4 py-2 rounded-lg font-sans text-sm font-semibold text-slate-400 bg-white/5 hover:bg-white/10 hover:text-slate-200 transition-colors" data-action="cancel">CANCELAR</button>
                         ` : ''}
-                        <button class="btn btn-primary btn-sm" style="background:${color}; min-width:100px;" data-action="confirm">
+                        <button class="px-6 py-2 rounded-lg font-sans text-sm font-semibold text-white ${btnClass} min-w-[100px] transition-colors shadow-lg" data-action="confirm">
                             ${this._type === 'confirm' || this._type === 'danger' ? 'CONFIRMAR' : 'OK'}
                         </button>
                     </div>

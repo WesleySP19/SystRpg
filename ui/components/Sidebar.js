@@ -29,279 +29,80 @@ export class Sidebar extends Component {
 
         return `
             <style>
-                /* ── Sidebar Minimalista v15.0 ("Modern Epic") ── */
+                /* V19 Host style */
                 .sidebar {
                     display: flex;
                     flex-direction: column;
                     width: var(--sidebar-w, 265px);
                     height: 100vh;
-                    background: #08090d !important;
-                    border-right: 1px solid rgba(197, 160, 89, 0.12);
-                    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.65);
+                    background: #06070a !important; /* obsidian-900 */
+                    border-right: 1px solid rgba(212, 175, 55, 0.15); /* tomeGold */
+                    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.8);
                     overflow: hidden;
                     flex-shrink: 0;
                     z-index: 100;
                 }
-
-                /* Cabeçalho */
-                .sm-header {
-                    display: flex;
-                    align-items: center;
-                    gap: 12px;
-                    padding: 20px 18px 16px;
-                    border-bottom: 1px solid rgba(197, 160, 89, 0.1);
-                    background: #0a0c12 !important;
-                    flex-shrink: 0;
-                }
-                .sm-header-icon {
-                    width: 34px;
-                    height: 34px;
-                    border-radius: 8px;
-                    background: linear-gradient(135deg, rgba(212, 175, 55, 0.2) 0%, rgba(15, 17, 26, 0.8) 100%);
-                    border: 1px solid rgba(212, 175, 55, 0.35);
-                    box-shadow: 0 0 10px rgba(212, 175, 55, 0.15);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    color: #d4af37;
-                    font-size: 0.95rem;
-                    flex-shrink: 0;
-                }
-                .sm-header-text {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 2px;
-                    min-width: 0;
-                }
-                .sm-title {
-                    font-family: 'Cinzel', serif;
-                    font-size: 0.92rem;
-                    font-weight: 800;
-                    color: #f1f5f9;
-                    white-space: nowrap;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                    letter-spacing: 0.05em;
-                }
-                .sm-badge {
-                    font-size: 0.58rem;
-                    color: #d4af37;
-                    text-transform: uppercase;
-                    letter-spacing: 0.12em;
-                    font-weight: 700;
-                    opacity: 0.9;
-                }
-
-                /* Nav */
-                .sm-nav {
-                    flex: 1;
-                    overflow-y: auto;
-                    padding: 10px 10px;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 2px;
-                }
-                .sm-nav::-webkit-scrollbar { width: 4px; }
-                .sm-nav::-webkit-scrollbar-thumb { background: rgba(212, 175, 55, 0.2); border-radius: 4px; }
-
-                .sm-item {
-                    display: flex;
-                    align-items: center;
-                    gap: 12px;
-                    padding: 9px 12px;
-                    border-radius: 8px;
-                    border: 1px solid transparent;
-                    cursor: pointer;
-                    background: none;
-                    color: #94a3b8;
-                    font-family: 'Outfit', sans-serif;
-                    font-size: 0.81rem;
-                    font-weight: 500;
-                    text-align: left;
-                    width: 100%;
-                    transition: color 0.18s, background 0.18s, border-color 0.18s, transform 0.18s;
-                    white-space: nowrap;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                }
-                .sm-item i {
-                    font-size: 0.82rem;
-                    width: 16px;
-                    text-align: center;
-                    flex-shrink: 0;
-                    opacity: 0.7;
-                    transition: opacity 0.18s, color 0.18s, transform 0.18s;
-                }
-                .sm-item:hover {
-                    background: rgba(255, 255, 255, 0.035);
-                    color: #f8fafc;
-                    border-color: rgba(255, 255, 255, 0.06);
-                    transform: translateX(2px);
-                }
-                .sm-item:hover i { opacity: 1; color: #d4af37; }
-                .sm-item.active {
-                    background: linear-gradient(90deg, rgba(212, 175, 55, 0.12) 0%, rgba(212, 175, 55, 0.03) 100%);
-                    color: #f3e5ab;
-                    border-color: rgba(212, 175, 55, 0.25);
-                    font-weight: 600;
-                    box-shadow: inset 3px 0 0 #d4af37;
-                }
-                .sm-item.active i { opacity: 1; color: #d4af37; filter: drop-shadow(0 0 4px rgba(212, 175, 55, 0.4)); }
-
-                /* Separador */
-                .sm-sep {
-                    height: 1px;
-                    background: linear-gradient(90deg, transparent, rgba(197, 160, 89, 0.15), transparent);
-                    margin: 8px 4px;
-                }
-
-                /* Footer */
-                .sm-footer {
-                    padding: 12px 10px;
-                    border-top: 1px solid rgba(197, 160, 89, 0.1);
-                    background: #0a0c12 !important;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 5px;
-                    flex-shrink: 0;
-                }
-                .sm-footer-btn {
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
-                    padding: 8px 11px;
-                    border-radius: 8px;
-                    border: 1px solid transparent;
-                    cursor: pointer;
-                    background: none;
-                    color: #64748b;
-                    font-family: 'Outfit', sans-serif;
-                    font-size: 0.76rem;
-                    font-weight: 500;
-                    text-align: left;
-                    width: 100%;
-                    transition: all 0.18s ease;
-                }
-                .sm-footer-btn i {
-                    font-size: 0.75rem;
-                    width: 15px;
-                    text-align: center;
-                    flex-shrink: 0;
-                }
-                .sm-footer-btn:hover {
-                    background: rgba(255, 255, 255, 0.04);
-                    color: #cbd5e1;
-                }
-                .sm-footer-btn.danger {
-                    color: #ef4444;
-                    background: rgba(239, 68, 68, 0.06);
-                    border-color: rgba(239, 68, 68, 0.15);
-                    font-weight: 600;
-                }
-                .sm-footer-btn.danger:hover {
-                    background: rgba(239, 68, 68, 0.12);
-                    color: #f87171;
-                    box-shadow: 0 0 12px rgba(239, 68, 68, 0.2);
-                }
-                .sm-footer-btn.gold {
-                    color: #d4af37;
-                    background: rgba(212, 175, 55, 0.07);
-                    border-color: rgba(212, 175, 55, 0.2);
-                    font-weight: 600;
-                }
-                .sm-footer-btn.gold:hover {
-                    background: rgba(212, 175, 55, 0.14);
-                    color: #f3e5ab;
-                    box-shadow: 0 0 12px rgba(212, 175, 55, 0.2);
-                }
-
-                /* Status */
-                .sm-status {
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    padding: 8px 10px 2px;
-                }
-                .sm-status-dot {
-                    width: 6px;
-                    height: 6px;
-                    border-radius: 50%;
-                    background: #22c55e;
-                    box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
-                    flex-shrink: 0;
-                }
-                .sm-status-label {
-                    font-size: 0.62rem;
-                    color: #475569;
-                    font-weight: 600;
-                    text-transform: uppercase;
-                    letter-spacing: 0.1em;
-                }
-
-                /* Botões de ação lado a lado */
-                .sm-row {
-                    display: grid;
-                    grid-template-columns: 1fr 1fr;
-                    gap: 5px;
-                }
+                
+                .sidebar ::-webkit-scrollbar { width: 4px; }
+                .sidebar ::-webkit-scrollbar-thumb { background: rgba(212, 175, 55, 0.2); border-radius: 4px; }
             </style>
 
             <!-- Cabeçalho -->
-            <div class="sm-header">
-                <div class="sm-header-icon">
+            <div class="flex items-center gap-3 px-[18px] pt-5 pb-4 border-b border-tomeGold/10 bg-obsidian-800 shrink-0">
+                <div class="w-[34px] h-[34px] rounded-lg bg-gradient-to-br from-tomeGold/20 to-obsidian-900/80 border border-tomeGold/30 shadow-[0_0_10px_rgba(212,175,55,0.15)] flex items-center justify-center text-tomeGold text-[0.95rem] shrink-0">
                     <i class="fa-solid fa-dice-d20"></i>
                 </div>
-                <div class="sm-header-text">
-                    <span class="sm-title">Mesa do Mestre</span>
-                    <span class="sm-badge">V18.5</span>
+                <div class="flex flex-col gap-0.5 min-w-0">
+                    <span class="font-cinzel text-[0.92rem] font-extrabold text-slate-100 whitespace-nowrap overflow-hidden text-ellipsis tracking-wider">Mesa do Mestre</span>
+                    <span class="text-[0.58rem] text-tomeGold uppercase tracking-widest font-bold opacity-90">V19 Premium</span>
                 </div>
             </div>
 
             <!-- Navegação principal -->
-            <nav class="sm-nav">
-                <button class="sm-item ${activeTab === 'campaign' ? 'active' : ''}"
+            <nav class="flex-1 overflow-y-auto px-[10px] py-[10px] flex flex-col gap-0.5">
+                <button class="flex items-center gap-3 px-3 py-[9px] rounded-lg border border-transparent cursor-pointer bg-transparent text-slate-400 font-sans text-[0.81rem] font-medium text-left w-full transition-all duration-300 ease-out whitespace-nowrap overflow-hidden text-ellipsis hover:bg-white/5 hover:text-slate-100 hover:border-white/10 hover:translate-x-1 group ${activeTab === 'campaign' ? 'bg-gradient-to-r from-tomeGold/10 to-tomeGold/5 text-tomeGold-bright border-tomeGold/25 font-semibold shadow-[inset_3px_0_0_#d4af37]' : ''}"
                         data-action="navigate" data-tab="campaign">
-                    <i class="fa-solid fa-users-viewfinder"></i>
+                    <i class="fa-solid fa-users-viewfinder text-[0.82rem] w-4 text-center shrink-0 opacity-70 transition-all duration-300 ease-out group-hover:opacity-100 group-hover:text-tomeGold ${activeTab === 'campaign' ? 'opacity-100 text-tomeGold drop-shadow-[0_0_4px_rgba(212,175,55,0.4)]' : ''}"></i>
                     <span>Gestão de Campanha</span>
                 </button>
 
-                <div class="sm-sep"></div>
+                <div class="h-px bg-gradient-to-r from-transparent via-tomeGold/15 to-transparent my-2 mx-1"></div>
 
                 ${items.map(i => `
-                    <button class="sm-item ${activeTab === i.id ? 'active' : ''}"
+                    <button class="flex items-center gap-3 px-3 py-[9px] rounded-lg border border-transparent cursor-pointer bg-transparent text-slate-400 font-sans text-[0.81rem] font-medium text-left w-full transition-all duration-300 ease-out whitespace-nowrap overflow-hidden text-ellipsis hover:bg-white/5 hover:text-slate-100 hover:border-white/10 hover:translate-x-1 group ${activeTab === i.id ? 'bg-gradient-to-r from-tomeGold/10 to-tomeGold/5 text-tomeGold-bright border-tomeGold/25 font-semibold shadow-[inset_3px_0_0_#d4af37]' : ''}"
                             data-action="navigate" data-tab="${i.id}">
-                        <i class="fa-solid ${i.icon}"></i>
+                        <i class="fa-solid ${i.icon} text-[0.82rem] w-4 text-center shrink-0 opacity-70 transition-all duration-300 ease-out group-hover:opacity-100 group-hover:text-tomeGold ${activeTab === i.id ? 'opacity-100 text-tomeGold drop-shadow-[0_0_4px_rgba(212,175,55,0.4)]' : ''}"></i>
                         <span>${i.label}</span>
                     </button>
                 `).join('')}
             </nav>
 
             <!-- Rodapé com ações -->
-            <div class="sm-footer">
-                <div class="sm-row">
-                    <button class="sm-footer-btn" data-action="exportCampaign">
-                        <i class="fa-solid fa-file-export"></i> Exportar
+            <div class="px-[10px] py-3 border-t border-tomeGold/10 bg-obsidian-800 flex flex-col gap-1.5 shrink-0">
+                <div class="grid grid-cols-2 gap-1.5">
+                    <button class="flex items-center gap-2.5 px-2.5 py-2 rounded-lg border border-transparent cursor-pointer bg-transparent text-slate-500 font-sans text-[0.76rem] font-medium text-left w-full transition-all duration-300 ease-out hover:bg-white/5 hover:text-slate-300" data-action="exportCampaign">
+                        <i class="fa-solid fa-file-export text-[0.75rem] w-[15px] text-center shrink-0"></i> Exportar
                     </button>
-                    <button class="sm-footer-btn" data-action="importCampaign">
-                        <i class="fa-solid fa-file-import"></i> Importar
+                    <button class="flex items-center gap-2.5 px-2.5 py-2 rounded-lg border border-transparent cursor-pointer bg-transparent text-slate-500 font-sans text-[0.76rem] font-medium text-left w-full transition-all duration-300 ease-out hover:bg-white/5 hover:text-slate-300" data-action="importCampaign">
+                        <i class="fa-solid fa-file-import text-[0.75rem] w-[15px] text-center shrink-0"></i> Importar
                     </button>
                 </div>
 
-                <button class="sm-footer-btn" onclick="window.location.href='/index.html?reset=1'">
-                    <i class="fa-solid fa-broom"></i> Limpar Cache
+                <button class="flex items-center gap-2.5 px-2.5 py-2 rounded-lg border border-transparent cursor-pointer bg-transparent text-slate-500 font-sans text-[0.76rem] font-medium text-left w-full transition-all duration-300 ease-out hover:bg-white/5 hover:text-slate-300" onclick="window.location.href='/index.html?reset=1'">
+                    <i class="fa-solid fa-broom text-[0.75rem] w-[15px] text-center shrink-0"></i> Limpar Cache
                 </button>
 
-                <button class="sm-footer-btn gold" data-action="openTolkienSummon">
-                    <i class="fa-solid fa-dragon"></i> Invocação de Tolkien
+                <button class="flex items-center gap-2.5 px-2.5 py-2 rounded-lg cursor-pointer font-sans text-[0.76rem] text-left w-full transition-all duration-300 ease-out text-tomeGold bg-tomeGold/5 border border-tomeGold/20 font-semibold hover:bg-tomeGold/10 hover:text-tomeGold-bright hover:shadow-[0_0_12px_rgba(212,175,55,0.2)]" data-action="openTolkienSummon">
+                    <i class="fa-solid fa-dragon text-[0.75rem] w-[15px] text-center shrink-0"></i> Invocação de Tolkien
                 </button>
 
-                <button class="sm-footer-btn danger" data-action="finishSession">
-                    <i class="fa-solid fa-flag-checkered"></i> Finalizar Sessão
+                <button class="flex items-center gap-2.5 px-2.5 py-2 rounded-lg cursor-pointer font-sans text-[0.76rem] text-left w-full transition-all duration-300 ease-out text-red-500 bg-red-500/5 border border-red-500/15 font-semibold hover:bg-red-500/10 hover:text-red-400 hover:shadow-[0_0_12px_rgba(239,68,68,0.2)]" data-action="finishSession">
+                    <i class="fa-solid fa-flag-checkered text-[0.75rem] w-[15px] text-center shrink-0"></i> Finalizar Sessão
                 </button>
 
-                <div class="sm-status">
-                    <div class="sm-status-dot"></div>
-                    <span class="sm-status-label">Sistema Ativo</span>
+                <div class="flex items-center gap-2 px-2.5 pt-2 pb-0.5">
+                    <div class="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)] shrink-0"></div>
+                    <span class="text-[0.62rem] text-slate-500 font-semibold uppercase tracking-widest">Sistema Ativo</span>
                 </div>
             </div>
         `;

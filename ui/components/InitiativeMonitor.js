@@ -1,3 +1,6 @@
+import { html } from 'htm/preact';
+import { render as preactRender } from 'preact';
+import { useState, useEffect, useRef } from 'preact/hooks';
 import { Component } from '../core/Component.js';
 import { TOME } from '../../core/Registry.js';
 import { Dice } from '../../utils/Dice.js';
@@ -6,641 +9,65 @@ import { RulesEngine } from '../../core/RulesEngine.js';
 import { MonsterArt } from '../../services/MonsterArt.js';
 import { FXEngine } from '../../services/FXEngine.js';
 
-/**
- * MONITOR DE INICIATIVA v1.0 — "Ordem de Batalha"
- * 
- * Painel dedicado ao rastreamento visual de turnos em combate D&D 5e.
- * Features:
- *  - Spotlight cinematográfico do combatente ativo
- *  - Timeline vertical com toda a fila de iniciativa
- *  - Economia de ações (Ação / Bônus / Reação / Movimento)
- *  - Aplicação rápida de dano/cura
- *  - Condições com ícones (envenenado, caído, etc.)
- *  - Adicionar combatente rápido com rolagem automática
- *  - Anúncio cinematográfico de turno e rodada
- *  - Sincronização em tempo real com player-view via BroadcastChannel
- */
-export class InitiativeMonitor extends Component {
-    constructor(opts) {
-        super(opts);
-        // Economia de ações do turno atual
-        this._economy = { action: true, bonus: true, reaction: true, movement: 30 };
-        // Formulário de adição rápida
-        this._quickAdd = { name: '', init: '', hp: '', type: 'Enemy' };
-        // Condição selecionada para aplicar
-        this._selectedCond = 'envenenado';
-        // ID do combatente selecionado para ações rápidas
-        this._focusId = null;
-        // Animação de novo turno
-        this._showTurnAnnounce = false;
-        this._announceText = '';
-        // Canal de broadcast para player-view
-        this._broadcast = null;
-        // Damage input value
-        this._dmgInput = '';
-    }
+const CONDITIONS = {
+    'abalado':       { emoji: '😰', label: 'Abalado' },
+    'amedrontado':   { emoji: '😨', label: 'Amedrontado' },
+    'agarrado':      { emoji: '🤝', label: 'Agarrado' },
+    'atordoado':     { emoji: '💫', label: 'Atordoado' },
+    'cego':          { emoji: '🙈', label: 'Cego' },
+    'caído':         { emoji: '🤕', label: 'Caído' },
+    'enfeitiçado':   { emoji: '💜', label: 'Enfeitiçado' },
+    'envenenado':    { emoji: '🤢', label: 'Envenenado' },
+    'exausto':       { emoji: '😫', label: 'Exausto' },
+    'incapacitado':  { emoji: '😵', label: 'Incapacitado' },
+    'invisível':     { emoji: '👻', label: 'Invisível' },
+    'paralisado':    { emoji: '🧊', label: 'Paralisado' },
+    'petrificado':   { emoji: '🗿', label: 'Petrificado' },
+    'preso':         { emoji: '🕸️', label: 'Preso' },
+    'amaldiçoado':   { emoji: '🧿', label: 'Amaldiçoado' },
+    'surdo':         { emoji: '🔇', label: 'Surdo' },
+};
 
-    // ── CONSTANTES ───────────────────────────────────────────────────
+function getOrder(storeState) {
+    return (storeState.initiativeOrder || []).map(c => {
+        const hp = RulesEngine.getHP(c);
+        return { ...c, _hpCurrent: hp.current, _hpMax: hp.max };
+    });
+}
 
-    static CONDITIONS = {
-        'abalado':       { emoji: '😰', label: 'Abalado' },
-        'amedrontado':   { emoji: '😨', label: 'Amedrontado' },
-        'agarrado':      { emoji: '🤝', label: 'Agarrado' },
-        'atordoado':     { emoji: '💫', label: 'Atordoado' },
-        'cego':          { emoji: '🙈', label: 'Cego' },
-        'caído':         { emoji: '🤕', label: 'Caído' },
-        'enfeitiçado':   { emoji: '💜', label: 'Enfeitiçado' },
-        'envenenado':    { emoji: '🤢', label: 'Envenenado' },
-        'exausto':       { emoji: '😫', label: 'Exausto' },
-        'incapacitado':  { emoji: '😵', label: 'Incapacitado' },
-        'invisível':     { emoji: '👻', label: 'Invisível' },
-        'paralisado':    { emoji: '🧊', label: 'Paralisado' },
-        'petrificado':   { emoji: '🗿', label: 'Petrificado' },
-        'preso':         { emoji: '🕸️', label: 'Preso' },
-        'amaldiçoado':   { emoji: '🧿', label: 'Amaldiçoado' },
-        'surdo':         { emoji: '🔇', label: 'Surdo' },
-    };
-
-    // ── LIFECYCLE ────────────────────────────────────────────────────
-
-    onMount() {
-        // Inicializa BroadcastChannel para sincronizar player-view
-        if (!this._broadcast) {
-            this._broadcast = new BroadcastChannel('tome_map');
-        }
-
-        // Listener dinâmico de invocação
-        this._handleSummon = this._handleSummon || this._onMonsterInvoked.bind(this);
-        TOME.events.on('MONSTER_INVOKED', this._handleSummon);
-
-        // Mantém foco no input de dano
-        const dmgEl = this.$('#im-dmg-val');
-        if (dmgEl && this._dmgInput) {
-            dmgEl.value = this._dmgInput;
-        }
-
-        // Scroll para o combatente ativo na fila
-        this._scrollToActive();
-
-        // Limpa anuncio após animação
-        if (this._showTurnAnnounce) {
-            setTimeout(() => {
-                this._showTurnAnnounce = false;
-                this._announceText = '';
-            }, 2000);
-        }
-    }
-
-    onUnmount() {
-        if (this._broadcast) {
-            this._broadcast.close();
-            this._broadcast = null;
-        }
-        if (this._handleSummon) {
-            TOME.events.off('MONSTER_INVOKED', this._handleSummon);
-        }
-    }
-
-    _onMonsterInvoked(entity) {
-        let initRoll = Dice.roll(20).total;
-        const combatant = {
-            id: entity.id || 'm-' + Date.now(),
-            name: entity.name,
-            initiative: initRoll,
-            hp: { current: entity.hp_max, max: entity.hp_max },
-            ac: entity.ac || 10,
-            type: entity.type || 'Enemy',
-            emoji: entity.emoji || '👹',
-            img: entity.img || '',
-            conditions: []
-        };
-        
-        this.store.update(s => {
-            if (!s.initiativeOrder) s.initiativeOrder = [];
-            s.initiativeOrder.push(combatant);
-            if (s.combatActive) {
-                 s.initiativeOrder.sort((a, b) => b.initiative - a.initiative);
+function broadcastState(storeState, broadcastChannel) {
+    try {
+        const idx = storeState.initiativeIndex || 0;
+        broadcastChannel?.postMessage({
+            type: 'COMBAT_UPDATE',
+            state: {
+                combatActive: storeState.combatActive,
+                combatRound: storeState.combatRound,
+                initiativeOrder: storeState.initiativeOrder,
+                initiativeIndex: idx,
             }
         });
-        
-        Toast.show(`🧙 Invocação: ${entity.name} (Iniciativa: ${initRoll})`, 'success');
-        this.render();
-    }
+    } catch (e) {}
+}
 
-    _scrollToActive() {
-        const active = this.$('.im-combatant.im-active');
-        if (active) {
-            active.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-    }
+const Header = ({ storeState, store, broadcastChannel, setEconomy }) => {
+    const { combatActive, combatRound } = storeState;
 
-    // ── HELPERS ──────────────────────────────────────────────────────
-
-    _getOrder() {
-        return (this.store.state.initiativeOrder || []).map(c => {
-            const hp = RulesEngine.getHP(c);
-            return { ...c, _hpCurrent: hp.current, _hpMax: hp.max };
-        });
-    }
-
-    _hpColor(current, max) {
-        if (max <= 0) return 'var(--text-dim)';
-        const pct = current / max;
-        if (pct > 0.5) return 'var(--success)';
-        if (pct > 0.2) return '#e5c17b';
-        return 'var(--danger)';
-    }
-
-    _hpPct(current, max) {
-        if (max <= 0) return 0;
-        return Math.min(100, Math.max(0, Math.round((current / max) * 100)));
-    }
-
-    _broadcastState() {
-        try {
-            const state = this.store.state;
-            const idx = state.initiativeIndex || 0;
-            const current = (state.initiativeOrder || [])[idx];
-            this._broadcast?.postMessage({
-                type: 'COMBAT_UPDATE',
-                state: {
-                    combatActive: state.combatActive,
-                    combatRound: state.combatRound,
-                    initiativeOrder: state.initiativeOrder,
-                    initiativeIndex: idx,
-                }
-            });
-        } catch (e) { /* silencioso */ }
-    }
-
-    // ── TEMPLATE ─────────────────────────────────────────────────────
-
-    template() {
-        const { combatActive, combatRound } = this.store.state;
-        const order = this._getOrder();
-        const idx   = this.store.state.initiativeIndex || 0;
-        const current = order[idx];
-
-        // Foco: combatente selecionado para ações rápidas (ou ativo)
-        const focused = this._focusId
-            ? order.find(c => c.id === this._focusId) || current
-            : current;
-
-        const isEmpty = !combatActive || order.length === 0;
-
-        return `
-
-
-            <div class="im-root" style="height:100%; position:relative;">
-
-                ${this._renderHeader(combatRound, order.length)}
-
-                ${isEmpty
-                    ? this._renderEmpty()
-                    : `
-                        ${this._renderSpotlight(current, idx)}
-                        ${this._renderQueue(order, idx)}
-                        ${this._renderQuickActions(focused)}
-                        ${this._renderQuickAdd()}
-                    `
-                }
-
-                ${this._showTurnAnnounce ? this._renderTurnAnnounce() : ''}
-
-            </div>
-        `;
-    }
-
-    // ── HEADER ───────────────────────────────────────────────────────
-
-    _renderHeader(round, count) {
-        const { combatActive } = this.store.state;
-        return `
-            <div class="im-header">
-                <div style="display:flex; align-items:center; gap:12px;">
-                    <h2 class="im-title">
-                        <i class="fa-solid fa-swords" style="color:var(--danger); font-size:0.9rem;"></i>
-                        ORDEM DE BATALHA
-                    </h2>
-                    ${combatActive
-                        ? `<span class="im-round-badge">⚔️ RODADA ${round || 1}</span>`
-                        : `<span class="im-round-badge" style="color:var(--text-dim); border-color:rgba(255,255,255,0.1);">COMBATE INATIVO</span>`
-                    }
-                </div>
-
-                <div class="im-header-controls">
-                    ${combatActive ? `
-                        <button class="btn btn-ghost" style="font-size:0.6rem; padding:5px 10px;" data-action="rollAllInitiative" title="Rerolar Iniciativa">
-                            <i class="fa-solid fa-dice-d20"></i> Rolar Tudo
-                        </button>
-                        <button class="btn btn-primary" style="font-size:0.7rem; padding:6px 16px; font-family:'Cinzel';" data-action="nextTurn">
-                            PRÓXIMO <i class="fa-solid fa-chevron-right"></i>
-                        </button>
-                        <button class="btn btn-ghost" style="font-size:0.6rem; padding:5px 8px; color:var(--danger); border-color:rgba(239,68,68,0.2);" data-action="endCombat" title="Encerrar Combate">
-                            <i class="fa-solid fa-flag-checkered"></i>
-                        </button>
-                    ` : `
-                        <button class="btn btn-primary" style="font-size:0.75rem; padding:7px 18px; font-family:'Cinzel'; letter-spacing:1px;" data-action="startCombat">
-                            <i class="fa-solid fa-dice-d20"></i> INICIAR COMBATE
-                        </button>
-                    `}
-                </div>
-            </div>
-        `;
-    }
-
-    // ── SPOTLIGHT (Combatente Ativo) ──────────────────────────────────
-
-    _renderSpotlight(current, idx) {
-        if (!current) return `
-            <div class="im-spotlight" style="padding:16px 28px;">
-                <p style="color:var(--text-dim); font-size:0.8rem; opacity:0.5;">Nenhum combatente na fila.</p>
-            </div>
-        `;
-
-        const hpPct   = this._hpPct(current._hpCurrent, current._hpMax);
-        const hpColor = this._hpColor(current._hpCurrent, current._hpMax);
-        const isEnemy = current.type !== 'Player';
-        const rawImg = current.img || current.portraitData || (isEnemy ? MonsterArt.getImage(current) : null);
-        const safeImg = rawImg && !rawImg.startsWith('db://') ? rawImg : null;
-        const avatarBg = safeImg
-            ? `background-image:url('${safeImg}');`
-            : '';
-
-        return `
-            <div class="im-spotlight" style="background: linear-gradient(to right, rgba(14,16,22,0.95), rgba(8,10,15,0.98)); border: 1px solid rgba(197, 160, 89, 0.25); border-radius: 12px; margin-bottom: 24px; position: relative; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.6);">
-                <!-- Glowing accent strip -->
-                <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: ${isEnemy ? 'var(--danger)' : 'var(--success)'}; box-shadow: 0 0 15px ${isEnemy ? 'var(--danger)' : 'var(--success)'};"></div>
-                
-                <div class="im-spotlight-inner" style="padding: 20px 24px; display: flex; gap: 24px; align-items: center; flex-wrap: wrap;">
-                    <!-- Avatar -->
-                    <div class="im-spotlight-avatar ${isEnemy ? 'enemy' : ''}" style="${avatarBg}; width: 85px; height: 85px; border-radius: 50%; box-shadow: 0 0 25px rgba(0,0,0,0.8); border: 2.5px solid ${isEnemy ? 'var(--danger)' : 'var(--success)'}; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-family: 'Cinzel'; font-weight: 900; color: #fff; background-size: cover; background-position: center; background-color: rgba(0,0,0,0.5);">
-                        ${!safeImg ? `<span>${current.name.substring(0,2).toUpperCase()}</span>` : ''}
-                    </div>
-
-                    <!-- Info -->
-                    <div class="im-spotlight-info" style="flex: 1; min-width: 250px;">
-                        <div class="im-spotlight-label" style="font-size: 0.65rem; color: var(--accent); font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
-                            ${isEnemy ? '<i class="fa-solid fa-skull" style="color:var(--danger);"></i> <span style="color:var(--danger);">INIMIGO</span>' : '<i class="fa-solid fa-shield-halved" style="color:var(--success);"></i> <span style="color:var(--success);">HERÓI</span>'} 
-                            <span style="color: rgba(255,255,255,0.2);">|</span> 
-                            TURNO ${idx + 1}
-                        </div>
-                        <div class="im-spotlight-name" style="font-size: 1.8rem; font-family: 'Cinzel', serif; font-weight: 900; color: #fff; text-shadow: 0 2px 12px rgba(0,0,0,0.9); margin-bottom: 14px; line-height: 1.1;">
-                            ${current.name}
-                        </div>
-                        
-                        <div class="im-spotlight-meta" style="display: flex; gap: 30px; flex-wrap: wrap; align-items: center;">
-                            <!-- HP Block -->
-                            <div class="im-hp-block" style="min-width: 180px; flex-shrink: 0;">
-                                <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 6px;">
-                                    <div class="im-hp-label" style="font-size: 0.6rem; text-transform: uppercase; font-weight: 800; color: var(--text-dim); letter-spacing: 1px;">Pontos de Vida</div>
-                                    <div class="im-hp-values" style="color: ${hpColor}; font-weight: 900; font-size: 1.2rem; text-shadow: 0 0 12px ${hpColor}; line-height: 1;">
-                                        ${current._hpCurrent} <span style="opacity: 0.5; font-size: 0.8rem; font-weight: 700;">/ ${current._hpMax}</span>
-                                    </div>
-                                </div>
-                                <div class="im-hp-bar-track" style="width: 100%; height: 8px; background: rgba(0,0,0,0.7); border-radius: 4px; overflow: hidden; box-shadow: inset 0 1px 4px rgba(0,0,0,0.9);">
-                                    <div class="im-hp-bar-fill" style="width: ${hpPct}%; height: 100%; background: ${hpColor}; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 10px ${hpColor};"></div>
-                                </div>
-                            </div>
-
-                            <!-- Stats & Economy Block -->
-                            <div style="display: flex; flex-direction: column; gap: 10px; flex: 1;">
-                                <div style="display: flex; gap: 16px; font-size: 0.75rem; color: var(--text-dim); font-weight: 700; background: rgba(255,255,255,0.02); padding: 6px 14px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); width: fit-content;">
-                                    <span style="display: flex; align-items: center; gap: 6px;"><i class="fa-solid fa-bolt" style="color: var(--accent);"></i> Inic: <strong style="color: #fff; font-size:0.85rem;">${current.init ?? 0}</strong></span>
-                                    <span style="display: flex; align-items: center; gap: 6px;"><i class="fa-solid fa-shield" style="color: #cbd5e1;"></i> CA: <strong style="color: #fff; font-size:0.85rem;">${current.ac ?? 10}</strong></span>
-                                    ${current.speed ? `<span style="display: flex; align-items: center; gap: 6px;"><i class="fa-solid fa-shoe-prints" style="color: #60a5fa;"></i> Mov: <strong style="color: #fff; font-size:0.85rem;">${current.speed}ft</strong></span>` : ''}
-                                </div>
-
-                                <!-- Economia de Ações -->
-                                <div class="im-economy" style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                    <button class="im-econ-btn" style="background: ${this._economy.action ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.02)'}; color: ${this._economy.action ? '#86efac' : 'var(--text-dim)'}; border: 1px solid ${this._economy.action ? 'rgba(34,197,94,0.4)' : 'rgba(255,255,255,0.05)'}; border-radius: 20px; padding: 6px 12px; font-size: 0.65rem; font-weight: 800; cursor: pointer; transition: all 0.2s;" data-action="toggleEconomy" data-type="action" title="Ação Principal (Clique para alternar)">
-                                        <i class="fa-solid ${this._economy.action ? 'fa-play' : 'fa-check'}"></i> ${this._economy.action ? 'AÇÃO' : 'USADA'}
-                                    </button>
-                                    <button class="im-econ-btn" style="background: ${this._economy.bonus ? 'rgba(250,204,21,0.15)' : 'rgba(255,255,255,0.02)'}; color: ${this._economy.bonus ? '#fde047' : 'var(--text-dim)'}; border: 1px solid ${this._economy.bonus ? 'rgba(250,204,21,0.4)' : 'rgba(255,255,255,0.05)'}; border-radius: 20px; padding: 6px 12px; font-size: 0.65rem; font-weight: 800; cursor: pointer; transition: all 0.2s;" data-action="toggleEconomy" data-type="bonus" title="Ação Bônus (Clique para alternar)">
-                                        <i class="fa-solid ${this._economy.bonus ? 'fa-sparkles' : 'fa-check'}"></i> ${this._economy.bonus ? 'BÔNUS' : 'USADO'}
-                                    </button>
-                                    <button class="im-econ-btn" style="background: ${this._economy.reaction ? 'rgba(96,165,250,0.15)' : 'rgba(255,255,255,0.02)'}; color: ${this._economy.reaction ? '#93c5fd' : 'var(--text-dim)'}; border: 1px solid ${this._economy.reaction ? 'rgba(96,165,250,0.4)' : 'rgba(255,255,255,0.05)'}; border-radius: 20px; padding: 6px 12px; font-size: 0.65rem; font-weight: 800; cursor: pointer; transition: all 0.2s;" data-action="toggleEconomy" data-type="reaction" title="Reação (Clique para alternar)">
-                                        <i class="fa-solid ${this._economy.reaction ? 'fa-reply' : 'fa-check'}"></i> ${this._economy.reaction ? 'REAÇÃO' : 'USADA'}
-                                    </button>
-                                    <button class="im-econ-btn" style="background: rgba(168,85,247,0.15); color: #d8b4fe; border: 1px solid rgba(168,85,247,0.4); border-radius: 20px; padding: 6px 12px; font-size: 0.65rem; font-weight: 800; cursor: pointer; transition: all 0.2s; box-shadow: 0 0 10px rgba(168,85,247,0.1);" data-action="toggleMovement" title="Movimento (Clique para subtrair 5ft)">
-                                        <i class="fa-solid fa-person-running"></i> ${this._economy.movement}ft
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Condições ativas -->
-                        ${current.conditions?.length ? `
-                            <div class="im-cond-list" style="margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.05);">
-                                ${current.conditions.map(c => {
-                                    const info = InitiativeMonitor.CONDITIONS[c] || { emoji: '⚠️', label: c };
-                                    return `<button class="btn btn-ghost" style="padding: 4px 10px; font-size: 0.7rem; border-radius: 6px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); color: #e2e8f0; transition: all 0.2s;" data-action="removeConditionFromActive" data-cond="${c}" title="Clique para remover condição">${info.emoji} ${info.label} <i class="fa-solid fa-times" style="margin-left: 6px; opacity: 0.5; font-size: 0.6rem;"></i></button>`;
-                                }).join('')}
-                            </div>
-                        ` : ''}
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    // ── FILA DE INICIATIVA ────────────────────────────────────────────
-
-    _renderQueue(order, idx) {
-        return `
-            <div class="im-queue-section" style="margin-bottom: 24px;">
-                <div class="im-queue-header" style="font-size: 0.65rem; font-weight: 900; letter-spacing: 2px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 12px; display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
-                    <span><i class="fa-solid fa-list-ol" style="margin-right: 6px;"></i> FILA DE INICIATIVA</span>
-                    <span style="color: var(--accent);">${order.length} COMBATENTES</span>
-                </div>
-
-                <div style="display: flex; flex-direction: column; gap: 10px;">
-                    ${order.map((c, i) => this._renderCombatantCard(c, i, idx)).join('')}
-                </div>
-            </div>
-        `;
-    }
-
-    _renderCombatantCard(c, i, activeIdx) {
-        const isActive   = i === activeIdx;
-        const isTargeted = this._focusId === c.id && !isActive;
-        const isDead     = c._hpCurrent <= 0;
-        const isUpcoming = i > activeIdx && !isDead;
-        const isEnemy    = c.type !== 'Player';
-
-        const hpPct   = this._hpPct(c._hpCurrent, c._hpMax);
-        const hpColor = this._hpColor(c._hpCurrent, c._hpMax);
-
-        const rawImg = c.img || c.portraitData || (c.type !== 'Player' ? MonsterArt.getImage(c) : null);
-        const safeImg = rawImg && !rawImg.startsWith('db://') ? rawImg : null;
-
-        const avatarBg = safeImg
-            ? `background-image:url('${safeImg}');`
-            : '';
-
-        const cardBg = isActive 
-            ? 'linear-gradient(90deg, rgba(197, 160, 89, 0.1), rgba(14, 16, 22, 0.8))'
-            : isTargeted 
-                ? 'linear-gradient(90deg, rgba(255, 255, 255, 0.05), rgba(14, 16, 22, 0.6))'
-                : 'rgba(14, 16, 22, 0.6)';
-
-        const cardBorder = isActive
-            ? '1px solid rgba(197, 160, 89, 0.6)'
-            : isTargeted
-                ? '1px solid rgba(255, 255, 255, 0.3)'
-                : '1px solid rgba(255, 255, 255, 0.03)';
-                
-        const cardGlow = isActive ? 'box-shadow: 0 0 15px rgba(197, 160, 89, 0.2);' : '';
-
-        const condEmojis = (c.conditions || []).slice(0, 4).map(cond => {
-            const info = InitiativeMonitor.CONDITIONS[cond] || { emoji: '⚠️' };
-            return `<span style="font-size: 0.8rem;" title="${cond}">${info.emoji}</span>`;
-        }).join('');
-
-        return `
-            <div class="im-combatant" style="background: ${cardBg}; border: ${cardBorder}; ${cardGlow} border-radius: 12px; padding: 14px 20px; display: flex; align-items: center; gap: 20px; cursor: pointer; transition: all 0.2s ease; opacity: ${isDead ? 0.5 : 1}; position: relative; overflow: hidden; min-height: 60px;"
-                 data-action="selectFocus" data-id="${c.id}"
-                 title="${isActive ? 'Turno Atual' : 'Clique para focar ações'}">
-                 
-                <!-- Indicator line -->
-                <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: ${isEnemy ? 'var(--danger)' : 'var(--success)'}; opacity: ${isActive ? 1 : 0.4};"></div>
-
-                <!-- Posição na ordem -->
-                <div style="font-family: 'Cinzel', serif; font-size: 1rem; font-weight: 900; color: ${isActive ? 'var(--accent)' : 'var(--text-dim)'}; width: 24px; text-align: center;">
-                    ${i + 1}
-                </div>
-
-                <!-- Avatar -->
-                <div style="${avatarBg} width: 40px; height: 40px; border-radius: 50%; background-size: cover; background-position: center; background-color: rgba(0,0,0,0.5); border: 1.5px solid ${isEnemy ? 'rgba(239,68,68,0.5)' : 'rgba(34,197,94,0.5)'}; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 900; color: #fff; flex-shrink: 0;">
-                    ${!safeImg ? `<span>${c.name.substring(0,2).toUpperCase()}</span>` : ''}
-                </div>
-
-                <!-- Info -->
-                <div style="flex: 1; min-width: 0;">
-                    <div style="font-family: 'Outfit'; font-weight: 800; font-size: 0.95rem; color: ${isActive ? '#fff' : (isEnemy ? '#fca5a5' : '#e2e8f0')}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 8px;">
-                        ${isDead ? '<i class="fa-solid fa-skull"></i> ' : ''}${c.name}
-                        ${isActive ? '<span style="font-size: 0.5rem; background: var(--accent); color: #000; padding: 2px 6px; border-radius: 10px; font-weight: 900; letter-spacing: 1px;">VEZ</span>' : ''}
-                    </div>
-                    <div style="font-size: 0.65rem; color: var(--text-dim); display: flex; gap: 12px; margin-top: 4px; font-weight: 600;">
-                        <span style="display: flex; align-items: center; gap: 4px;"><i class="fa-solid fa-heart" style="color: ${hpColor};"></i> ${c._hpCurrent}/${c._hpMax}</span>
-                        <span style="display: flex; align-items: center; gap: 4px;"><i class="fa-solid fa-shield-halved"></i> ${c.ac ?? 10}</span>
-                        ${c.concentration?.length ? '<span title="Concentração" style="color: #60a5fa;"><i class="fa-solid fa-brain"></i> Conc</span>' : ''}
-                    </div>
-                    <!-- HP Bar mini -->
-                    <div style="width: 100%; max-width: 200px; height: 3px; background: rgba(0,0,0,0.5); border-radius: 2px; margin-top: 6px; overflow: hidden;">
-                        <div style="width: ${hpPct}%; height: 100%; background: ${hpColor}; transition: width 0.3s ease;"></div>
-                    </div>
-                </div>
-
-                <!-- Direita: Iniciativa + Condições + Controles -->
-                <div style="display: flex; align-items: center; gap: 16px;">
-                    ${condEmojis ? `<div style="display: flex; gap: 4px;">${condEmojis}</div>` : ''}
-                    
-                    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
-                        <div style="font-family: 'Cinzel', serif; font-size: 1.1rem; font-weight: 900; color: var(--accent); text-shadow: 0 0 8px rgba(197,160,89,0.3);">
-                            ${c.init ?? 0}
-                        </div>
-                    </div>
-                    
-                    <div style="display: flex; gap: 4px; opacity: ${isActive ? 1 : 0.3}; transition: opacity 0.2s;" class="im-card-controls">
-                        <button class="btn btn-ghost" style="padding: 6px; font-size: 0.65rem; border-radius: 6px; background: rgba(255,255,255,0.05);" data-action="moveUp" data-id="${c.id}" onclick="event.stopPropagation()" title="Subir Fila"><i class="fa-solid fa-chevron-up"></i></button>
-                        <button class="btn btn-ghost" style="padding: 6px; font-size: 0.65rem; border-radius: 6px; background: rgba(255,255,255,0.05);" data-action="moveDown" data-id="${c.id}" onclick="event.stopPropagation()" title="Descer Fila"><i class="fa-solid fa-chevron-down"></i></button>
-                        <button class="btn btn-ghost" style="padding: 6px; font-size: 0.65rem; border-radius: 6px; background: rgba(239,68,68,0.1); color: var(--danger);" data-action="removeCombatant" data-id="${c.id}" onclick="event.stopPropagation()" title="Remover"><i class="fa-solid fa-trash-can"></i></button>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    // ── AÇÕES RÁPIDAS (Dano / Cura / Condições) ──────────────────────
-
-    _renderQuickActions(focused) {
-        if (!focused) return '';
-
-        const isFocusedActive = !this._focusId || this._focusId === focused.id;
-
-        return `
-            <div style="background: linear-gradient(to top, rgba(8,10,15,0.98), rgba(14,16,22,0.95)); border-top: 1px solid rgba(197, 160, 89, 0.2); padding: 16px 24px; flex-shrink: 0; box-shadow: 0 -10px 20px rgba(0,0,0,0.5); border-radius: 12px 12px 0 0; position: relative; z-index: 10;">
-                
-                <div style="font-size: 0.65rem; font-weight: 900; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
-                    <span style="display: flex; align-items: center; gap: 8px;">
-                        <i class="fa-solid fa-crosshairs"></i>
-                        ${isFocusedActive ? 'AÇÕES DO COMBATENTE ATIVO' : `FOCO MANUL: ${focused.name}`}
-                    </span>
-                    ${!isFocusedActive
-                        ? `<button class="btn btn-ghost" style="font-size: 0.6rem; padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2);" data-action="clearFocus">✕ Limpar foco</button>`
-                        : ''}
-                </div>
-
-                <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end; justify-content: flex-start; margin-bottom: 8px;">
-                    <!-- Dano / Cura Group -->
-                    <div style="display: flex; gap: 10px; align-items: center; background: rgba(0,0,0,0.5); padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08);">
-                        <input type="number" id="im-dmg-val" class="form-input"
-                               placeholder="Valor" min="0" style="width: 90px; font-size: 0.9rem; padding: 8px 12px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #fff;" data-action="dmgInputChange">
-                        <button class="btn" style="background: rgba(239,68,68,0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); font-size: 0.75rem; padding: 6px 14px; border-radius: 6px; font-weight: 700; transition: all 0.2s;" data-action="applyDamage">
-                            <i class="fa-solid fa-heart-crack" style="margin-right: 4px;"></i> Dano
-                        </button>
-                        <button class="btn" style="background: rgba(34,197,94,0.15); color: #86efac; border: 1px solid rgba(34,197,94,0.3); font-size: 0.75rem; padding: 6px 14px; border-radius: 6px; font-weight: 700; transition: all 0.2s;" data-action="applyHeal">
-                            <i class="fa-solid fa-heart-pulse" style="margin-right: 4px;"></i> Cura
-                        </button>
-                        <button class="btn btn-ghost" style="font-size: 0.75rem; padding: 6px 10px; border-radius: 6px; background: rgba(255,255,255,0.05);" data-action="rollDice" title="Rolar 1d6">
-                            <i class="fa-solid fa-dice"></i>
-                        </button>
-                    </div>
-
-                    <!-- Condições Group -->
-                    <div style="display: flex; gap: 10px; align-items: center; background: rgba(0,0,0,0.5); padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); flex: 1; min-width: 280px;">
-                        <select class="form-select" id="im-cond-select" style="font-size: 0.85rem; padding: 8px 12px; border-radius: 8px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; flex: 1;" data-action="condSelectChange">
-                            ${Object.entries(InitiativeMonitor.CONDITIONS).map(([k, v]) =>
-                                `<option value="${k}" ${this._selectedCond === k ? 'selected' : ''}>${v.emoji} ${v.label}</option>`
-                            ).join('')}
-                        </select>
-                        <button class="btn" style="background: rgba(168,85,247,0.15); color: #d8b4fe; border: 1px solid rgba(168,85,247,0.3); font-size: 0.75rem; padding: 6px 14px; border-radius: 6px; font-weight: 700;" data-action="applyCondition">
-                            <i class="fa-solid fa-plus" style="margin-right: 4px;"></i> Status
-                        </button>
-                        <button class="btn btn-ghost" style="font-size: 0.75rem; padding: 6px 12px; color: var(--danger); border-radius: 6px; background: rgba(239,68,68,0.05);" data-action="clearConditions" title="Limpar todos os status">
-                            <i class="fa-solid fa-broom"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    // ── ADICIONAR COMBATENTE RÁPIDO ───────────────────────────────────
-
-    _renderQuickAdd() {
-        return `
-            <div class="im-quick-add">
-                <div style="font-size:0.55rem; font-weight:800; color:var(--text-dim); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:6px;">
-                    <i class="fa-solid fa-plus" style="margin-right:4px;"></i> ADICIONAR COMBATENTE
-                </div>
-                <div class="im-quick-add-row">
-                    <input type="text"   id="qa-name" class="form-input" style="font-size:0.75rem; padding:6px 10px;" placeholder="Nome..." value="${this._quickAdd.name}">
-                    <input type="number" id="qa-init" class="form-input" style="font-size:0.75rem; padding:6px 8px;" placeholder="Inic" min="-5" max="30" value="${this._quickAdd.init}">
-                    <input type="number" id="qa-hp"   class="form-input" style="font-size:0.75rem; padding:6px 8px;" placeholder="HP" min="1" max="999" value="${this._quickAdd.hp}">
-                    <div style="display:flex; gap:4px;">
-                        <button class="btn btn-ghost btn-sm" style="font-size:0.6rem; padding:5px 8px; background:rgba(96,165,250,0.08); border-color:rgba(96,165,250,0.2); color:#93c5fd;" data-action="quickAddPlayer" title="Adicionar como Herói">
-                            <i class="fa-solid fa-shield"></i>
-                        </button>
-                        <button class="btn btn-ghost btn-sm" style="font-size:0.6rem; padding:5px 8px; background:rgba(239,68,68,0.08); border-color:rgba(239,68,68,0.2); color:#fca5a5;" data-action="quickAddEnemy" title="Adicionar como Inimigo">
-                            <i class="fa-solid fa-skull"></i>
-                        </button>
-                        <button class="btn btn-ghost btn-sm" style="font-size:0.6rem; padding:5px 8px;" data-action="quickAddRollInit" title="Rolar iniciativa automática">
-                            <i class="fa-solid fa-dice-d20"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    // ── ESTADO VAZIO ──────────────────────────────────────────────────
-
-    _renderEmpty() {
-        const { players, monsters } = this.store.state;
-        const hasParty = (players?.length || 0) + (monsters?.length || 0) > 0;
-
-        return `
-            <div class="im-empty">
-                <div class="im-empty-icon">⚔️</div>
-                <div class="im-empty-title">Arena Silenciosa</div>
-                <p class="im-empty-sub">
-                    ${hasParty
-                        ? 'Clique em "Iniciar Combate" para rolar iniciativa automática para toda a party e monstros ativos.'
-                        : 'Adicione heróis e monstros à campanha, depois clique em "Iniciar Combate" para gerar a ordem de iniciativa.'}
-                </p>
-                ${hasParty ? `
-                    <button class="btn btn-primary" style="font-family:'Cinzel'; padding:12px 28px; letter-spacing:1px; font-size:0.85rem;" data-action="startCombat">
-                        <i class="fa-solid fa-dice-d20"></i> INICIAR COMBATE
-                    </button>
-                ` : `
-                    <button class="btn btn-ghost" style="font-size:0.8rem;" data-action="navigateToCombat">
-                        Ir para Campanha →
-                    </button>
-                `}
-            </div>
-        `;
-    }
-
-    // ── ANÚNCIO CINEMATOGRÁFICO ───────────────────────────────────────
-
-    _renderTurnAnnounce() {
-        return `
-            <div class="im-turn-announce">
-                <div class="im-turn-announce-inner">
-                    <i class="fa-solid fa-swords" style="color:var(--accent);"></i>
-                    ${this._announceText}
-                </div>
-            </div>
-        `;
-    }
-
-    // ── AÇÕES ─────────────────────────────────────────────────────────
-
-    /** Avança para o próximo turno */
-    nextTurn() {
-        const order = this._getOrder();
-        if (!order.length) return;
-
-        const { combatRound } = this.store.state;
-        let idx = (this.store.state.initiativeIndex || 0) + 1;
-        let newRound = combatRound || 1;
-        let isNewRound = false;
-
-        if (idx >= order.length) {
-            idx = 0;
-            newRound++;
-            isNewRound = true;
-        }
-
-        // Reseta economia de ações
-        this._economy = { action: true, bonus: true, reaction: true, movement: 30 };
-        this._focusId = null;
-
-        // Anúncio cinematográfico
-        const nextActor = order[idx];
-        if (nextActor) {
-            this._showTurnAnnounce = true;
-            this._announceText = isNewRound
-                ? `⚔️ RODADA ${newRound} — Vez de ${nextActor.name}`
-                : `Vez de ${nextActor.name}`;
-        }
-
-        this.store.update(s => {
-            s.initiativeIndex = idx;
-            if (isNewRound) s.combatRound = newRound;
-            // Marca isCurrentTurn em todos os tokens do mapa
-            if (s.initiativeOrder) {
-                s.initiativeOrder = s.initiativeOrder.map((c, i) => ({
-                    ...c,
-                    isCurrentTurn: i === idx
-                }));
-            }
-        });
-
-        // Sincroniza player-view
-        this._broadcastState();
-
-        Toast.show(`⚔️ Vez de ${nextActor?.name}${isNewRound ? ` · Rodada ${newRound}` : ''}`, 'info');
-    }
-
-    /** Inicia combate rolando iniciativa para todos */
-    startCombat() {
-        const state = JSON.parse(JSON.stringify(this.store.state));
+    const startCombat = () => {
+        const state = JSON.parse(JSON.stringify(storeState));
         const { players, monsters } = state;
         const allCombatants = [
             ...(players || []).map(p => ({
                 ...p,
                 type: 'Player',
-                init: Dice.quick(20) + Math.floor(((p.stats?.dex || 10) - 10) / 2),
+                initiative: Dice.quick(20) + Math.floor(((p.stats?.dex || 10) - 10) / 2),
                 conditions: p.conditions || [],
                 isCurrentTurn: false,
             })),
             ...(monsters || []).map(m => ({
                 ...m,
                 type: 'Monster',
-                init: Dice.quick(20) + Math.floor(((m.stats?.dex || 10) - 10) / 2),
+                initiative: Dice.quick(20) + Math.floor(((m.stats?.dex || 10) - 10) / 2),
                 conditions: m.conditions || [],
                 isCurrentTurn: false,
             }))
@@ -651,336 +78,492 @@ export class InitiativeMonitor extends Component {
             return;
         }
 
-        // Ordena por iniciativa (decrescente)
-        allCombatants.sort((a, b) => (b.init ?? 0) - (a.init ?? 0));
+        allCombatants.sort((a, b) => (b.initiative ?? 0) - (a.initiative ?? 0));
+        if (allCombatants.length > 0) allCombatants[0].isCurrentTurn = true;
 
-        if (allCombatants.length > 0) {
-            allCombatants[0].isCurrentTurn = true;
-        }
+        setEconomy({ action: true, bonus: true, reaction: true, movement: 30 });
 
-        this._economy = { action: true, bonus: true, reaction: true, movement: 30 };
-        this._focusId = null;
-        this._showTurnAnnounce = true;
-        this._announceText = `⚔️ RODADA 1 — Vez de ${allCombatants[0]?.name}`;
-
-        this.store.update(s => {
+        store.update(s => {
             s.initiativeOrder = allCombatants;
             s.initiativeIndex = 0;
             s.combatRound = 1;
             s.combatActive = true;
         });
 
-        this._broadcastState();
+        broadcastState(store.state, broadcastChannel);
         Toast.show('⚔️ Combate iniciado! Iniciativa rolada automaticamente.', 'success');
-    }
+    };
 
-    /** Rerola iniciativa para todos */
-    rollAllInitiative() {
-        this.store.update(s => {
+    const rollAllInitiative = () => {
+        store.update(s => {
             if (!s.initiativeOrder?.length) return;
             s.initiativeOrder = s.initiativeOrder.map(c => ({
                 ...c,
-                init: Dice.quick(20) + Math.floor(((c.stats?.dex || 10) - 10) / 2),
-            })).sort((a, b) => (b.init ?? 0) - (a.init ?? 0));
+                initiative: Dice.quick(20) + Math.floor(((c.stats?.dex || 10) - 10) / 2),
+            })).sort((a, b) => (b.initiative ?? 0) - (a.initiative ?? 0));
             s.initiativeIndex = 0;
             s.combatRound = 1;
         });
-        this._economy = { action: true, bonus: true, reaction: true, movement: 30 };
+        setEconomy({ action: true, bonus: true, reaction: true, movement: 30 });
         Toast.show('🎲 Iniciativa rerolada!', 'info');
-    }
+    };
 
-    /** Encerra combate */
-    endCombat() {
-        this.store.update(s => {
+    const nextTurn = () => {
+        let orderLen = 0;
+        let nextName = '';
+        let newRound = 0;
+        store.update(s => {
+            if (!s.initiativeOrder?.length) return;
+            orderLen = s.initiativeOrder.length;
+            const currentIdx = s.initiativeIndex || 0;
+            let nextIdx = currentIdx + 1;
+            
+            if (nextIdx >= orderLen) {
+                nextIdx = 0;
+                s.combatRound = (s.combatRound || 1) + 1;
+                newRound = s.combatRound;
+            }
+            s.initiativeIndex = nextIdx;
+            
+            s.initiativeOrder.forEach((c, i) => c.isCurrentTurn = (i === nextIdx));
+            nextName = s.initiativeOrder[nextIdx].name;
+        });
+        
+        setEconomy({ action: true, bonus: true, reaction: true, movement: 30 });
+        broadcastState(store.state, broadcastChannel);
+        Toast.show(`⚔️ Vez de ${nextName}${newRound ? ` · Rodada ${newRound}` : ''}`, 'info');
+    };
+
+    const endCombat = () => {
+        store.update(s => {
             s.combatActive = false;
             s.initiativeOrder = [];
             s.initiativeIndex = 0;
             s.combatRound = 0;
         });
-        this._broadcastState();
+        broadcastState(store.state, broadcastChannel);
         Toast.show('🏁 Combate encerrado.', 'info');
-    }
+    };
 
-    /** Seleciona combatente para foco de ações rápidas */
-    selectFocus(e, el) {
-        const id = el.dataset.id;
-        this._focusId = this._focusId === id ? null : id;
-        this.render();
-    }
-
-    clearFocus() {
-        this._focusId = null;
-        this.render();
-    }
-
-    /** Alterna estado da economia de ações */
-    toggleEconomy(e, el) {
-        const type = el.dataset.type;
-        if (type in this._economy && typeof this._economy[type] === 'boolean') {
-            this._economy[type] = !this._economy[type];
-            this.render();
-        }
-    }
-
-    /** Reduz movimento em 5ft por clique */
-    toggleMovement() {
-        this._economy.movement = Math.max(0, this._economy.movement - 5);
-        this.render();
-    }
-
-    /** Mover combatente para cima na fila */
-    moveUp(e, el) {
-        const id = el.dataset.id;
-        this.store.update(s => {
-            const order = s.initiativeOrder || [];
-            const i = order.findIndex(c => c.id === id);
-            if (i > 0) {
-                [order[i - 1], order[i]] = [order[i], order[i - 1]];
-            }
-        });
-    }
-
-    /** Mover combatente para baixo na fila */
-    moveDown(e, el) {
-        const id = el.dataset.id;
-        this.store.update(s => {
-            const order = s.initiativeOrder || [];
-            const i = order.findIndex(c => c.id === id);
-            if (i < order.length - 1) {
-                [order[i], order[i + 1]] = [order[i + 1], order[i]];
-            }
-        });
-    }
-
-    /** Remove combatente da fila */
-    removeCombatant(e, el) {
-        const id = el.dataset.id;
-        this.store.update(s => {
-            s.initiativeOrder = (s.initiativeOrder || []).filter(c => c.id !== id);
-            if (s.initiativeIndex >= s.initiativeOrder.length) {
-                s.initiativeIndex = Math.max(0, s.initiativeOrder.length - 1);
-            }
-        });
-        if (this._focusId === id) this._focusId = null;
-    }
-
-    /** Obtém o combatente alvo (foco ou ativo) */
-    _getTarget() {
-        const order = this._getOrder();
-        const idx   = this.store.state.initiativeIndex || 0;
-        return this._focusId
-            ? order.find(c => c.id === this._focusId) || order[idx]
-            : order[idx];
-    }
-
-    /** Aplica dano ao alvo */
-    applyDamage() {
-        const target = this._getTarget();
-        if (!target) return;
-
-        const val = parseInt(this.$('#im-dmg-val')?.value || '0', 10);
-        if (isNaN(val) || val <= 0) {
-            Toast.show('Insira um valor de dano válido.', 'warning');
-            return;
-        }
-
-        let killedNow = false;
-        let actorType = 'Enemy';
-        this.store.update(s => {
-            const actor = (s.initiativeOrder || []).find(c => c.id === target.id);
-            if (!actor) return;
-
-            actorType = actor.type || 'Enemy';
-            const oldHp = RulesEngine.getHP(actor).current;
-
-            // Suporte a HP dinâmico (players vs monsters)
-            if ('hp_current' in actor) {
-                actor.hp_current = Math.max(0, (actor.hp_current ?? actor.hp_max) - val);
-                if (actor.hp_current === 0 && oldHp > 0) killedNow = true;
-            } else if (actor._tempHP !== undefined) {
-                const tempDmg = Math.min(actor._tempHP || 0, val);
-                actor._tempHP = (actor._tempHP || 0) - tempDmg;
-                const remaining = val - tempDmg;
-                if (actor.combat) {
-                    actor.combat.hp_current = Math.max(0, (actor.combat.hp_current ?? 0) - remaining);
-                    if (actor.combat.hp_current === 0 && oldHp > 0) killedNow = true;
+    return html`
+        <div class="flex items-center justify-between px-6 py-4 bg-obsidian-900 border-b border-tomeGold/20 rounded-t-xl">
+            <div class="flex items-center gap-3">
+                <h2 class="m-0 font-cinzel text-red-500 text-lg uppercase tracking-widest drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]">
+                    <i class="fa-solid fa-swords mr-2"></i> Ordem de Batalha
+                </h2>
+                ${combatActive 
+                    ? html`<span class="px-2 py-1 text-xs font-bold text-red-100 bg-red-900/50 border border-red-500/50 rounded animate-pulse">⚔️ RODADA ${combatRound || 1}</span>` 
+                    : html`<span class="px-2 py-1 text-xs font-bold text-gray-400 bg-black/50 border border-white/10 rounded">COMBATE INATIVO</span>`
                 }
-            } else if (actor.combat) {
-                actor.combat.hp_current = Math.max(0, (actor.combat.hp_current ?? actor.combat.hp_max ?? 10) - val);
-                if (actor.combat.hp_current === 0 && oldHp > 0) killedNow = true;
-            }
-        });
+            </div>
+            
+            <div class="flex items-center gap-2">
+                ${combatActive ? html`
+                    <button onClick=${rollAllInitiative} class="px-3 py-1.5 text-xs text-tomeGold bg-tomeGold/10 hover:bg-tomeGold/20 border border-tomeGold/30 rounded transition-colors" title="Rerolar Iniciativa">
+                        <i class="fa-solid fa-dice-d20"></i> Rolar Tudo
+                    </button>
+                    <button onClick=${nextTurn} class="px-4 py-1.5 font-cinzel font-bold text-white bg-gradient-to-br from-red-600 to-red-800 hover:from-red-500 hover:to-red-700 rounded shadow-[0_0_10px_rgba(239,68,68,0.4)] transition-all">
+                        PRÓXIMO <i class="fa-solid fa-chevron-right ml-1"></i>
+                    </button>
+                    <button onClick=${endCombat} class="px-2 py-1.5 text-red-500 hover:text-white hover:bg-red-600/80 border border-red-500/30 rounded transition-colors" title="Encerrar Combate">
+                        <i class="fa-solid fa-flag-checkered"></i>
+                    </button>
+                ` : html`
+                    <button onClick=${startCombat} class="px-4 py-2 font-cinzel font-bold text-white bg-gradient-to-r from-emerald-600 to-emerald-800 hover:from-emerald-500 hover:to-emerald-700 rounded shadow-[0_0_10px_rgba(16,185,129,0.4)] transition-all tracking-wider">
+                        <i class="fa-solid fa-dice-d20 mr-2"></i> INICIAR COMBATE
+                    </button>
+                `}
+            </div>
+        </div>
+    `;
+};
 
-        this._broadcastState();
-        Toast.show(`💥 ${val} de dano aplicado a ${target.name}`, 'danger');
-        if (this.$('#im-dmg-val')) this.$('#im-dmg-val').value = '';
+const Spotlight = ({ current, idx, economy, setEconomy }) => {
+    if (!current) return html`
+        <div class="p-6 text-gray-500 text-sm text-center">Nenhum combatente na fila.</div>
+    `;
 
-        if (killedNow) {
-            if (actorType === 'Player' || target.type === 'Player') {
-                FXEngine.trigger('HERO_FALLEN', target.name, target.id);
+    const isEnemy = current.type !== 'Player';
+    const hpPct = current._hpMax > 0 ? Math.min(100, Math.max(0, Math.round((current._hpCurrent / current._hpMax) * 100))) : 0;
+    const hpColor = current._hpMax <= 0 ? 'text-gray-500' : (hpPct > 50 ? 'text-emerald-400' : (hpPct > 20 ? 'text-yellow-400' : 'text-red-500'));
+    
+    const rawImg = current.img || current.portraitData || (isEnemy ? MonsterArt.getImage(current) : null);
+    const safeImg = rawImg && !rawImg.startsWith('db://') ? rawImg : null;
+
+    const toggleEco = (type) => {
+        if (type === 'movement') {
+            setEconomy(prev => ({ ...prev, movement: Math.max(0, prev.movement - 5) }));
+        } else {
+            setEconomy(prev => ({ ...prev, [type]: !prev[type] }));
+        }
+    };
+
+    return html`
+        <div class="relative overflow-hidden mb-6 rounded-xl border border-tomeGold/30 bg-gradient-to-r from-obsidian-950 to-obsidian-900 shadow-[0_10px_30px_rgba(0,0,0,0.6)]">
+            <div class="absolute left-0 top-0 bottom-0 w-1 ${isEnemy ? 'bg-red-500 shadow-[0_0_15px_rgba(239,68,68,1)]' : 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,1)]'}"></div>
+            
+            <div class="p-5 pl-7 flex flex-wrap gap-6 items-center">
+                <div class="w-20 h-20 rounded-full border-2 ${isEnemy ? 'border-red-500' : 'border-emerald-500'} flex-shrink-0 flex items-center justify-center font-cinzel text-xl text-white font-bold bg-black/50 shadow-[0_0_20px_rgba(0,0,0,0.8)] bg-cover bg-center" style="background-image: ${safeImg ? `url('${safeImg}')` : 'none'}">
+                    ${!safeImg ? current.name.substring(0,2).toUpperCase() : ''}
+                </div>
+                
+                <div class="flex-1 min-w-[250px]">
+                    <div class="flex items-center gap-2 text-[0.65rem] font-extrabold uppercase tracking-widest mb-1.5">
+                        ${isEnemy 
+                            ? html`<span class="text-red-500"><i class="fa-solid fa-skull mr-1"></i> INIMIGO</span>` 
+                            : html`<span class="text-emerald-500"><i class="fa-solid fa-shield-halved mr-1"></i> HERÓI</span>`
+                        }
+                        <span class="text-white/20">|</span>
+                        <span class="text-tomeGold">TURNO ${idx + 1}</span>
+                    </div>
+                    <div class="font-cinzel font-black text-2xl text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)] mb-3 leading-tight">
+                        ${current.name}
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-6 items-center">
+                        <div class="min-w-[120px]">
+                            <div class="flex justify-between items-end mb-1">
+                                <span class="text-[0.6rem] uppercase font-bold text-gray-400 tracking-wider">Pontos de Vida</span>
+                                <span class="text-lg font-black ${hpColor} drop-shadow-[0_0_10px_currentColor] leading-none">
+                                    ${current._hpCurrent} <span class="text-xs opacity-50">/ ${current._hpMax}</span>
+                                </span>
+                            </div>
+                            <div class="h-1.5 bg-black/80 rounded-full overflow-hidden border border-white/5">
+                                <div class="h-full transition-all duration-300" style="width: ${hpPct}%; background-color: currentColor; color: ${hpColor.replace('text-','bg-')}"></div>
+                            </div>
+                        </div>
+
+                        ${current.conditions?.length > 0 ? html`
+                            <div class="flex flex-wrap gap-2">
+                                ${current.conditions.map(c => {
+                                    const info = CONDITIONS[c] || { emoji: '⚠️', label: c };
+                                    return html`<span class="px-2 py-1 bg-red-900/30 border border-red-500/40 text-red-200 text-xs rounded shadow-sm" title="${info.label}">${info.emoji} ${info.label}</span>`;
+                                })}
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-2 min-w-[150px] border-l border-white/10 pl-6 py-2">
+                    <div class="text-[0.65rem] text-tomeGold uppercase font-black tracking-widest text-center mb-1">Economia de Ações</div>
+                    <div class="flex justify-center gap-2">
+                        <button onClick=${() => toggleEco('action')} class="w-10 h-10 rounded-lg flex flex-col items-center justify-center gap-1 border border-white/10 transition-colors ${economy.action ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' : 'bg-black/50 text-gray-600 grayscale'}">
+                            <i class="fa-solid fa-hand-fist text-sm"></i>
+                        </button>
+                        <button onClick=${() => toggleEco('bonus')} class="w-10 h-10 rounded-lg flex flex-col items-center justify-center gap-1 border border-white/10 transition-colors ${economy.bonus ? 'bg-blue-500/20 text-blue-400 border-blue-500/50' : 'bg-black/50 text-gray-600 grayscale'}">
+                            <i class="fa-solid fa-bolt text-sm"></i>
+                        </button>
+                        <button onClick=${() => toggleEco('reaction')} class="w-10 h-10 rounded-lg flex flex-col items-center justify-center gap-1 border border-white/10 transition-colors ${economy.reaction ? 'bg-purple-500/20 text-purple-400 border-purple-500/50' : 'bg-black/50 text-gray-600 grayscale'}">
+                            <i class="fa-solid fa-shield-halved text-sm"></i>
+                        </button>
+                        <button onClick=${() => toggleEco('movement')} class="w-12 h-10 rounded-lg flex flex-col items-center justify-center border border-white/10 transition-colors ${economy.movement > 0 ? 'bg-orange-500/20 text-orange-400 border-orange-500/50' : 'bg-black/50 text-gray-600 grayscale'}">
+                            <span class="font-bold text-xs">${economy.movement}</span>
+                            <span class="text-[0.5rem] uppercase opacity-70">ft</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+};
+
+const InitiativeApp = ({ store, broadcastChannel }) => {
+    // Escuta store via state nativo do Preact
+    const [storeState, setStoreState] = useState(store.state);
+    useEffect(() => {
+        const handler = () => setStoreState({ ...store.state });
+        store.on('change', handler);
+        return () => store.off('change', handler);
+    }, [store]);
+
+    const [economy, setEconomy] = useState({ action: true, bonus: true, reaction: true, movement: 30 });
+    const [quickAdd, setQuickAdd] = useState({ name: '', init: '', hp: '', type: 'Enemy' });
+    const [selectedCond, setSelectedCond] = useState('envenenado');
+    const [focusId, setFocusId] = useState(null);
+    const [dmgInput, setDmgInput] = useState('');
+
+    const order = getOrder(storeState);
+    const idx = storeState.initiativeIndex || 0;
+    const current = order[idx];
+    const focused = focusId ? (order.find(c => c.id === focusId) || current) : current;
+
+    // Listen to invocations from TOME events (Summoning)
+    useEffect(() => {
+        const handleSummon = (entity) => {
+            let initRoll = Dice.quick(20);
+            const combatant = {
+                id: entity.id || 'm-' + Date.now(),
+                name: entity.name,
+                initiative: initRoll,
+                hp: { current: entity.hp_max, max: entity.hp_max },
+                ac: entity.ac || 10,
+                type: entity.type || 'Enemy',
+                emoji: entity.emoji || '👹',
+                img: entity.img || '',
+                conditions: []
+            };
+            store.update(s => {
+                if (!s.initiativeOrder) s.initiativeOrder = [];
+                s.initiativeOrder.push(combatant);
+                if (s.combatActive) {
+                    s.initiativeOrder.sort((a, b) => (b.initiative ?? 0) - (a.initiative ?? 0));
+                }
+            });
+            Toast.show(`🧙 Invocação: ${entity.name} (Iniciativa: ${initRoll})`, 'success');
+        };
+        TOME.events.on('MONSTER_INVOKED', handleSummon);
+        return () => TOME.events.off('MONSTER_INVOKED', handleSummon);
+    }, []);
+
+    // Actions
+    const doDamage = () => {
+        if (!focused || !dmgInput) return;
+        const amt = parseInt(dmgInput, 10);
+        if (isNaN(amt) || amt <= 0) return;
+
+        store.update(s => {
+            const actor = (s.initiativeOrder || []).find(c => c.id === focused.id);
+            if (!actor) return;
+            if (actor.type === 'Player') {
+                const globalP = (s.players || []).find(p => p.id === actor.id);
+                if (globalP) RulesEngine.applyDamage(globalP, amt);
             } else {
-                FXEngine.trigger('ENTITY_SLAIN', target.name, target.id);
+                const globalM = (s.monsters || []).find(m => m.id === actor.id);
+                if (globalM) RulesEngine.applyDamage(globalM, amt);
+                else {
+                    actor.hp = actor.hp || { current: actor.hp_max, max: actor.hp_max };
+                    if (typeof actor.hp === 'number') actor.hp = { current: actor.hp, max: actor.hp_max };
+                    actor.hp.current = Math.max(0, actor.hp.current - amt);
+                }
             }
-        }
-    }
+        });
+        broadcastState(store.state, broadcastChannel);
+        Toast.show(`💥 Dano aplicado: ${amt} em ${focused.name}`, 'warning');
+        setDmgInput('');
+    };
 
-    /** Aplica cura ao alvo */
-    applyHeal() {
-        const target = this._getTarget();
-        if (!target) return;
+    const doHeal = () => {
+        if (!focused || !dmgInput) return;
+        const amt = parseInt(dmgInput, 10);
+        if (isNaN(amt) || amt <= 0) return;
 
-        const val = parseInt(this.$('#im-dmg-val')?.value || '0', 10);
-        if (isNaN(val) || val <= 0) {
-            Toast.show('Insira um valor de cura válido.', 'warning');
-            return;
-        }
-
-        this.store.update(s => {
-            const actor = (s.initiativeOrder || []).find(c => c.id === target.id);
+        store.update(s => {
+            const actor = (s.initiativeOrder || []).find(c => c.id === focused.id);
             if (!actor) return;
-
-            if ('hp_current' in actor) {
-                actor.hp_current = Math.min(actor.hp_max ?? 999, (actor.hp_current ?? 0) + val);
-            } else if (actor.combat) {
-                actor.combat.hp_current = Math.min(
-                    actor.combat.hp_max ?? 999,
-                    (actor.combat.hp_current ?? 0) + val
-                );
+            if (actor.type === 'Player') {
+                const globalP = (s.players || []).find(p => p.id === actor.id);
+                if (globalP) RulesEngine.heal(globalP, amt);
+            } else {
+                const globalM = (s.monsters || []).find(m => m.id === actor.id);
+                if (globalM) RulesEngine.heal(globalM, amt);
+                else {
+                    actor.hp = actor.hp || { current: actor.hp_max, max: actor.hp_max };
+                    actor.hp.current = Math.min(actor.hp.max, actor.hp.current + amt);
+                }
             }
         });
+        broadcastState(store.state, broadcastChannel);
+        Toast.show(`💚 Cura aplicada: ${amt} em ${focused.name}`, 'success');
+        setDmgInput('');
+    };
 
-        this._broadcastState();
-        Toast.show(`💚 ${val} HP restaurados para ${target.name}`, 'success');
-        if (this.$('#im-dmg-val')) this.$('#im-dmg-val').value = '';
-    }
-
-    /** Rola 1d6 e preenche o campo de dano */
-    rollDice() {
-        const result = Dice.roll(6);
-        const input = this.$('#im-dmg-val');
-        if (input) input.value = result;
-        Toast.show(`🎲 1d6 = ${result}`, 'info');
-    }
-
-    /** Armazena valor do input de dano sem re-render */
-    dmgInputChange(e, el) {
-        this._dmgInput = el.value;
-    }
-
-    /** Armazena condição selecionada */
-    condSelectChange(e, el) {
-        this._selectedCond = el.value;
-    }
-
-    /** Aplica condição ao alvo focado */
-    applyCondition() {
-        const target = this._getTarget();
-        if (!target) return;
-
-        const cond = this.$('#im-cond-select')?.value || this._selectedCond;
-
-        this.store.update(s => {
-            const actor = (s.initiativeOrder || []).find(c => c.id === target.id);
-            if (!actor) return;
-            if (!actor.conditions) actor.conditions = [];
-            if (!actor.conditions.includes(cond)) {
-                actor.conditions.push(cond);
+    const applyCond = () => {
+        if (!focused || !selectedCond) return;
+        store.update(s => {
+            const actor = (s.initiativeOrder || []).find(c => c.id === focused.id);
+            if (actor) {
+                if (!actor.conditions) actor.conditions = [];
+                if (!actor.conditions.includes(selectedCond)) actor.conditions.push(selectedCond);
             }
         });
+    };
 
-        const info = InitiativeMonitor.CONDITIONS[cond] || { emoji: '⚠️', label: cond };
-        Toast.show(`${info.emoji} ${info.label} aplicado a ${target.name}`, 'warning');
-    }
-
-    /** Remove condição do combatente ativo pelo spotlight */
-    removeConditionFromActive(e, el) {
-        const cond = el.dataset.cond;
-        const order = this._getOrder();
-        const idx   = this.store.state.initiativeIndex || 0;
-        const current = order[idx];
-        if (!current) return;
-
-        this.store.update(s => {
-            const actor = (s.initiativeOrder || []).find(c => c.id === current.id);
-            if (actor?.conditions) {
-                actor.conditions = actor.conditions.filter(c => c !== cond);
-            }
-        });
-    }
-
-    /** Limpa todas as condições do alvo */
-    clearConditions() {
-        const target = this._getTarget();
-        if (!target) return;
-
-        this.store.update(s => {
-            const actor = (s.initiativeOrder || []).find(c => c.id === target.id);
+    const clearConds = () => {
+        if (!focused) return;
+        store.update(s => {
+            const actor = (s.initiativeOrder || []).find(c => c.id === focused.id);
             if (actor) actor.conditions = [];
         });
-        Toast.show(`✅ Condições limpas de ${target.name}`, 'success');
-    }
+    };
 
-    /** Adiciona combatente como Herói */
-    quickAddPlayer() { this._quickAddCombatant('Player'); }
+    const moveUp = (id) => {
+        store.update(s => {
+            const ord = s.initiativeOrder || [];
+            const i = ord.findIndex(c => c.id === id);
+            if (i > 0) [ord[i - 1], ord[i]] = [ord[i], ord[i - 1]];
+        });
+    };
 
-    /** Adiciona combatente como Inimigo */
-    quickAddEnemy() { this._quickAddCombatant('Monster'); }
+    const moveDown = (id) => {
+        store.update(s => {
+            const ord = s.initiativeOrder || [];
+            const i = ord.findIndex(c => c.id === id);
+            if (i < ord.length - 1) [ord[i], ord[i + 1]] = [ord[i + 1], ord[i]];
+        });
+    };
 
-    /** Adiciona combatente com iniciativa automática rolada */
-    quickAddRollInit() {
-        const init = Dice.quick(20);
-        const initEl = this.$('#qa-init');
-        if (initEl) initEl.value = init;
-        this._quickAdd.init = init;
-        Toast.show(`🎲 Iniciativa rolada: ${init}`, 'info');
-    }
+    const removeCombatant = (id) => {
+        if (confirm('Remover combatente da fila?')) {
+            store.update(s => {
+                s.initiativeOrder = (s.initiativeOrder || []).filter(c => c.id !== id);
+                if (s.initiativeIndex >= s.initiativeOrder.length) s.initiativeIndex = 0;
+            });
+        }
+    };
 
-    _quickAddCombatant(type) {
-        const name = this.$('#qa-name')?.value?.trim() || '';
-        const init = parseInt(this.$('#qa-init')?.value || '0', 10) || Dice.quick(20);
-        const hp   = parseInt(this.$('#qa-hp')?.value || '10', 10) || 10;
-
-        if (!name) {
+    const doQuickAdd = (type) => {
+        if (!quickAdd.name) {
             Toast.show('Insira um nome para o combatente.', 'warning');
             return;
         }
+        const init = parseInt(quickAdd.init || Dice.quick(20), 10);
+        const hp = parseInt(quickAdd.hp || 10, 10);
 
         const newCombatant = {
             id: `qc-${Date.now()}-${Math.random().toString(36).substring(2,7)}`,
-            name,
-            type,
-            init,
+            name: quickAdd.name,
+            type: type,
+            initiative: init,
             ac: 10,
-            hp_current: hp,
-            hp_max: hp,
+            hp: { current: hp, max: hp },
             conditions: [],
             isCurrentTurn: false,
         };
 
-        this.store.update(s => {
+        store.update(s => {
             if (!s.initiativeOrder) s.initiativeOrder = [];
             s.initiativeOrder.push(newCombatant);
-            s.initiativeOrder.sort((a, b) => (b.init ?? 0) - (a.init ?? 0));
+            s.initiativeOrder.sort((a, b) => (b.initiative ?? 0) - (a.initiative ?? 0));
             if (!s.combatActive) {
                 s.combatActive = true;
-                s.combatRound  = s.combatRound || 1;
+                s.combatRound = s.combatRound || 1;
                 s.initiativeIndex = 0;
             }
         });
 
-        this._broadcastState();
+        broadcastState(store.state, broadcastChannel);
+        setQuickAdd({ name: '', init: '', hp: '', type: 'Enemy' });
+        Toast.show(`➕ ${quickAdd.name} adicionado como ${type === 'Player' ? 'Herói' : 'Inimigo'}`, 'success');
+    };
 
-        // Limpa formulário
-        this._quickAdd = { name: '', init: '', hp: '', type: 'Enemy' };
-        if (this.$('#qa-name'))  this.$('#qa-name').value  = '';
-        if (this.$('#qa-init'))  this.$('#qa-init').value  = '';
-        if (this.$('#qa-hp'))    this.$('#qa-hp').value    = '';
+    return html`
+        <div class="flex flex-col h-full bg-obsidian-950 text-gray-200 font-sans overflow-hidden">
+            <${Header} storeState=${storeState} store=${store} broadcastChannel=${broadcastChannel} setEconomy=${setEconomy} />
+            
+            <div class="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-tomeGold/30">
+                ${!storeState.combatActive || order.length === 0 
+                    ? html`
+                        <div class="flex flex-col items-center justify-center h-full opacity-50 py-10">
+                            <i class="fa-solid fa-campground text-6xl text-gray-600 mb-4"></i>
+                            <h3 class="font-cinzel text-xl text-gray-400">Acampamento Pacífico</h3>
+                            <p class="text-sm">Adicione entidades e inicie o combate.</p>
+                        </div>
+                    ` 
+                    : html`
+                        <${Spotlight} current=${current} idx=${idx} economy=${economy} setEconomy=${setEconomy} />
+                        
+                        <div class="flex gap-6 items-start">
+                            <!-- QUEUE -->
+                            <div class="flex-1 min-w-[300px]">
+                                <h3 class="font-cinzel text-sm text-tomeGold uppercase tracking-widest mb-3 border-b border-white/10 pb-2">
+                                    <i class="fa-solid fa-list-ol mr-2"></i> Fila de Iniciativa
+                                </h3>
+                                <div class="flex flex-col gap-2">
+                                    ${order.map((c, i) => {
+                                        const isFocus = focused?.id === c.id;
+                                        const isActive = i === idx;
+                                        const isEnemy = c.type !== 'Player';
+                                        return html`
+                                            <div onClick=${() => setFocusId(isFocus ? null : c.id)} class="flex items-center justify-between p-3 rounded-lg border transition-all cursor-pointer ${isActive ? 'bg-black/50 border-tomeGold/50 shadow-[0_0_10px_rgba(197,160,89,0.2)]' : (isFocus ? 'bg-white/10 border-white/30' : 'bg-black/30 border-transparent hover:bg-white/5')}">
+                                                <div class="flex items-center gap-3">
+                                                    <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs bg-black border ${isEnemy ? 'border-red-500 text-red-500' : 'border-emerald-500 text-emerald-500'}">
+                                                        ${c.initiative}
+                                                    </div>
+                                                    <div>
+                                                        <div class="font-bold text-sm ${isActive ? 'text-tomeGold' : 'text-gray-200'}">${c.name}</div>
+                                                        <div class="text-[0.65rem] text-gray-500 uppercase tracking-widest">
+                                                            HP: ${c._hpCurrent}/${c._hpMax} | AC: ${c.ac || 10}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="flex items-center gap-1 opacity-0 hover:opacity-100 transition-opacity">
+                                                    <button onClick=${(e) => { e.stopPropagation(); moveUp(c.id); }} class="w-6 h-6 rounded bg-white/10 hover:bg-white/20 flex items-center justify-center text-xs"><i class="fa-solid fa-arrow-up"></i></button>
+                                                    <button onClick=${(e) => { e.stopPropagation(); moveDown(c.id); }} class="w-6 h-6 rounded bg-white/10 hover:bg-white/20 flex items-center justify-center text-xs"><i class="fa-solid fa-arrow-down"></i></button>
+                                                    <button onClick=${(e) => { e.stopPropagation(); removeCombatant(c.id); }} class="w-6 h-6 rounded bg-red-900/40 hover:bg-red-600 flex items-center justify-center text-xs text-red-400 hover:text-white"><i class="fa-solid fa-trash"></i></button>
+                                                </div>
+                                            </div>
+                                        `;
+                                    })}
+                                </div>
+                            </div>
 
-        Toast.show(`➕ ${name} adicionado como ${type === 'Player' ? 'Herói' : 'Inimigo'}`, 'success');
+                            <!-- ACTION PANEL -->
+                            <div class="w-[280px] bg-black/40 border border-white/10 rounded-xl p-4 sticky top-0 flex flex-col gap-6">
+                                <h3 class="font-cinzel text-sm text-gray-300 uppercase tracking-widest border-b border-white/10 pb-2">
+                                    <i class="fa-solid fa-crosshairs text-red-500 mr-2"></i> Ações Manuais
+                                </h3>
+                                
+                                ${!focused ? html`<div class="text-xs text-gray-500 text-center">Selecione um alvo na fila</div>` : html`
+                                    <div>
+                                        <div class="text-xs text-tomeGold font-bold mb-2">ALVO: ${focused.name}</div>
+                                        
+                                        <div class="flex flex-col gap-2 mb-4">
+                                            <input type="number" placeholder="Quantidade (HP)" value=${dmgInput} onInput=${e => setDmgInput(e.target.value)} class="w-full bg-black/50 border border-white/20 rounded p-2 text-sm text-white focus:outline-none focus:border-tomeGold/50" />
+                                            <div class="flex gap-2">
+                                                <button onClick=${doDamage} class="flex-1 bg-red-900/40 hover:bg-red-700 border border-red-500/50 text-red-200 text-xs py-2 rounded font-bold transition-colors"><i class="fa-solid fa-burst"></i> Dano</button>
+                                                <button onClick=${doHeal} class="flex-1 bg-emerald-900/40 hover:bg-emerald-700 border border-emerald-500/50 text-emerald-200 text-xs py-2 rounded font-bold transition-colors"><i class="fa-solid fa-hand-holding-medical"></i> Curar</button>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex flex-col gap-2">
+                                            <select value=${selectedCond} onChange=${e => setSelectedCond(e.target.value)} class="w-full bg-black/50 border border-white/20 rounded p-2 text-sm text-white focus:outline-none focus:border-tomeGold/50">
+                                                ${Object.entries(CONDITIONS).map(([k, v]) => html`<option value="${k}">${v.emoji} ${v.label}</option>`)}
+                                            </select>
+                                            <div class="flex gap-2">
+                                                <button onClick=${applyCond} class="flex-1 bg-purple-900/40 hover:bg-purple-700 border border-purple-500/50 text-purple-200 text-xs py-2 rounded font-bold transition-colors"><i class="fa-solid fa-plus"></i> Condição</button>
+                                                <button onClick=${clearConds} class="w-10 bg-white/5 hover:bg-white/20 border border-white/20 text-gray-300 text-xs py-2 rounded font-bold transition-colors" title="Limpar"><i class="fa-solid fa-eraser"></i></button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `}
+                            </div>
+                        </div>
+                    `
+                }
+            </div>
+
+            <!-- QUICK ADD FOOTER -->
+            <div class="bg-black/60 border-t border-white/10 p-4">
+                <div class="flex items-center gap-3">
+                    <span class="text-xs text-gray-400 font-bold uppercase tracking-widest"><i class="fa-solid fa-bolt text-tomeGold mr-1"></i> Quick Add</span>
+                    <input type="text" placeholder="Nome" value=${quickAdd.name} onInput=${e => setQuickAdd(p => ({...p, name: e.target.value}))} class="flex-1 min-w-0 bg-white/5 border border-white/10 rounded px-2 py-1.5 text-sm text-white focus:outline-none focus:border-tomeGold/50" />
+                    <input type="number" placeholder="Inic" value=${quickAdd.init} onInput=${e => setQuickAdd(p => ({...p, init: e.target.value}))} class="w-16 bg-white/5 border border-white/10 rounded px-2 py-1.5 text-sm text-white focus:outline-none focus:border-tomeGold/50" title="Iniciativa (Vazio rola 1d20)" />
+                    <input type="number" placeholder="HP" value=${quickAdd.hp} onInput=${e => setQuickAdd(p => ({...p, hp: e.target.value}))} class="w-16 bg-white/5 border border-white/10 rounded px-2 py-1.5 text-sm text-white focus:outline-none focus:border-tomeGold/50" />
+                    <button onClick=${() => doQuickAdd('Monster')} class="px-3 py-1.5 bg-red-900/40 hover:bg-red-700 border border-red-500/50 text-red-200 text-xs rounded font-bold transition-colors">Inimigo</button>
+                    <button onClick=${() => doQuickAdd('Player')} class="px-3 py-1.5 bg-emerald-900/40 hover:bg-emerald-700 border border-emerald-500/50 text-emerald-200 text-xs rounded font-bold transition-colors">Herói</button>
+                </div>
+            </div>
+        </div>
+    `;
+};
+
+/**
+ * Wrapper de Componente V19.2.1
+ * Mantém compatibilidade com o sistema de abas do Dashboard.js
+ */
+export class InitiativeMonitor extends Component {
+    constructor(opts) {
+        super(opts);
+        this._broadcast = new BroadcastChannel('tome_map');
     }
 
-    /** Navega para a aba de campanha */
-    navigateToCombat() {
-        this.store.update(s => { s.activeTab = 'campaign'; });
+    onMount() {}
+    onUnmount() {
+        if (this._broadcast) this._broadcast.close();
+    }
+
+    render() {
+        if (!this.element) return;
+        preactRender(html`<${InitiativeApp} store=${this.store} broadcastChannel=${this._broadcast} />`, this.element);
     }
 }

@@ -66,8 +66,8 @@ export class SessionManager {
 
             if (!response.ok) {
                 if (response.status === 401 || response.status === 403) {
-                    console.error('[SessionManager] Não autorizado a salvar. Faça login novamente.');
-                    TOME.events.emit('AUTH_REQUIRED');
+                    console.warn('[SessionManager] Sessão remota expirada. O jogo continuará salvando no Cache Local/CRDT, mas a sincronização com o banco pode falhar.');
+                    // TOME.events.emit('AUTH_REQUIRED'); // Removido para evitar loop de recarregamento
                 }
                 throw new Error(`Erro na resposta do servidor: ${response.status}`);
             }

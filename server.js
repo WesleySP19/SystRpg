@@ -11,7 +11,7 @@ import os from 'os';
 import { initDb, getDocument, saveDocument, getDbType, getPrisma } from './utils/db.js';
 import { battleManager } from './services/BattleManager.js';
 import { WebSocketServer } from 'ws';
-import { setupWSConnection, setPersistence } from 'y-websocket/bin/utils';
+import { setupWSConnection, setPersistence, docs as activeYDocs } from 'y-websocket/bin/utils';
 import compression from 'compression';
 
 import registerAuthRoutes from './routes/auth.js';
@@ -31,9 +31,9 @@ const io = new Server(server, {
     destroyUpgrade: false
 });
 
-// Aumenta o limite de payload JSON para suportar uploads base64 grandes
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+// Limite reduzido de payload JSON para poupar RAM (Uploads pesados agora via Multer/Stream)
+app.use(express.json({ limit: '5mb' }));
+app.use(express.urlencoded({ limit: '5mb', extended: true }));
 
 // Habilita Compressão GZIP/Brotli para todas as rotas (reduz tamanho JSON e assets em até 90%)
 app.use(compression());
@@ -64,6 +64,20 @@ setInterval(() => {
         }
     }
 
+    // Purga de sessões (QR Codes abandonados há mais de 12 horas)
+    let hasChanges = false;
+    for (const [token, data] of sessionTokens.entries()) {
+        if (data.createdAt && now - data.createdAt > 12 * 60 * 60 * 1000) {
+            sessionTokens.delete(token);
+            if (activeTables.has(data.tableId)) {
+                activeTables.get(data.tableId).delete(token);
+                if (activeTables.get(data.tableId).size === 0) activeTables.delete(data.tableId);
+            }
+            hasChanges = true;
+        }
+    }
+    if (hasChanges) saveSessions();
+
     // Monitoramento e Purge de memória (V17.9 - Pre-V18 Polishing)
     const memUse = process.memoryUsage();
     if (memUse.heapUsed > 250 * 1024 * 1024) { 
@@ -71,7 +85,7 @@ setInterval(() => {
         console.warn(`[Servidor] ATENÇÃO: Alto consumo de RAM (${Math.round(memUse.heapUsed / 1024 / 1024)}MB)`);
         if (global.gc) {
             global.gc();
-            console.log('[Servidor] Garbage Collector forçado (V17.9 Profiling Ativo).');
+            console.log('[Servidor] Garbage Collector forçado (Fase 3: Memory Cleanup ativo).');
         }
     }
 }, 60 * 1000); // Roda a cada minuto
@@ -183,11 +197,8 @@ function authenticateToken(req, res, next) {
 // ── ROTAS DE AUTENTICAÇÃO (JWT & SMS Simulado) ──
 registerAuthRoutes(app, { smsCodes, JWT_SECRET, getOrCreateMasterInDb });
 
-// ── ELO ARCANO (MENSAGERIA MOBILE SSE) PREMIUM ──
-const playerConnections = new Map(); // characterId -> { res, tableId, nome, sessionToken }
-const masterConnections = new Map(); // masterId -> res
+// Variáveis de estado antigas (SSE) foram removidas para prevenir Memory Leaks
 const messageHistory = new Map(); // tableId -> Array of messages
-const throttleState = new Map(); // masterId -> lastMessageTime
 
 // ── SESSÕES POR QR CODE (TOME.SINAL V2) ──
 let sessionTokens = new Map(); // sessionToken -> { characterId, tableId, connected, nome, avatar, classe }
@@ -247,15 +258,16 @@ async function saveSessions() {
     const prisma = getPrisma();
     if (getDbType() === 'sqlite' && prisma) {
         try {
+            const operations = [];
             for (const [tableId] of activeTables.entries()) {
-                await prisma.tableSession.upsert({
+                operations.push(prisma.tableSession.upsert({
                     where: { tableId },
                     update: {},
                     create: { tableId }
-                });
+                }));
             }
             for (const [token, data] of sessionTokens.entries()) {
-                await prisma.playerSession.upsert({
+                operations.push(prisma.playerSession.upsert({
                     where: { sessionToken: token },
                     update: {
                         characterId: data.characterId,
@@ -274,7 +286,10 @@ async function saveSessions() {
                         avatar: data.avatar,
                         classe: data.classe
                     }
-                });
+                }));
+            }
+            if (operations.length > 0) {
+                await prisma.$transaction(operations);
             }
         } catch (err) {
             console.error('[NodeServer] Erro ao persistir sessões no Prisma:', err);
@@ -319,7 +334,8 @@ app.post('/api/sessao/iniciar', (req, res) => {
             connected: false,
             nome: char.name || 'Desconhecido',
             avatar: char.avatar || '',
-            classe: char.class || ''
+            classe: char.class || '',
+            createdAt: Date.now()
         });
         result.push({ characterId: char.id, sessionToken: token, nome: char.name });
     }
@@ -357,13 +373,6 @@ app.post('/api/sessao/encerrar', (req, res) => {
     if (tableId && activeTables.has(tableId)) {
         for (const token of activeTables.get(tableId)) {
             sessionTokens.delete(token);
-            // Drop connection if active
-            for (const [charId, conn] of playerConnections.entries()) {
-                if (conn.sessionToken === token) {
-                    conn.res.end();
-                    playerConnections.delete(charId);
-                }
-            }
         }
         activeTables.delete(tableId);
         saveSessions(); // Atualiza persistência
@@ -430,8 +439,7 @@ app.get('/api/sessao/token-info', (req, res) => {
     res.json({ ...sessionData, sessionToken });
 });
 
-// ── SYSTEMA SYNC-MESH UNIVERSAL DE CHAT & MENSAGERIA HÍBRIDA ──
-const activeYDocs = new Map();
+// activeYDocs agora aponta para o Map interno do y-websocket (docs)
 
 function normalizeChatMessage(msg = {}) {
     const id = msg.id || crypto.randomUUID();
@@ -735,46 +743,6 @@ app.post('/api/save', authenticateToken, async (req, res) => {
     }
 });
 
-// 2. POST /api/upload — Faz o upload de imagens base64 decodificando e salvando em disco (Com JWT se em produção)
-app.post('/api/upload', authenticateToken, async (req, res) => {
-    try {
-        const { filename, base64 } = req.body;
-        let rawName = filename || `upload_${Date.now()}.png`;
-
-        let rawBase = req.body.base64 || req.body.image;
-        if (!rawBase) return res.status(400).json({ error: 'Nenhum base64 fornecido.' });
-
-        // Resolve extensão a partir do cabeçalho base64 data URI se disponível
-        let ext = path.extname(rawName) || '.png';
-        let cleanBase64 = rawBase;
-        
-        const match = rawBase.match(/^data:image\/([a-zA-Z+.-]+);base64,/);
-        if (match) {
-            let mimeSub = match[1].toLowerCase();
-            if (mimeSub === 'jpeg' || mimeSub === 'jpg') ext = '.jpg';
-            else if (mimeSub === 'png') ext = '.png';
-            else if (mimeSub === 'webp') ext = '.webp';
-            else if (mimeSub === 'gif') ext = '.gif';
-            else if (mimeSub === 'svg+xml') ext = '.svg';
-            cleanBase64 = rawBase.replace(match[0], '');
-        }
-
-        // Sanitiza o nome final garantindo a extensão apropriada
-        let baseNameWithoutExt = path.basename(rawName, path.extname(rawName));
-        let safeName = baseNameWithoutExt.replace(/[^a-zA-Z0-9_.-]/g, '') + ext;
-
-        const buffer = Buffer.from(cleanBase64, 'base64');
-        const filePath = path.join(uploadDir, safeName);
-        await fs.promises.writeFile(filePath, buffer);
-
-        const urlPath = `/public/uploads/${safeName}`;
-        console.log(`[NodeServer] Imagem salva: ${urlPath}`);
-        res.json({ status: 'success', url: urlPath });
-    } catch (err) {
-        console.error('[NodeServer] Erro no upload:', err);
-        res.status(500).json({ status: 'error', message: err.message });
-    }
-});
 
 // Cache control matches PowerShell implementation (no-store)
 app.use((req, res, next) => {
@@ -887,6 +855,18 @@ io.on('connection', (socket) => {
             senderId: socket.id,
             candidate: payload.candidate
         });
+    });
+
+    socket.on('disconnecting', () => {
+        // Fase 3.3: Higienização de salas inativas antes do socket fechar definitivamente
+        for (const room of socket.rooms) {
+            if (room !== socket.id) {
+                const roomData = io.sockets.adapter.rooms.get(room);
+                if (roomData && roomData.size === 1) {
+                    console.log(`[NodeServer] [Socket] A sala da mesa '${room}' ficará vazia. Higienização programada.`);
+                }
+            }
+        }
     });
 
     socket.on('disconnect', () => {
@@ -1004,10 +984,13 @@ async function start() {
     // ── CONFIGURAÇÃO DE PERSISTÊNCIA DO YJS ──
     const yjsDir = path.join(dataDir, 'yjs');
     if (!fs.existsSync(yjsDir)) fs.mkdirSync(yjsDir, { recursive: true });
+    
+    // Fila de gravação com debounce para evitar corrupção de estado (Mutex)
+    const pendingWrites = new Map();
 
     setPersistence({
         bindState: async (docName, ydoc) => {
-            activeYDocs.set(docName, ydoc);
+            // activeYDocs (docs do y-websocket) já gerencia o lifecycle da instância
             const docPath = path.join(yjsDir, `${docName.replace(/[^a-zA-Z0-9_-]/g, '')}.bin`);
             try {
                 const encodedState = await fs.promises.readFile(docPath);
@@ -1056,13 +1039,24 @@ async function start() {
         },
         writeState: async (docName, ydoc) => {
             const docPath = path.join(yjsDir, `${docName.replace(/[^a-zA-Z0-9_-]/g, '')}.bin`);
-            try {
-                const encodedState = Y.encodeStateAsUpdate(ydoc);
-                await fs.promises.writeFile(docPath, encodedState);
-                console.log(`[Yjs] Estado salvo no disco para o documento: ${docName}`);
-            } catch (err) {
-                console.error(`[Yjs] Erro ao salvar o documento ${docName}:`, err);
+            
+            // Debounce: Apenas agenda a gravação para não dar write overhead e travar I/O
+            if (pendingWrites.has(docName)) {
+                clearTimeout(pendingWrites.get(docName));
             }
+            
+            const timeout = setTimeout(async () => {
+                pendingWrites.delete(docName);
+                try {
+                    const encodedState = Y.encodeStateAsUpdate(ydoc);
+                    await fs.promises.writeFile(docPath, encodedState);
+                    console.log(`[Yjs] Estado salvo no disco para o documento: ${docName}`);
+                } catch (err) {
+                    console.error(`[Yjs] Erro ao salvar o documento ${docName}:`, err);
+                }
+            }, 500); // 500ms de debounce
+
+            pendingWrites.set(docName, timeout);
         }
     });
 
@@ -1115,5 +1109,20 @@ async function start() {
         });
     });
 }
+
+// Fase 4.2: Tratamento de desligamento seguro (Graceful Shutdown)
+async function gracefulShutdown(signal) {
+    console.log(`\n[NodeServer] Recebido ${signal}. Salvando sessões e encerrando de forma segura...`);
+    try {
+        await saveSessions();
+        console.log('[NodeServer] Sessões persistidas com sucesso.');
+    } catch (err) {
+        console.error('[NodeServer] Erro ao salvar sessões durante o encerramento:', err);
+    }
+    process.exit(0);
+}
+
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
 start();

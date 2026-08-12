@@ -1,5 +1,6 @@
 import { html } from 'htm/preact';
 import { render as preactRender } from 'preact';
+import { simulateOracle } from '../../utils/mockOracle.js';
 
 /**
  * OracleModal - O Oráculo do Mestre (RAG de Lore & IA Local Offline)
@@ -34,38 +35,6 @@ export class OracleModal {
         }
     }
 
-    async _simulateOracle(q) {
-        return new Promise(resolve => {
-            setTimeout(() => {
-                const s = this.store.state;
-                const lowerQ = q.toLowerCase();
-                let ans = "🔮 As linhas do destino estão turvas, aventureiro. Refaça a pergunta com outras palavras.";
-                
-                if (lowerQ.includes('herói') || lowerQ.includes('jogador') || lowerQ.includes('party')) {
-                    if (s.heroes && s.heroes.length > 0) {
-                        ans = "✨ Sinto a presença vibrante das seguintes almas valentes na sua mesa: " + s.heroes.map(h => h.name || h.nome).join(', ') + ". O destino deles pende por um fio.";
-                    } else {
-                        ans = "🌑 Não vejo nenhum herói nas neblinas desta sessão no momento. Eles ainda não chegaram ou caíram em batalha.";
-                    }
-                }
-                else if (lowerQ.includes('npc') || lowerQ.includes('ferreiro') || lowerQ.includes('taverneiro')) {
-                    ans = "👁️ Nos registros esotéricos, vejo um mercador peculiar na cidade que guarda um segredo maldito. Ele é um ferreiro com cicatrizes de fogo dracônico nas mãos. Ele sabe onde fica a tumba.";
-                }
-                else if (lowerQ.includes('resumo') || lowerQ.includes('sessão')) {
-                    ans = "📜 As crônicas desta sessão revelam turbulência. Sangue foi derramado no grid, testes de resistência vitais foram forçados e os deuses acompanham cada rolagem de perto.";
-                }
-                else if (lowerQ.includes('quest') || lowerQ.includes('missão')) {
-                    ans = "🗡️ A maior provação que aguarda o grupo está ligada ao Culto das Sombras no subterrâneo. O resgate do prisioneiro é urgente.";
-                }
-                else if (lowerQ.includes('dragão')) {
-                    ans = "🐉 Táticas Dracônicas: Dragões são predadores aéreos formidáveis. Eles usarão seu Sopro Destrutivo (Recarrega 5-6) sempre que possível, e preferem isolar curandeiros usando Ataques de Asa e Presença Aterradora antes de engajar em combate corporal.";
-                }
-
-                resolve(ans);
-            }, 1500); // Simulando tempo de inferência neural
-        });
-    }
-
     _typeWriter(text) {
         this._response = "";
         let i = 0;
@@ -91,25 +60,30 @@ export class OracleModal {
 
         this._query = q;
         this._loading = true;
-        this._response = null; // Limpa para não piscar texto velho
+        this._response = ''; 
         this.render();
 
         try {
+            const onChunk = (chunk) => {
+                if (this._loading) this._loading = false;
+                this._response += chunk;
+                this.render();
+            };
+
             let res = '';
             if (window.TOME && window.TOME.ai) {
                 if (q.toLowerCase().includes('quem') || q.toLowerCase().includes('npc') || q.toLowerCase().includes('missão')) {
-                    res = await window.TOME.ai.oracleSearch(q, this.store);
+                    res = await window.TOME.ai.oracleSearch(q, this.store, onChunk);
                 } else {
-                    res = await window.TOME.ai.ask(q);
+                    res = await window.TOME.ai.ask(q, '', onChunk);
                 }
             } else {
                 // FALLBACK: Heurística / Mock Inteligente
-                res = await this._simulateOracle(q);
+                res = await simulateOracle(q, this.store);
+                this._typeWriter(res);
             }
             
             this._loading = false;
-            // Invoca o efeito máquina de escrever no lugar da resposta instantânea
-            this._typeWriter(res);
             this._history.unshift({ query: q, answer: res, timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) });
         } catch (err) {
             this._loading = false;
@@ -119,61 +93,59 @@ export class OracleModal {
 
     template() {
         return html`
-            <div class="modal-backdrop animate-fadeIn" style="position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); display: flex; align-items: center; justify-content: center; z-index: 10001; backdrop-filter: blur(8px);">
-                <div class="glass-accent" style="width: 780px; max-width: 95vw; max-height: 88vh; background: rgba(13, 10, 18, 0.98); border: 2px solid #a855f7; border-radius: 18px; box-shadow: 0 25px 75px rgba(168, 85, 247, 0.3); display: flex; flex-direction: column; overflow: hidden;">
+            <div class="modal-backdrop animate-fadeIn fixed inset-0 bg-black/85 flex items-center justify-center z-[10001] backdrop-blur-sm">
+                <div class="glass-accent w-[780px] max-w-[95vw] max-h-[88vh] bg-obsidian-900/95 border-2 border-purple-500 rounded-2xl shadow-[0_25px_75px_rgba(168,85,247,0.3)] flex flex-col overflow-hidden">
                     
                     <!-- Cabeçalho -->
-                    <header style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.3), rgba(0,0,0,0.85)); padding: 18px 24px; border-bottom: 1px solid rgba(168, 85, 247, 0.35); display: flex; justify-content: space-between; align-items: center;">
-                        <div style="display: flex; align-items: center; gap: 14px;">
-                            <div style="width: 42px; height: 42px; background: linear-gradient(135deg, #a855f7, #6b21a8); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: #fff; box-shadow: 0 0 18px rgba(168, 85, 247, 0.6);">
+                    <header class="bg-gradient-to-br from-purple-500/30 to-black/85 px-6 py-4 border-b border-purple-500/35 flex justify-between items-center">
+                        <div class="flex items-center gap-3.5">
+                            <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-800 rounded-xl flex items-center justify-center text-2xl text-white shadow-[0_0_18px_rgba(168,85,247,0.6)]">
                                 <i class="fa-solid fa-crystal-ball"></i>
                             </div>
                             <div>
-                                <h3 style="margin: 0; font-family: 'Cinzel', serif; color: #e9d5ff; font-size: 1.3rem; text-shadow: 0 0 10px rgba(168, 85, 247, 0.5);">O Oráculo de Lore & IA Arcana</h3>
-                                <span style="font-size: 0.75rem; color: #c084fc; letter-spacing: 1px; text-transform: uppercase;">Consulta RAG Offline & Memória da Campanha</span>
+                                <h3 class="m-0 font-cinzel text-purple-200 text-xl drop-shadow-[0_0_10px_rgba(168,85,247,0.5)]">O Oráculo de Lore & IA Arcana</h3>
+                                <span class="text-xs text-purple-400 tracking-widest uppercase">Consulta RAG Offline & Memória da Campanha</span>
                             </div>
                         </div>
-                        <div style="display: flex; gap: 10px; align-items: center;">
-                            <span style="font-size: 0.72rem; padding: 4px 8px; border-radius: 6px; background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); font-weight: bold;">
+                        <div class="flex gap-2.5 items-center">
+                            <span class="text-[0.72rem] px-2 py-1 rounded-md bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-bold">
                                 <i class="fa-solid fa-brain"></i> Ollama / Local Ready
                             </span>
-                            <button onClick=${() => this._close()} class="btn btn-ghost" style="color: #ef4444; font-size: 1.4rem; padding: 4px; border: none; background: transparent; cursor: pointer;">
+                            <button onClick=${() => this._close()} class="btn btn-ghost text-red-500 text-2xl p-1 border-none bg-transparent cursor-pointer hover:text-red-400 transition-colors">
                                 <i class="fa-solid fa-times-circle"></i>
                             </button>
                         </div>
                     </header>
 
                     <!-- Área de Busca -->
-                    <div style="padding: 20px 24px; background: rgba(0,0,0,0.5); border-bottom: 1px solid rgba(255,255,255,0.08);">
-                        <div style="display: flex; gap: 10px;">
-                            <div style="position: relative; flex: 1;">
+                    <div class="px-6 py-5 bg-black/50 border-b border-white/10">
+                        <div class="flex gap-2.5">
+                            <div class="relative flex-1">
                                 <input 
                                     type="text" 
-                                    class="form-control" 
+                                    class="form-control w-full py-3 pr-4 pl-10 rounded-xl bg-[#120e18e6] border border-purple-500/40 text-white text-[0.95rem] focus:outline-none focus:border-purple-500/80 transition-colors" 
                                     placeholder="Pergunte ao Oráculo (ex: 'Quem era o taverneiro misterioso?', 'Quais as quests ativas?')..." 
                                     .value=${this._query}
                                     @input=${e => this._query = e.target.value}
                                     @keydown=${e => e.key === 'Enter' ? this._handleSearch() : null}
-                                    style="width: 100%; padding: 12px 16px 12px 40px; border-radius: 10px; background: rgba(18, 14, 24, 0.9); border: 1px solid rgba(168, 85, 247, 0.4); color: #fff; font-size: 0.95rem;"
                                 />
-                                <i class="fa-solid fa-magic-wand-sparkles" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #a855f7;"></i>
+                                <i class="fa-solid fa-magic-wand-sparkles absolute left-3.5 top-1/2 -translate-y-1/2 text-purple-500"></i>
                             </div>
                             <button 
                                 onClick=${() => this._handleSearch()} 
                                 disabled=${this._loading}
-                                class="btn btn-primary" 
-                                style="padding: 0 24px; border-radius: 10px; background: linear-gradient(135deg, #a855f7, #7e22ce); color: #fff; font-weight: bold; border: none; cursor: pointer; box-shadow: 0 0 15px rgba(168,85,247,0.4); display: flex; align-items: center; gap: 8px;">
+                                class="btn btn-primary px-6 rounded-xl bg-gradient-to-br from-purple-500 to-purple-700 text-white font-bold border-none cursor-pointer shadow-[0_0_15px_rgba(168,85,247,0.4)] flex items-center gap-2 hover:from-purple-400 hover:to-purple-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                                 ${this._loading ? html`<i class="fa-solid fa-circle-notch fa-spin"></i> Consultando...` : html`<i class="fa-solid fa-wand-magic-sparkles"></i> Consultar`}
                             </button>
                         </div>
 
                         <!-- Perguntas Sugeridas -->
-                        <div style="margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
-                            <span style="font-size: 0.75rem; color: #9ca3af;"><i class="fa-solid fa-compass"></i> Sugestões Arcanas:</span>
+                        <div class="mt-3.5 flex flex-wrap gap-2 items-center">
+                            <span class="text-xs text-gray-400"><i class="fa-solid fa-compass"></i> Sugestões Arcanas:</span>
                             ${this._suggestedPrompts.map(s => html`
                                 <button 
                                     onClick=${() => this._handleSearch(s)}
-                                    style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.25); color: #d8b4fe; padding: 4px 10px; border-radius: 14px; font-size: 0.75rem; cursor: pointer; transition: all 0.2s; white-space: nowrap;">
+                                    class="bg-purple-500/10 border border-purple-500/25 text-purple-300 px-2.5 py-1 rounded-full text-xs cursor-pointer transition-all hover:bg-purple-500/20 hover:border-purple-500/50 whitespace-nowrap">
                                     ${s}
                                 </button>
                             `)}
@@ -181,47 +153,48 @@ export class OracleModal {
                     </div>
 
                     <!-- Conteúdo / Resposta e Histórico -->
-                    <div style="flex: 1; overflow-y: auto; padding: 24px; scrollbar-width: thin; background: radial-gradient(circle at center, rgba(22, 14, 30, 0.9), rgba(9, 6, 12, 1));">
+                    <div class="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-purple-500/50 scrollbar-track-transparent bg-[radial-gradient(circle_at_center,rgba(22,14,30,0.9),rgba(9,6,12,1))]">
                         ${this._loading ? html`
-                            <div style="text-align: center; padding: 40px 0; color: #c084fc;">
-                                <i class="fa-solid fa-book-journal-whills fa-bounce" style="font-size: 3rem; margin-bottom: 15px; color: #a855f7;"></i>
-                                <h4 style="font-family: 'Cinzel'; margin: 0; color: #f3e8ff;">O Oráculo vascula os registros da campanha...</h4>
-                                <p style="font-size: 0.85rem; color: #9ca3af; margin-top: 6px;">Analisando NPCs, Crônicas do Diário, Quests e memórias arcanas.</p>
+                            <div class="text-center py-10 text-purple-400">
+                                <i class="fa-solid fa-book-journal-whills fa-bounce text-5xl mb-4 text-purple-500"></i>
+                                <h4 class="font-cinzel m-0 text-purple-100 text-lg">O Oráculo vasculha os registros da campanha...</h4>
+                                <p class="text-sm text-gray-400 mt-1.5">Analisando NPCs, Crônicas do Diário, Quests e memórias arcanas.</p>
                             </div>
                         ` : this._response ? html`
-                            <div style="background: rgba(0, 0, 0, 0.55); border: 1px solid rgba(168, 85, 247, 0.35); border-radius: 12px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-bottom: 24px;">
-                                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px; margin-bottom: 16px;">
-                                    <span style="font-family: 'Cinzel'; color: #e9d5ff; font-weight: bold; font-size: 1.05rem; display: flex; align-items: center; gap: 8px;">
-                                        <i class="fa-solid fa-scroll" style="color: #a855f7;"></i> Retorno das Linhas do Destino
+                            <div class="bg-black/55 border border-purple-500/35 rounded-xl p-5 shadow-[0_10px_30px_rgba(0,0,0,0.5)] mb-6">
+                                <div class="flex items-center justify-between border-b border-white/10 pb-3 mb-4">
+                                    <span class="font-cinzel text-purple-200 font-bold text-lg flex items-center gap-2">
+                                        <i class="fa-solid fa-scroll text-purple-500"></i> Retorno das Linhas do Destino
                                     </span>
-                                    <span style="font-size: 0.75rem; color: #9ca3af;">Agora mesmo</span>
+                                    <span class="text-xs text-gray-400">Agora mesmo</span>
                                 </div>
-                                <div style="color: #e2e8f0; font-size: 0.95rem; line-height: 1.6; white-space: pre-line;">
+                                <div class="text-gray-200 text-[0.95rem] leading-relaxed whitespace-pre-line">
                                     ${this._response}
                                 </div>
                             </div>
                         ` : html`
-                            <div style="text-align: center; padding: 40px 20px; color: #64748b;">
-                                <i class="fa-solid fa-eye" style="font-size: 3rem; color: rgba(168, 85, 247, 0.3); margin-bottom: 16px;"></i>
-                                <h4 style="font-family: 'Cinzel'; color: #cbd5e1; margin: 0 0 8px 0; font-size: 1.2rem;">Sussurros na Escuridão</h4>
-                                <p style="font-size: 0.9rem; max-width: 480px; margin: 0 auto; line-height: 1.5; color: #94a3b8;">
+                            <div class="text-center py-10 px-5 text-slate-500">
+                                <i class="fa-solid fa-eye text-5xl text-purple-500/30 mb-4"></i>
+                                <h4 class="font-cinzel text-slate-300 m-0 mb-2 text-xl">Sussurros na Escuridão</h4>
+                                <p class="text-sm max-w-md mx-auto leading-relaxed text-slate-400">
                                     O Oráculo está sintonizado aos segredos da sua mesa. Faça perguntas sobre a história da sua campanha ou peça para gerar ganchos dramáticos offline!
                                 </p>
                             </div>
                         `}
 
                         ${this._history.length > 0 ? html`
-                            <div style="margin-top: 30px;">
-                                <h5 style="font-family: 'Cinzel'; color: #a855f7; margin: 0 0 14px 0; font-size: 0.9rem; letter-spacing: 1px; text-transform: uppercase;">
+                            <div class="mt-8">
+                                <h5 class="font-cinzel text-purple-500 m-0 mb-3.5 text-sm tracking-widest uppercase">
                                     <i class="fa-solid fa-clock-rotate-left"></i> Consultas Anteriores NESTA SESSÃO
                                 </h5>
-                                <div style="display: flex; flex-direction: column; gap: 12px;">
+                                <div class="flex flex-col gap-3">
                                     ${this._history.slice(1).map(h => html`
-                                        <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 14px;">
-                                            <div style="font-size: 0.82rem; color: #a855f7; font-weight: bold; margin-bottom: 6px;">
-                                                ❓ "${h.query}" <span style="color: #64748b; font-weight: normal; float: right;">${h.timestamp}</span>
+                                        <div class="bg-black/35 border border-white/5 rounded-lg p-3.5">
+                                            <div class="text-xs text-purple-500 font-bold mb-1.5 flex justify-between">
+                                                <span>❓ "${h.query}"</span>
+                                                <span class="text-slate-500 font-normal">${h.timestamp}</span>
                                             </div>
-                                            <div style="font-size: 0.88rem; color: #cbd5e1; line-height: 1.4; max-height: 80px; overflow: hidden; text-overflow: ellipsis;">
+                                            <div class="text-sm text-slate-300 leading-relaxed max-h-20 overflow-hidden text-ellipsis">
                                                 ${h.answer}
                                             </div>
                                         </div>
@@ -232,12 +205,12 @@ export class OracleModal {
                     </div>
 
                     <!-- Rodapé -->
-                    <footer style="background: rgba(0,0,0,0.85); padding: 14px 24px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-size: 0.78rem; color: #9ca3af;">
-                            <i class="fa-solid fa-network-wired" style="color: #10b981;"></i> RAG Engine Ativo | Sintonizado aos arquivos de <code>/data</code>
+                    <footer class="bg-black/85 px-6 py-3.5 border-t border-white/10 flex justify-between items-center">
+                        <span class="text-xs text-gray-400">
+                            <i class="fa-solid fa-network-wired text-emerald-500 mr-1"></i> RAG Engine Ativo | Sintonizado aos arquivos de <code class="bg-white/10 px-1 rounded">/data</code>
                         </span>
-                        <button onClick=${() => { this._query = ''; this._response = null; this.render(); }} class="btn btn-ghost btn-sm" style="color: #cbd5e1; border: 1px solid rgba(255,255,255,0.15); padding: 6px 12px; border-radius: 6px; cursor: pointer;">
-                            <i class="fa-solid fa-eraser"></i> Limpar Consulta
+                        <button onClick=${() => { this._query = ''; this._response = null; this.render(); }} class="btn btn-ghost btn-sm text-slate-300 border border-white/15 px-3 py-1.5 rounded-md cursor-pointer hover:bg-white/5 transition-colors">
+                            <i class="fa-solid fa-eraser mr-1"></i> Limpar Consulta
                         </button>
                     </footer>
 

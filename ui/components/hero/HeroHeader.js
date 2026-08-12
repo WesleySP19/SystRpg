@@ -1,46 +1,37 @@
 import { html } from 'htm/preact';
+import { calculateLevelAndXP } from '../../../utils/progression.js';
 
 export function HeroHeader({ hero }) {
     if (!hero) return null;
 
-    const lvl = parseInt(hero.level) || 1;
-    const currentXP = hero.xp || 0;
-    // XP Scaling
-    let nextXP = 300;
-    if (lvl === 1) nextXP = 300;
-    else if (lvl === 2) nextXP = 900;
-    else if (lvl === 3) nextXP = 2700;
-    else if (lvl === 4) nextXP = 6500;
-    else if (lvl >= 5) nextXP = lvl * 2000;
-    
-    let progress = Math.min((currentXP / nextXP) * 100, 100);
+    const { lvl, currentXP, nextXP, progress } = calculateLevelAndXP(hero.xp, hero.level);
 
     return html`
-        <div style="display:flex; align-items:center; gap:30px;">
-            <div class="token-avatar" style="width:120px; height:120px; border:3px solid var(--accent); font-family:'Cinzel'; font-size:2.8rem; box-shadow:0 0 25px rgba(197,160,89,0.3); background:rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center;">
+        <div class="flex items-center gap-8">
+            <div class="token-avatar w-[120px] h-[120px] border-[3px] border-tomeGold-muted font-cinzel text-5xl shadow-[0_0_25px_rgba(197,160,89,0.3)] bg-black/60 flex items-center justify-center">
                 ${hero.name.substring(0,2)}
             </div>
             
-            <div style="flex:1;">
-                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:15px;">
+            <div class="flex-1">
+                <div class="flex justify-between items-start mb-4">
                     <div>
-                        <h1 style="margin:0; font-family:'Cinzel'; font-size:2.2rem; color:var(--accent); text-shadow:0 0 15px rgba(197,160,89,0.4); line-height:1.1;">
+                        <h1 class="m-0 font-cinzel text-4xl text-tomeGold-muted drop-shadow-[0_0_15px_rgba(197,160,89,0.4)] leading-tight">
                             ${hero.name}
                         </h1>
-                        <div style="font-size:0.9rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:2px; margin-top:5px; font-weight:600;">
-                            ${hero.race || 'Humano'} <span style="color:var(--accent); margin:0 5px;">•</span> ${hero.class || 'Aventureiro'}
+                        <div class="text-sm text-gray-400 uppercase tracking-widest mt-1 font-semibold">
+                            ${hero.race || 'Humano'} <span class="text-tomeGold-muted mx-1">•</span> ${hero.class || 'Aventureiro'}
                         </div>
                     </div>
                 </div>
 
                 <!-- XP Bar -->
-                <div class="glass" style="padding:15px 20px; border-radius:12px; border:1px solid rgba(197,160,89,0.15);">
-                    <div style="display:flex; justify-content:space-between; font-size:0.75rem; font-weight:800; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">
-                        <span style="color:var(--accent);">Nível ${lvl}</span>
-                        <span style="color:var(--text-main);">${currentXP} / ${nextXP} XP</span>
+                <div class="glass px-5 py-4 rounded-xl border border-tomeGold-muted/20">
+                    <div class="flex justify-between text-xs font-extrabold uppercase tracking-wider mb-2">
+                        <span class="text-tomeGold-muted">Nível ${lvl}</span>
+                        <span class="text-gray-200">${currentXP} / ${nextXP} XP</span>
                     </div>
-                    <div style="width:100%; height:8px; background:rgba(0,0,0,0.5); border-radius:4px; overflow:hidden; box-shadow:inset 0 1px 3px rgba(0,0,0,0.8);">
-                        <div style="height:100%; width:${progress}%; background:linear-gradient(90deg, #c5a059, #e0c88c); box-shadow:0 0 10px rgba(197,160,89,0.8); transition:width 0.5s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+                    <div class="w-full h-2 bg-black/50 rounded-md overflow-hidden shadow-[inset_0_1px_3px_rgba(0,0,0,0.8)]">
+                        <div class="h-full bg-gradient-to-r from-tomeGold-muted to-tomeGold shadow-[0_0_10px_rgba(197,160,89,0.8)] transition-all duration-500 ease-out" style="width:${progress}%"></div>
                     </div>
                 </div>
             </div>

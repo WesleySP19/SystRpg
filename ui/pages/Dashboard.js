@@ -393,7 +393,7 @@ export class Dashboard extends Component {
                         <!-- MINI COMBAT MONITOR -->
                         <div class="card glass-accent" style="padding:25px; border-radius:12px; border-top:4px solid var(--accent); box-shadow:0 10px 30px rgba(0,0,0,0.5);">
                             <h3 style="font-family:'Cinzel'; text-align:center; margin-bottom:15px; color:var(--accent); letter-spacing:1px;">MONITOR DE INICIATIVA</h3>
-                            ${stats.combatActive ? this._renderCombatMiniPreview() : html`<p style="text-align:center; opacity:0.5; padding:20px; color:var(--text-dim);">Nenhum combate ativo.</p>`}
+                            ${stats.combatActive ? this._renderCombatMiniPreview() : `<p style="text-align:center; opacity:0.5; padding:20px; color:var(--text-dim);">Nenhum combate ativo.</p>`}
                             <button class="btn btn-primary btn-block" style="margin-top:20px;" data-action="quickNav" data-tab="combat">ACESSAR ARENA</button>
                         </div>
                         
@@ -426,7 +426,7 @@ export class Dashboard extends Component {
                                 </div>
                                 <button class="btn btn-ghost btn-sm" data-action="restoreSnapshot" data-id="${s.id}">Restaurar</button>
                             </div>
-                        `).join('') || html`<p style="text-align:center; opacity:0.4; font-size:0.7rem; color:var(--text-dim);">Nenhum snapshot encontrado.</p>`}
+                        `).join('') || `<p style="text-align:center; opacity:0.4; font-size:0.7rem; color:var(--text-dim);">Nenhum snapshot encontrado.</p>`}
                     </div>
 
                     <button class="btn btn-ghost btn-block" style="margin-top:20px;" data-action="closeSnapshots">Fechar</button>
@@ -502,7 +502,7 @@ export class Dashboard extends Component {
                     </header>
 
                     <motionless class="match-history-list">
-                        ${entries.length === 0 ? html`<p style="text-align:center; opacity:0.5; padding:40px; color:var(--text-dim);">Nenhuma partida registrada ainda.<br><small>Crie uma nova sessão em Campanha.</small></p>` : entries.map(entry => {
+                        ${entries.length === 0 ? `<p style="text-align:center; opacity:0.5; padding:40px; color:var(--text-dim);">Nenhuma partida registrada ainda.<br><small>Crie uma nova sessão em Campanha.</small></p>` : entries.map(entry => {
                             const isActive = entry.file === activeFile;
                             const status = entry.combatActive ? 'Em combate' : 'Exploração';
                             return `
@@ -639,7 +639,7 @@ export class Dashboard extends Component {
                                 <i class="fa-solid fa-trash-can"></i>
                             </button>
                         </div>
-                    `).join('') || html`<p style="text-align:center; opacity:0.4; font-size:0.8rem; padding:20px; color:var(--text-dim);">Nenhuma criatura ativa no campo de batalha.</p>`}
+                    `).join('') || `<p style="text-align:center; opacity:0.4; font-size:0.8rem; padding:20px; color:var(--text-dim);">Nenhuma criatura ativa no campo de batalha.</p>`}
                 </div>
 
                 <div style="margin-top:25px; display:flex; justify-content:flex-end;">
@@ -714,7 +714,7 @@ export class Dashboard extends Component {
                                 <i class="fa-solid fa-trash-can"></i>
                             </button>
                         </div>
-                    `).join('') || html`<p style="text-align:center; opacity:0.4; font-size:0.8rem; padding:20px; color:var(--text-dim);">Nenhum NPC salvo nesta sessão.</p>`}
+                    `).join('') || `<p style="text-align:center; opacity:0.4; font-size:0.8rem; padding:20px; color:var(--text-dim);">Nenhum NPC salvo nesta sessão.</p>`}
                 </div>
 
                 <div style="margin-top:25px; display:flex; justify-content:flex-end;">

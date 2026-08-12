@@ -19,10 +19,15 @@ export class MainPanel extends Component {
 
   template() {
     return html`
-      <div class="panel-overlay">
-        <link rel="stylesheet" href="ui/components/main-panel.css" />
-        <canvas class="particles-canvas" id="particleCanvas"></canvas>
-        <img class="character-hero" src="${this._heroImageUrl()}" alt="Hero" />
+      <div class="relative w-full h-screen overflow-hidden bg-obsidian-900/90 backdrop-blur-md flex items-center justify-center text-slate-100 font-sans">
+        <canvas class="absolute top-0 left-0 w-full h-full pointer-events-none z-[1]" id="particleCanvas"></canvas>
+        <img class="absolute top-[-20%] left-1/2 -translate-x-1/2 max-w-[30vw] md:max-w-[60vw] h-auto z-10 animate-[heroSlideIn_0.6s_ease-out_forwards]" src="${this._heroImageUrl()}" alt="Hero" />
+        <style>
+          @keyframes heroSlideIn {
+            0% { top: -40%; opacity: 0; }
+            100% { top: -20%; opacity: 1; }
+          }
+        </style>
       </div>
     `;
   }
