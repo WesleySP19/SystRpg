@@ -375,7 +375,7 @@ export class SpellBook extends ReactiveComponent {
         <div class="modal-overlay animate-fadeIn spell-book-modal" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.85); z-index:99999; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(8px);">
             <div class="card glass-accent animate-scaleIn" style="max-width:1400px; width:95%; height:90vh; padding:30px; border:2px solid var(--accent); overflow-y:auto; background:rgba(15,12,16,0.95); position:relative;">
                 <button class="btn btn-ghost" onclick="this.closest('.spell-book-modal').__component.close()" style="position:absolute; top:20px; right:20px; border-radius:50%; width:36px; height:36px; padding:0; z-index:10;"><i class="fa-solid fa-times"></i></button>
-                <!-- HEADER DA PÁGINA COM SELETOR DE ABAS PREMIUM -->
+                
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1.5px solid rgba(197,160,89,0.25); padding-bottom: 15px; margin-bottom: 25px; flex-wrap: wrap; gap: 15px;">
                     <div>
                         <h2 class="section-title" style="font-family:'Cinzel'; color:var(--accent); text-shadow:0 0 10px rgba(197,160,89,0.3); margin: 0; font-size: 1.6rem; font-weight: bold;">
@@ -384,7 +384,7 @@ export class SpellBook extends ReactiveComponent {
                         <p class="section-subtitle" style="color:var(--text-dim); font-size:0.85rem; margin: 4px 0 0 0;">${displayTabSubtitle}</p>
                     </div>
 
-                    <!-- ABAS DE NAVEGAÇÃO -->
+                    
                     <div style="display: flex; gap: 8px; background: rgba(0,0,0,0.35); padding: 4px; border-radius: 10px; border: 1.5px solid rgba(197,160,89,0.25); box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);">
                         <button class="btn spell-tab-btn ${this._activeSpellTab === 'cantrips' ? 'btn-primary' : 'btn-ghost'}" 
                                 data-tab="cantrips" 
@@ -400,7 +400,7 @@ export class SpellBook extends ReactiveComponent {
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 340px; gap: 30px; align-items: start;">
-                    <!-- PAINEL PRINCIPAL (LISTAGEM OU DETALHES) -->
+                    
                     <div style="display: flex; flex-direction: column; gap: 20px;">
                         ${this._renderSearchBar()}
                         <div id="spell-grid-target">
@@ -408,7 +408,7 @@ export class SpellBook extends ReactiveComponent {
                         </div>
                     </div>
 
-                    <!-- SIDEBAR DE FILTROS -->
+                    
                     <div style="display: flex; flex-direction: column; gap: 16px;">
                         ${this._renderFilterPanel(stats)}
                     </div>
@@ -441,7 +441,7 @@ export class SpellBook extends ReactiveComponent {
                 <div style="font-family: 'Cinzel'; color: var(--accent); font-size: 0.85rem; letter-spacing: 1px; margin-bottom: 15px; text-transform: uppercase; border-bottom: 1px solid rgba(197,160,89,0.15); padding-bottom: 6px;">Filtros</div>
 
                 <div style="display: flex; flex-direction: column; gap: 14px;">
-                    <!-- Classe -->
+                    
                     <div>
                         <label style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; display: block; margin-bottom: 6px; font-weight: 700;">Classe</label>
                         <select data-action="filterClass" style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(197,160,89,0.25); padding: 8px 12px; border-radius: 6px; color: var(--text-main); font-size: 0.82rem; outline: none;">
@@ -450,7 +450,7 @@ export class SpellBook extends ReactiveComponent {
                         </select>
                     </div>
 
-                    <!-- Tipo -->
+                    
                     <div>
                         <label style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; display: block; margin-bottom: 6px; font-weight: 700;">Tipo</label>
                         <select data-action="filterType" style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(197,160,89,0.25); padding: 8px 12px; border-radius: 6px; color: var(--text-main); font-size: 0.82rem; outline: none;">
@@ -459,7 +459,7 @@ export class SpellBook extends ReactiveComponent {
                         </select>
                     </div>
 
-                    <!-- Nível (Apenas se aba de Magias) -->
+                    
                     ${this._activeSpellTab === 'spells' ? html`
                     <div>
                         <label style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; display: block; margin-bottom: 6px; font-weight: 700;">Círculo / Nível</label>
@@ -619,7 +619,7 @@ export class SpellBook extends ReactiveComponent {
                     </div>
                 ` : ''}
 
-                <!-- CONJURADORES VINCULADOS -->
+                
                 <div style="background: rgba(197,160,89,0.02); padding: 15px; border-radius: 10px; border: 1px solid rgba(197,160,89,0.15); margin-bottom: 20px;">
                     <div style="font-family: 'Cinzel'; color: var(--accent); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; font-weight: bold; display: flex; align-items: center; gap: 6px;">
                         <i class="fa-solid fa-users"></i> Conjuradores Vinculados
@@ -834,7 +834,7 @@ export class SpellBook extends ReactiveComponent {
 
         return html`
             <div style="display: flex; flex-direction: column; gap: 12px; position: relative;">
-                <!-- Header Title -->
+                
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1.5px solid rgba(255,255,255,0.08); padding-bottom: 8px;">
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <span style="font-size: 1rem; color: ${typeColor}; display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);">
@@ -850,7 +850,7 @@ export class SpellBook extends ReactiveComponent {
                     </span>
                 </div>
 
-                <!-- Specs Grid -->
+                
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: rgba(0,0,0,0.15); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.02); font-size: 0.72rem;">
                     <div style="display: flex; align-items: center; gap: 6px; color: var(--text-dim);">
                         <i class="fa-regular fa-clock" style="color: var(--accent); width: 12px; text-align: center;"></i>
@@ -870,18 +870,18 @@ export class SpellBook extends ReactiveComponent {
                     </div>
                 </div>
 
-                <!-- Description -->
+                
                 <div style="background: rgba(255, 255, 255, 0.015); border-left: 2.5px solid ${typeColor}; padding: 8px 12px; border-radius: 0 6px 6px 0; font-size: 0.72rem; line-height: 1.45; color: var(--text-main);">
                     <div style="font-weight: 700; color: var(--text-dim); font-size: 0.65rem; text-transform: uppercase; margin-bottom: 3px; letter-spacing: 0.5px;">Como funciona:</div>
                     ${shortNarrative}
                 </div>
 
-                <!-- Test calculation box -->
+                
                 <div style="background: rgba(255,255,255,0.02); border: 1.5px solid rgba(197, 160, 89, 0.15); padding: 12px; border-radius: 8px;">
                     ${testBoxHTML}
                 </div>
 
-                <!-- CONJURADORES VINCULADOS EM POPUP -->
+                
                 <div style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 8px; margin-top: 2px;">
                     <div style="font-family: 'Cinzel', serif; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 6px; letter-spacing: 0.5px; text-transform: uppercase; display: flex; align-items: center; gap: 4px;">
                         <i class="fa-solid fa-users"></i> Conjuradores
@@ -889,7 +889,7 @@ export class SpellBook extends ReactiveComponent {
                     ${this._renderPlayersWithSpell(spell)}
                 </div>
 
-                <!-- Dano / Efeito box -->
+                
                 <div style="background: rgba(197, 160, 89, 0.05); border: 1.5px dashed rgba(197, 160, 89, 0.3); padding: 8px 10px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 4px;">
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <span style="color: var(--accent); font-size: 0.95rem; display: inline-flex;">
