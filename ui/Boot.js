@@ -8,7 +8,10 @@ import { AIService } from '../services/AIService.js';
 import { FXEngine } from '../services/FXEngine.js';
 import { IndexedDBService } from '../services/IndexedDBService.js';
 import { TelemetryService } from '../services/TelemetryService.js';
+import { DiceBoxService } from '../services/DiceBoxService.js';
 import { io } from "https://cdn.socket.io/4.7.4/socket.io.esm.min.js";
+import { render } from 'preact';
+import { html } from 'htm/preact';
 
 export async function startApp() {
     // Garantir que temos um registro de início
@@ -112,26 +115,33 @@ export async function startApp() {
         await persistence.init();
         await persistence.load();
         persistence.startAutoSave();
+        
+        const corePersistence = (await import('../core/PersistenceService.js')).PersistenceService;
+        corePersistence.initNetworkListeners();
     } catch (e) { console.warn('[Boot] persistence skipped:', e); }
 
-    const sidebar = new Sidebar({
-        store: TOME.store,
-        element: document.getElementById('sidebar-target')
-    });
+    // Render UI directly using Preact
+    render(html`<${Sidebar} />`, document.getElementById('sidebar-target'));
+    render(html`<${Dashboard} />`, document.getElementById('view-target'));
 
-    const dashboard = new Dashboard({
-        store: TOME.store,
-        element: document.getElementById('view-target')
-    });
+    const dice3d = new DiceBoxService();
+    TOME.registerService('dice3d', dice3d);
 
-    sidebar.mount();
-    dashboard.mount();
-
-    TOME.events.on('DICE_ROLL_REQUESTED', (sides) => {
-        const result = Dice.roll(`1d${sides}`);
-        import('./components/Toast.js').then(m => {
-            m.Toast.show(`d${sides}: ${result.total}`, 'info');
-        }).catch(() => alert(`d${sides}: ${result.total}`));
+    TOME.events.on('DICE_ROLL_REQUESTED', async (sides) => {
+        // Usa o motor 3D ao invés do rolador simples
+        try {
+            const total = await dice3d.roll(sides);
+            import('./components/Toast.js').then(m => {
+                m.Toast.show(`Rolou d${sides}: Resultou em ${total}! 🎲`, 'success');
+            });
+        } catch (err) {
+            console.error(err);
+            // Fallback
+            const result = Dice.roll(`1d${sides}`);
+            import('./components/Toast.js').then(m => {
+                m.Toast.show(`d${sides}: ${result.total}`, 'info');
+            });
+        }
     });
 
     if ('serviceWorker' in navigator) {

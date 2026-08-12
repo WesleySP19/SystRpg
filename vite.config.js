@@ -2,11 +2,26 @@ import { defineConfig } from 'vite';
 import { resolve } from 'path';
 import { fileURLToPath } from 'url';
 import path from 'path';
+import preact from '@preact/preset-vite';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export default defineConfig({
+  plugins: [
+    preact({
+      babel: {
+        plugins: [
+          ['htm', {
+            import: 'preact',
+            pragma: 'h',
+            useBuiltIns: true,
+            useNativeSpread: true
+          }]
+        ]
+      }
+    })
+  ],
   build: {
     rollupOptions: {
       input: {
@@ -30,6 +45,14 @@ export default defineConfig({
       '/public': {
         target: 'http://localhost:8080',
         changeOrigin: true
+      },
+      '/socket.io': {
+        target: 'http://localhost:8080',
+        ws: true
+      },
+      '/yjs': {
+        target: 'http://localhost:8080',
+        ws: true
       }
     }
   }

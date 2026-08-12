@@ -37,7 +37,7 @@ function printHeader() {
      
   ================================================================
   ` + colors.reset);
-  console.log(colors.fgCyan + "          V19.2.1 PREMIUM VTT - The Atomic Engine\n" + colors.reset);
+  console.log(colors.fgCyan + "          Mesa Psigologos V21.0.0 PREMIUM VTT - The Atomic Engine\n" + colors.reset);
 }
 
 function checkDependencies() {
@@ -76,7 +76,7 @@ function startServer(mode) {
 
   // Dá um pequeno tempo para o servidor iniciar antes de abrir abas
   setTimeout(() => {
-    const baseUrl = 'http://localhost:3333';
+    const baseUrl = 'http://localhost:4000';
     if (mode === 'master') {
       console.log(colors.fgGold + "Iniciando Frequência do Mestre..." + colors.reset);
       openBrowser(`${baseUrl}/`);

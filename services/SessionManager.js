@@ -1,6 +1,7 @@
 import { TOME } from '../core/Registry.js';
 import { MediaService } from './MediaService.js';
 import { FrontendDirectoryService } from '../ui/services/FrontendDirectoryService.js';
+import { PersistenceService } from '../core/PersistenceService.js';
 
 /**
  * SESSION MANAGER
@@ -55,22 +56,7 @@ export class SessionManager {
             const rawState = store.snapshot();
             const cleanState = await MediaService.extractMedia(rawState, filename.split('.')[0]);
             
-            const response = await fetch('/api/save', {
-                method: 'POST',
-                headers: this._getAuthHeaders({ 'Content-Type': 'application/json' }),
-                body: JSON.stringify({
-                    filename: filename,
-                    data: cleanState
-                })
-            });
-
-            if (!response.ok) {
-                if (response.status === 401 || response.status === 403) {
-                    console.error('[SessionManager] Não autorizado a salvar. Faça login novamente.');
-                    TOME.events.emit('AUTH_REQUIRED');
-                }
-                throw new Error(`Erro na resposta do servidor: ${response.status}`);
-            }
+            await PersistenceService.saveState(filename, cleanState);
             
             this.updateTableStats(filename, cleanState);
             this._isSaving = false;
@@ -85,30 +71,26 @@ export class SessionManager {
     static async load(filename, store) {
         try {
             console.log(`[SessionManager] Solicitando state do Node (arquivo: ${filename})`);
-            const response = await fetch(`/data/${filename}?t=${Date.now()}`, {
-                headers: this._getAuthHeaders()
-            });
-
-            if (!response.ok) {
-                if (response.status === 401 || response.status === 403) {
-                    TOME.events.emit('AUTH_REQUIRED');
-                }
-                console.warn(`[SessionManager] Server state file /data/${filename} not found or unauthorized. Using default.`);
-                store.update(s => Object.assign(s, DEFAULT_INITIAL_STATE));
-                return false;
-            }
-
-            const data = await response.json();
-            const loadedState = await MediaService.restoreMedia(data);
+            const rawState = await PersistenceService.loadState(filename);
+            const loadedState = await MediaService.restoreMedia(rawState);
             
             if (loadedState.activeView === 'login') loadedState.activeView = 'home';
             if (loadedState.activeTab === 'map') loadedState.activeTab = 'dmtable';
             
-            store.update(s => Object.assign(s, loadedState));
+            this._isApplyingNetworkState = true;
+            store.update(s => {
+                const mergedState = Object.assign({}, DEFAULT_INITIAL_STATE, s, loadedState);
+                if (mergedState.schemaVersion && mergedState.schemaVersion < DEFAULT_INITIAL_STATE.schemaVersion) {
+                    this._migrateState(mergedState);
+                }
+                return mergedState;
+            });
+            this._isApplyingNetworkState = false;
+            
             console.log('[SessionManager] Carregamento Concluído!');
             return true;
         } catch (e) {
-            console.error('[SessionManager] Falha ao carregar estado do servidor:', e);
+            console.warn(`[SessionManager] Falha ao carregar estado: ${e.message}`);
             store.update(s => Object.assign(s, DEFAULT_INITIAL_STATE));
             return false;
         }

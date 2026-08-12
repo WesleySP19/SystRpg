@@ -14,7 +14,8 @@ export class TacticalEyeModal extends Component {
         this.broadcast = new BroadcastChannel('tome_map');
         this.fogPaths = []; // Mantenha as revelações de névoa da sessão
         this.sidebarOpen = false;
-        this.activeTool = 'pan'; // pan | eraser
+        this.activeTool = 'pan'; // pan | eraser | wall
+        this.dynamicLighting = false;
     }
 
     template() {
@@ -86,12 +87,18 @@ export class TacticalEyeModal extends Component {
                         <button class="tool-btn ${this.activeTool === 'eraser' ? 'active' : ''}" data-action="setToolEraser" title="Pincel Revelador de Névoa (E)">
                             <i class="fa-solid fa-eraser"></i>
                         </button>
+                        <button class="tool-btn ${this.activeTool === 'wall' ? 'active' : ''}" data-action="setToolWall" title="Desenhar Parede Oculta (W)">
+                            <i class="fa-solid fa-layer-group"></i>
+                        </button>
                         <div style="width: 1px; background: rgba(255,255,255,0.1); margin: 0 5px;"></div>
                         <button class="tool-btn ${this.grid ? 'active-green' : ''}" data-action="toggleGrid" title="Grade (G)">
                             <i class="fa-solid fa-border-all"></i>
                         </button>
                         <button class="tool-btn ${this.fog ? 'active-purple' : ''}" data-action="toggleFog" title="Névoa de Guerra (F)">
                             <i class="fa-solid fa-cloud"></i>
+                        </button>
+                        <button class="tool-btn ${this.dynamicLighting ? 'active-yellow' : ''}" data-action="toggleDynamicLighting" title="Iluminação Dinâmica (L)">
+                            <i class="fa-solid fa-lightbulb"></i>
                         </button>
                     </div>
 
@@ -104,6 +111,7 @@ export class TacticalEyeModal extends Component {
                         .tool-btn.active { background: rgba(197,160,89,0.2); border-color: rgba(197,160,89,0.5); color: var(--accent); }
                         .tool-btn.active-green { background: rgba(16,185,129,0.2); border-color: rgba(16,185,129,0.5); color: #10b981; }
                         .tool-btn.active-purple { background: rgba(168,85,247,0.2); border-color: rgba(168,85,247,0.5); color: #a855f7; }
+                        .tool-btn.active-yellow { background: rgba(234,179,8,0.2); border-color: rgba(234,179,8,0.5); color: #eab308; }
                     </style>
 
                     <!-- Map Container -->
@@ -220,6 +228,65 @@ export class TacticalEyeModal extends Component {
                     });
                 }
             });
+
+            // Drag and Drop (Phase 5 Simbiosis)
+            container.addEventListener('dragover', (e) => {
+                e.preventDefault(); // Necessário para permitir o drop
+                e.dataTransfer.dropEffect = 'copy';
+            });
+
+            container.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const dataStr = e.dataTransfer.getData('application/json');
+                if (dataStr) {
+                    try {
+                        const payload = JSON.parse(dataStr);
+                        const stage = this.mapEngine.stage;
+                        // Força o Konva a ler a posição do mouse no evento de drop nativo
+                        stage.setPointersPositions(e); 
+                        const pointer = stage.getPointerPosition();
+                        if (pointer) {
+                            const transform = stage.getAbsoluteTransform().copy();
+                            transform.invert();
+                            const relPos = transform.point(pointer);
+                            
+                            if (payload.type === 'spell') {
+                                this.mapEngine.showSpellEffect(relPos.x, relPos.y, '#9c27b0', 'spell'); // Partículas roxas
+                                
+                                // Áudio Espacial
+                                const center = this._getStageCenter(transform);
+                                if (window.TOME && window.TOME.audio) {
+                                    window.TOME.audio.playSpatialSFX('https://freesound.org/data/previews/404/404764_118613-lq.mp3', relPos.x, relPos.y, center.x, center.y, this.mapEngine.stage.scaleX());
+                                }
+
+                                if (window.TOME && window.TOME.events) {
+                                    window.TOME.events.emit('SYSTEM_NOTIFICATION', {
+                                        text: `${payload.sourceHeroName} invocou ${payload.data.name}!`,
+                                        type: 'info'
+                                    });
+                                }
+                            } else if (payload.type === 'attack') {
+                                this.mapEngine.showSpellEffect(relPos.x, relPos.y, '#ef4444', 'attack'); // Partículas vermelhas
+                                
+                                // Áudio Espacial
+                                const center = this._getStageCenter(transform);
+                                if (window.TOME && window.TOME.audio) {
+                                    window.TOME.audio.playSpatialSFX('https://freesound.org/data/previews/415/415209_5121236-lq.mp3', relPos.x, relPos.y, center.x, center.y, this.mapEngine.stage.scaleX());
+                                }
+
+                                if (window.TOME && window.TOME.events) {
+                                    window.TOME.events.emit('SYSTEM_NOTIFICATION', {
+                                        text: `${payload.sourceHeroName} atacou com ${payload.data.name}!`,
+                                        type: 'warning'
+                                    });
+                                }
+                            }
+                        }
+                    } catch(err) {
+                        console.error('[TacticalEye] Erro ao processar drop:', err);
+                    }
+                }
+            });
         }
 
         this._resizeHandler = () => {
@@ -233,6 +300,15 @@ export class TacticalEyeModal extends Component {
 
         // Load tokens
         this._loadTokensFromStore();
+    }
+
+    _getStageCenter(transform) {
+        const viewX = this.mapEngine.stage.x();
+        const viewY = this.mapEngine.stage.y();
+        const viewScale = this.mapEngine.stage.scaleX();
+        const centerX = -viewX / viewScale + (window.innerWidth / 2) / viewScale;
+        const centerY = -viewY / viewScale + (window.innerHeight / 2) / viewScale;
+        return { x: centerX, y: centerY };
     }
 
     onUnmount() {
@@ -298,6 +374,12 @@ export class TacticalEyeModal extends Component {
         this.render('Palette'); // re-render só estilos
     }
 
+    setToolWall() {
+        this.activeTool = 'wall';
+        this.mapEngine.setTool('wall');
+        this.render('Palette');
+    }
+
     render_Palette() {
         // Simple re-render logic to update active buttons without full redraw
         this.render(); 
@@ -328,6 +410,18 @@ export class TacticalEyeModal extends Component {
             this.mapEngine.setFog({ enabled: false });
         }
         this.render(); 
+    }
+
+    toggleDynamicLighting() {
+        this.dynamicLighting = !this.dynamicLighting;
+        this.mapEngine.setDynamicLightingEnabled(this.dynamicLighting);
+        if (this.dynamicLighting && !this.fog) {
+            // Se ativou luz dinâmica, é necessário ativar a névoa!
+            this.fog = true;
+            this.store.update(s => { s.mapFog = true; });
+            this.mapEngine.setFog({ enabled: true, paths: this.fogPaths });
+        }
+        this.render('Palette');
     }
 
     placeToken(e, el) {

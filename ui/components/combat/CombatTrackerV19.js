@@ -6,7 +6,7 @@ import { CombatControls } from './CombatControls.js';
 import { CombatantListV19 } from './CombatantListV19.js';
 
 /**
- * COMBAT TRACKER V19.2.1 — "The Atomic Engine"
+ * COMBAT TRACKER V21.0.0 — "The Atomic Engine"
  * Full Preact-based Virtual DOM engine with glassmorphism aesthetics.
  */
 export class CombatTrackerV19 extends ReactiveComponent {
@@ -27,7 +27,7 @@ export class CombatTrackerV19 extends ReactiveComponent {
                     <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); width:600px; height:100px; background:radial-gradient(ellipse, rgba(212,175,55,0.15) 0%, transparent 70%); pointer-events:none; z-index:0;"></div>
                     <h1 style="font-family:'Cinzel'; font-size:3rem; color:var(--text-main); margin:0; text-shadow:0 5px 20px rgba(212,175,55,0.4); position:relative; z-index:1; display:flex; align-items:center; justify-content:center; gap:15px;">
                         <i class="fa-solid fa-khanda" style="color:var(--accent); font-size:2.4rem;"></i>
-                        TOME ARENA <span style="font-size:1.2rem; color:var(--accent); opacity:0.8; margin-top:15px;">V19.2.1</span>
+                        TOME ARENA <span style="font-size:1.2rem; color:var(--accent); opacity:0.8; margin-top:15px;">V21.0.0</span>
                         <i class="fa-solid fa-khanda fa-flip-horizontal" style="color:var(--accent); font-size:2.4rem;"></i>
                     </h1>
                     <div style="font-size:1rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:6px; font-weight:800; margin-top:5px; text-shadow:0 2px 10px rgba(0,0,0,0.8);">

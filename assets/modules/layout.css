@@ -113,3 +113,10 @@ html, body {
     transform: scale(1.1) rotate(15deg);
     box-shadow: 0 8px 25px rgba(197, 160, 89, 0.5);
 }
+#dice-box-container {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+    overflow: hidden;
+}

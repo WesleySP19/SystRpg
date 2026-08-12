@@ -1,3 +1,5 @@
+import { Raycaster } from '../../utils/Raycaster.js';
+
 export class TacticalMapEngine {
     constructor(containerId, options = {}) {
         this.containerId = containerId;
@@ -17,15 +19,20 @@ export class TacticalMapEngine {
 
         this.bgLayer = new Konva.Layer();
         this.gridLayer = new Konva.Layer();
+        this.wallLayer = new Konva.Layer(); // Phase 9: Walls
         this.fogLayer = new Konva.Layer();
         this.tokenLayer = new Konva.Layer();
         this.uiLayer = new Konva.Layer();
         
         this.stage.add(this.bgLayer);
         this.stage.add(this.gridLayer);
-        this.stage.add(this.fogLayer); // Fog is drawn over background and grid
+        this.stage.add(this.wallLayer); // Draw walls under fog
+        this.stage.add(this.fogLayer); // Fog is drawn over background, grid and walls
         this.stage.add(this.tokenLayer); // Tokens go above fog
         this.stage.add(this.uiLayer);
+
+        this.walls = [];
+        this.isDynamicLightingEnabled = false;
 
         this.mapImage = new Konva.Image({ x: 0, y: 0 });
         this.bgLayer.add(this.mapImage);
@@ -74,55 +81,82 @@ export class TacticalMapEngine {
             }
         });
 
-        // --- FOG ERASER ---
+        // --- FOG ERASER & WALL DRAWING ---
         this.isDrawingFog = false;
+        this.isDrawingWall = false;
+        
         this.stage.on('mousedown touchstart', (e) => {
-            // Se clicar com botão direito, não desenha
             if (e.evt.button === 2) return;
-            
-            if (this.activeTool !== 'eraser' || !this.isDM) return;
-            this.isDrawingFog = true;
+            if (!this.isDM) return;
             
             const pos = this.stage.getPointerPosition();
             const transform = this.stage.getAbsoluteTransform().copy();
             transform.invert();
             const relPos = transform.point(pos);
 
-            this.currentFogLine = new Konva.Line({
-                stroke: 'black',
-                strokeWidth: 60,
-                globalCompositeOperation: 'destination-out',
-                lineCap: 'round',
-                lineJoin: 'round',
-                points: [relPos.x, relPos.y, relPos.x, relPos.y],
-            });
-            this.fogLayer.add(this.currentFogLine);
+            if (this.activeTool === 'eraser') {
+                this.isDrawingFog = true;
+                this.currentFogLine = new Konva.Line({
+                    stroke: 'black',
+                    strokeWidth: 60,
+                    globalCompositeOperation: 'destination-out',
+                    lineCap: 'round',
+                    lineJoin: 'round',
+                    points: [relPos.x, relPos.y, relPos.x, relPos.y],
+                });
+                this.fogLayer.add(this.currentFogLine);
+            } else if (this.activeTool === 'wall') {
+                this.isDrawingWall = true;
+                this.wallStartPos = relPos;
+                this.currentWallLine = new Konva.Line({
+                    stroke: '#0ea5e9', // Cyan color for DM wall visibility
+                    strokeWidth: 4,
+                    lineCap: 'round',
+                    points: [relPos.x, relPos.y, relPos.x, relPos.y],
+                    opacity: 0.8
+                });
+                this.wallLayer.add(this.currentWallLine);
+            }
         });
 
         this.stage.on('mousemove touchmove', (e) => {
-            if (!this.isDrawingFog || !this.isDM || this.activeTool !== 'eraser') return;
+            if (!this.isDM) return;
             const pos = this.stage.getPointerPosition();
             const transform = this.stage.getAbsoluteTransform().copy();
             transform.invert();
             const relPos = transform.point(pos);
             
-            const newPoints = this.currentFogLine.points().concat([relPos.x, relPos.y]);
-            this.currentFogLine.points(newPoints);
+            if (this.isDrawingFog && this.activeTool === 'eraser') {
+                const newPoints = this.currentFogLine.points().concat([relPos.x, relPos.y]);
+                this.currentFogLine.points(newPoints);
+            } else if (this.isDrawingWall && this.activeTool === 'wall') {
+                this.currentWallLine.points([this.wallStartPos.x, this.wallStartPos.y, relPos.x, relPos.y]);
+                if (this.isVisible) this.wallLayer.draw();
+            }
         });
 
         this.stage.on('mouseup touchend', () => {
-            if (!this.isDrawingFog) return;
-            this.isDrawingFog = false;
-            
-            if (this.isDM && this.currentFogLine) {
-                this._dispatchFogPath(this.currentFogLine.points());
+            if (this.isDrawingFog) {
+                this.isDrawingFog = false;
+                if (this.isDM && this.currentFogLine) {
+                    this._dispatchFogPath(this.currentFogLine.points());
+                }
+            } else if (this.isDrawingWall) {
+                this.isDrawingWall = false;
+                if (this.isDM && this.currentWallLine) {
+                    const pts = this.currentWallLine.points();
+                    const newWall = { p1: { x: pts[0], y: pts[1] }, p2: { x: pts[2], y: pts[3] } };
+                    this.walls.push(newWall);
+                    this._dispatchWall(newWall);
+                    if (this.isDynamicLightingEnabled) this.renderDynamicLighting();
+                }
             }
         });
     }
 
     setTool(tool) {
         this.activeTool = tool;
-        if (tool === 'eraser') {
+        if (tool === 'eraser' || tool === 'wall') {
             this.stage.draggable(false);
             this.container.style.cursor = 'crosshair';
         } else {
@@ -147,6 +181,59 @@ export class TacticalMapEngine {
             detail: { points }
         });
         window.dispatchEvent(evt);
+    }
+
+    _dispatchWall(wall) {
+        const evt = new CustomEvent('tome:wall_drawn', {
+            detail: { wall }
+        });
+        window.dispatchEvent(evt);
+    }
+
+    setDynamicLightingEnabled(enabled) {
+        this.isDynamicLightingEnabled = enabled;
+        // Trigger a re-render of the fog
+        if (enabled) {
+            this.renderDynamicLighting();
+        } else {
+            // Se desativar, redesenha o fog convencional (precisa de um refresh externo idealmente)
+            this.fogLayer.destroyChildren();
+            this.setFog({ enabled: true, paths: [] }); 
+        }
+    }
+
+    renderDynamicLighting() {
+        if (!this.isDynamicLightingEnabled) return;
+        
+        // Remove cutouts antigos (mas mantem o retangulo preto)
+        const children = this.fogLayer.getChildren().toArray();
+        children.forEach(c => {
+            if (c.attrs.id !== 'global-darkness') c.destroy();
+        });
+
+        // Para cada token (simulando que todos emitem luz de 800px para simplificar)
+        for (const token of this.tokens.values()) {
+            const origin = { x: token.x(), y: token.y() };
+            const radius = 800; // Raio de luz padrão
+            
+            const polygonPoints = Raycaster.computePolygon(origin, radius, this.walls);
+            
+            const lightShape = new Konva.Line({
+                points: polygonPoints,
+                fillRadialGradientStartPoint: { x: origin.x, y: origin.y },
+                fillRadialGradientStartRadius: 0,
+                fillRadialGradientEndPoint: { x: origin.x, y: origin.y },
+                fillRadialGradientEndRadius: radius,
+                fillRadialGradientColorStops: [0, 'rgba(255,255,255,1)', 0.8, 'rgba(255,255,255,0.8)', 1, 'rgba(255,255,255,0)'],
+                closed: true,
+                globalCompositeOperation: 'destination-out',
+                listening: false
+            });
+
+            this.fogLayer.add(lightShape);
+        }
+
+        if (this.isVisible) this.fogLayer.draw();
     }
 
     setCamera(x, y, scale) {
@@ -212,13 +299,18 @@ export class TacticalMapEngine {
                 width: 10000,
                 height: 10000, // Cover a massive area to allow panning
                 fill: 'black',
-                opacity: 0.95
+                opacity: 0.95,
+                id: 'global-darkness'
             });
             this.fogLayer.add(rect);
             
-            // Renderiza caminhos de fog que vieram do sync (se houver)
-            if (fogData.paths && Array.isArray(fogData.paths)) {
-                fogData.paths.forEach(p => this.addFogPath(p));
+            if (this.isDynamicLightingEnabled) {
+                this.renderDynamicLighting();
+            } else {
+                // Renderiza caminhos de fog que vieram do sync (se houver)
+                if (fogData.paths && Array.isArray(fogData.paths)) {
+                    fogData.paths.forEach(p => this.addFogPath(p));
+                }
             }
         }
         if (this.isVisible) this.fogLayer.draw();
@@ -334,6 +426,11 @@ export class TacticalMapEngine {
             group.on('dragstart', () => {
                 group.moveToTop();
             });
+            group.on('dragmove', () => {
+                if (this.isDynamicLightingEnabled) {
+                    this.renderDynamicLighting();
+                }
+            });
             group.on('dragend', (e) => {
                 let x = e.target.x();
                 let y = e.target.y();
@@ -344,6 +441,10 @@ export class TacticalMapEngine {
                     x = Math.round(x / step) * step;
                     y = Math.round(y / step) * step;
                     e.target.to({ x, y, duration: 0.2, easing: Konva.Easings.EaseOut });
+                    // Re-render lighting after snap animation finishes
+                    if (this.isDynamicLightingEnabled) {
+                        setTimeout(() => this.renderDynamicLighting(), 210);
+                    }
                 }
 
                 const evt = new CustomEvent('tome:token_moved', {
@@ -415,5 +516,67 @@ export class TacticalMapEngine {
             easing: Konva.Easings.EaseOut,
             onFinish: () => center.destroy()
         });
+    }
+
+    /**
+     * Efeito Visual Cinematográfico para Spells e Attacks (Phase 5)
+     */
+    showSpellEffect(x, y, color, type = 'spell') {
+        const particleCount = type === 'spell' ? 12 : 6;
+        const group = new Konva.Group({ x, y });
+        
+        // Círculo de Explosão Central
+        const burst = new Konva.Circle({
+            radius: 5,
+            fill: color,
+            opacity: 0.9,
+            shadowColor: color,
+            shadowBlur: 15
+        });
+        group.add(burst);
+
+        burst.to({
+            radius: type === 'spell' ? 60 : 40,
+            opacity: 0,
+            duration: 0.8,
+            easing: Konva.Easings.EaseOut,
+            onFinish: () => burst.destroy()
+        });
+
+        // Partículas Orbitais
+        for(let i = 0; i < particleCount; i++) {
+            const angle = (Math.PI * 2 / particleCount) * i;
+            const distance = type === 'spell' ? 70 : 45;
+            const endX = Math.cos(angle) * distance;
+            const endY = Math.sin(angle) * distance;
+            
+            const p = new Konva.Circle({
+                x: 0, y: 0,
+                radius: type === 'spell' ? 4 : 2,
+                fill: color,
+                opacity: 1,
+                shadowColor: color,
+                shadowBlur: 10
+            });
+            group.add(p);
+
+            // Animação de espalhamento
+            p.to({
+                x: endX + (Math.random() * 20 - 10),
+                y: endY + (Math.random() * 20 - 10),
+                opacity: 0,
+                radius: 0,
+                duration: 0.6 + Math.random() * 0.4,
+                easing: Konva.Easings.EaseOut,
+                onFinish: () => p.destroy()
+            });
+        }
+        
+        this.uiLayer.add(group);
+        
+        // Destroi o grupo depois da animação
+        setTimeout(() => {
+            group.destroy();
+        }, 1200);
     }
 }

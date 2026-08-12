@@ -268,7 +268,7 @@ export class InitiativeMonitor extends Component {
             : '';
 
         return `
-            <div class="im-spotlight" style="background: linear-gradient(to right, rgba(14,16,22,0.95), rgba(8,10,15,0.98)); border: 1px solid rgba(197, 160, 89, 0.25); border-radius: 12px; margin-bottom: 24px; position: relative; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.6);">
+            <div class="im-spotlight" style="background: linear-gradient(to right, rgba(14,16,22,0.7), rgba(8,10,15,0.85)); backdrop-filter: blur(12px); border: 1px solid rgba(197, 160, 89, 0.4); border-radius: 12px; margin-bottom: 24px; position: relative; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.6); transition: all 0.3s ease;">
                 <!-- Glowing accent strip -->
                 <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: ${isEnemy ? 'var(--danger)' : 'var(--success)'}; box-shadow: 0 0 15px ${isEnemy ? 'var(--danger)' : 'var(--success)'};"></div>
                 
@@ -398,7 +398,9 @@ export class InitiativeMonitor extends Component {
         }).join('');
 
         return `
-            <div class="im-combatant" style="background: ${cardBg}; border: ${cardBorder}; ${cardGlow} border-radius: 12px; padding: 14px 20px; display: flex; align-items: center; gap: 20px; cursor: pointer; transition: all 0.2s ease; opacity: ${isDead ? 0.5 : 1}; position: relative; overflow: hidden; min-height: 60px;"
+            <div class="im-combatant" style="background: ${cardBg}; backdrop-filter: blur(8px); border: ${cardBorder}; ${cardGlow} border-radius: 12px; padding: 14px 20px; display: flex; align-items: center; gap: 20px; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); opacity: ${isDead ? 0.5 : 1}; position: relative; overflow: hidden; min-height: 60px;"
+                 onmouseover="this.style.transform='scale(1.02) translateX(4px)'; this.style.borderColor='rgba(197,160,89,0.8)';"
+                 onmouseout="this.style.transform='none'; this.style.borderColor='${cardBorder.split('solid ')[1]}';"
                  data-action="selectFocus" data-id="${c.id}"
                  title="${isActive ? 'Turno Atual' : 'Clique para focar ações'}">
                  
@@ -460,7 +462,7 @@ export class InitiativeMonitor extends Component {
         const isFocusedActive = !this._focusId || this._focusId === focused.id;
 
         return `
-            <div style="background: linear-gradient(to top, rgba(8,10,15,0.98), rgba(14,16,22,0.95)); border-top: 1px solid rgba(197, 160, 89, 0.2); padding: 16px 24px; flex-shrink: 0; box-shadow: 0 -10px 20px rgba(0,0,0,0.5); border-radius: 12px 12px 0 0; position: relative; z-index: 10;">
+            <div style="background: linear-gradient(to top, rgba(8,10,15,0.85), rgba(14,16,22,0.7)); backdrop-filter: blur(16px); border-top: 1px solid rgba(197, 160, 89, 0.4); padding: 16px 24px; flex-shrink: 0; box-shadow: 0 -10px 20px rgba(0,0,0,0.5); border-radius: 12px 12px 0 0; position: relative; z-index: 10;">
                 
                 <div style="font-size: 0.65rem; font-weight: 900; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
                     <span style="display: flex; align-items: center; gap: 8px;">

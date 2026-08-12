@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Mesa do Mestre — Plataforma completa de RPG para D&D 5e.">
+    <title>Mesa Psigologos — V19.3.0</title>
+    <link rel="icon" href="/assets/logo-CXT5CHJ2.png">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Outfit:wght@300;400;600;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Design System (Vite will inject CSS here) -->
+    <link rel="manifest" href="/assets/manifest-DSQtFyQu.json">
+    <meta name="theme-color" content="#c5a059">
+    <!-- Versão e cache são gerenciados pelo Service Worker (service-worker.js) -->
+    <script>
+    // Limpa apenas se há um parâmetro ?reset=1 na URL (link de emergência)
+    if (new URLSearchParams(location.search).get('reset') === '1') {
+        (async () => {
+            try {
+                if ('serviceWorker' in navigator) {
+                    const regs = await navigator.serviceWorker.getRegistrations();
+                    for (const r of regs) await r.unregister();
+                }
+                if ('caches' in window) {
+                    const keys = await caches.keys();
+                    await Promise.all(keys.map(k => caches.delete(k)));
+                }
+                console.log('[Reset] Cache limpo. Recarregando...');
+                history.replaceState({}, '', '/');
+                location.reload();
+            } catch (e) { console.error('[Reset] Falhou:', e); }
+        })();
+    }
+    </script>
+  <script type="module" crossorigin src="/assets/main-V8m65_sL.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/BattleManager-CrdQ-hKX.js">
+  <link rel="stylesheet" crossorigin href="/assets/main-DEzkeF59.css">
+</head>
+<body>
+    <div id="app-root">
+        <aside id="sidebar-target" class="sidebar"></aside>
+        <main id="view-target" class="main-stage"></main>
+    </div>
+
+    <!-- Discreet Floating Dice Roller -->
+    <div class="dice-roller-container">
+        <div class="dice-roller-tray" id="dice-tray">
+            <button class="dice-btn" onclick="window.TOME.events.emit('DICE_ROLL_REQUESTED', 4)">d4</button>
+            <button class="dice-btn" onclick="window.TOME.events.emit('DICE_ROLL_REQUESTED', 6)">d6</button>
+            <button class="dice-btn" onclick="window.TOME.events.emit('DICE_ROLL_REQUESTED', 8)">d8</button>
+            <button class="dice-btn" onclick="window.TOME.events.emit('DICE_ROLL_REQUESTED', 10)">d10</button>
+            <button class="dice-btn" onclick="window.TOME.events.emit('DICE_ROLL_REQUESTED', 12)">d12</button>
+            <button class="dice-btn" onclick="window.TOME.events.emit('DICE_ROLL_REQUESTED', 20)">d20</button>
+        </div>
+        <button class="dice-fab" onclick="document.getElementById('dice-tray').classList.toggle('active')">
+            <i class="fa-solid fa-dice-d20"></i>
+        </button>
+    </div>
+
+    <!-- Socket.io -->
+    <script src="/socket.io/socket.io.js"></script>
+
+    <!-- Bootstrap App via Vite -->
+</body>
+</html>

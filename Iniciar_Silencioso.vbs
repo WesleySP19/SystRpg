@@ -9,11 +9,11 @@ ScriptDir = FSO.GetParentFolderName(WScript.ScriptFullName)
 BatPath = ScriptDir & "\Iniciar_TOME.bat"
 
 If Not FSO.FileExists(BatPath) Then
-    MsgBox "ERRO: Iniciar_TOME.bat nao encontrado em: " & ScriptDir, vbCritical, "Mesa Psigologos V19.3.0"
+    MsgBox "ERRO: Iniciar_TOME.bat nao encontrado em: " & ScriptDir, vbCritical, "Mesa Psigologos V21.0.0"
     WScript.Quit 1
 End If
 
-WshShell.Popup "Mesa Psigologos V19.3.0 (Atomic Engine) iniciando..." & vbCrLf & vbCrLf & "O servidor esta sendo otimizado para alto desempenho (GC ativo & 4GB de RAM)." & vbCrLf & "Acesso em: http://localhost:3000/", 4, "Mesa Psigologos V19.3.0 - Premium VTT", 64
+WshShell.Popup "Mesa Psigologos V21.0.0 (Atomic Engine) iniciando..." & vbCrLf & vbCrLf & "O servidor esta sendo otimizado para alto desempenho (GC ativo & 4GB de RAM)." & vbCrLf & "Acesso em: http://localhost:4000/", 4, "Mesa Psigologos V21.0.0 - Premium VTT", 64
 
 WshShell.Run "cmd.exe /c """ & BatPath & """ --silent", 0, False
 

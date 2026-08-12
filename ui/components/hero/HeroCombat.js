@@ -8,6 +8,22 @@ export function HeroCombat({ hero }) {
     // Local state for tabs
     const [activeTab, setActiveTab] = useState('weapons'); // 'weapons' or 'spells'
 
+    const handleDragStart = (e, itemType, itemData) => {
+        e.dataTransfer.setData('application/json', JSON.stringify({
+            type: itemType,
+            data: itemData,
+            sourceHeroId: hero.id,
+            sourceHeroName: hero.name
+        }));
+        e.dataTransfer.effectAllowed = 'copy';
+        // Efeito visual sutil ao arrastar
+        e.currentTarget.style.opacity = '0.5';
+    };
+
+    const handleDragEnd = (e) => {
+        e.currentTarget.style.opacity = '1';
+    };
+
     const deathSuccess = hero.deathSaves?.success || [false, false, false];
     const deathFailure = hero.deathSaves?.failure || [false, false, false];
     const lvl = parseInt(hero.level) || 1;
@@ -101,7 +117,10 @@ export function HeroCombat({ hero }) {
                 <!-- Content -->
                 <div style="display:${activeTab === 'weapons' ? 'flex' : 'none'}; flex-direction:column; gap:10px;">
                     ${hero.attacks && hero.attacks.length > 0 ? hero.attacks.map(a => html`
-                        <div class="glass interactive-roll-row" style="padding:10px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.05); background:rgba(0,0,0,0.2); display:flex; justify-content:space-between; align-items:center; cursor:pointer;"
+                        <div class="glass interactive-roll-row" style="padding:10px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.05); background:rgba(0,0,0,0.2); display:flex; justify-content:space-between; align-items:center; cursor:grab;"
+                             draggable="true" 
+                             onDragStart=${e => handleDragStart(e, 'attack', a)} 
+                             onDragEnd=${handleDragEnd}
                              onMouseOver=${e => { e.currentTarget.style.background='rgba(197,160,89,0.08)'; e.currentTarget.style.borderColor='var(--accent)'; e.currentTarget.style.transform='scale(1.02)'; }}
                              onMouseOut=${e => { e.currentTarget.style.background='rgba(0,0,0,0.2)'; e.currentTarget.style.borderColor='rgba(255,255,255,0.05)'; e.currentTarget.style.transform='none'; }}>
                             <div>
@@ -118,7 +137,10 @@ export function HeroCombat({ hero }) {
 
                 <div style="display:${activeTab === 'spells' ? 'flex' : 'none'}; flex-direction:column; gap:10px;">
                     ${heroSpells.length > 0 ? heroSpells.map(s => html`
-                        <div class="glass interactive-roll-row" style="padding:10px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.05); background:rgba(0,0,0,0.2); display:flex; justify-content:space-between; align-items:center; cursor:pointer;"
+                        <div class="glass interactive-roll-row" style="padding:10px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.05); background:rgba(0,0,0,0.2); display:flex; justify-content:space-between; align-items:center; cursor:grab;"
+                             draggable="true"
+                             onDragStart=${e => handleDragStart(e, 'spell', s)}
+                             onDragEnd=${handleDragEnd}
                              onMouseOver=${e => { e.currentTarget.style.background='rgba(156,39,176,0.1)'; e.currentTarget.style.borderColor='#9c27b0'; e.currentTarget.style.transform='scale(1.02)'; }}
                              onMouseOut=${e => { e.currentTarget.style.background='rgba(0,0,0,0.2)'; e.currentTarget.style.borderColor='rgba(255,255,255,0.05)'; e.currentTarget.style.transform='none'; }}>
                             <div style="display:flex; align-items:center; gap:8px;">

@@ -67,6 +67,67 @@ export class AudioService {
         }
     }
 
+    /**
+     * Toca um efeito sonoro espacialmente, com volume e pan (esquerda/direita) baseados 
+     * na distância e ângulo do evento (x, y) em relação à câmera do usuário.
+     */
+    async playSpatialSFX(url, eventX, eventY, cameraX, cameraY, cameraScale = 1.0) {
+        this._initAudioContext();
+        try {
+            const audio = new Audio(url);
+            const useWebAudio = this.ctx && !isCrossOrigin(url);
+
+            if (useWebAudio) {
+                audio.crossOrigin = 'anonymous';
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+                
+                const sfxGain = this.ctx.createGain();
+                const panner = this.ctx.createStereoPanner();
+                
+                // Cálculo de distância e Pan 
+                const dx = eventX - cameraX;
+                const dy = eventY - cameraY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                // O alcance auditivo efetivo (ex: 2000 pixels do Konva base)
+                const maxAudibleDistance = 2000;
+                let attenuation = 1 - Math.min(distance / maxAudibleDistance, 1);
+                attenuation = Math.pow(attenuation, 2); // curva quadrática para fading mais natural
+                
+                // Pan baseia-se na distância horizontal
+                // Se a distância for muito pequena, o pan é 0 (centro)
+                let panValue = 0;
+                if (distance > 0) {
+                    panValue = (dx / (window.innerWidth / cameraScale)) * 2; // Normaliza
+                    panValue = Math.max(-1, Math.min(1, panValue));
+                }
+
+                panner.pan.value = panValue;
+                sfxGain.gain.value = this._masterVolume * 0.6 * attenuation;
+                
+                const source = this.ctx.createMediaElementSource(audio);
+                source.connect(panner);
+                panner.connect(sfxGain);
+                sfxGain.connect(this.masterGain);
+
+                audio.play().catch(() => {});
+
+                audio.onended = () => {
+                    source.disconnect();
+                    panner.disconnect();
+                    sfxGain.disconnect();
+                };
+            } else {
+                audio.volume = this._masterVolume * 0.5;
+                await audio.play().catch(() => {});
+            }
+        } catch (e) {
+            console.warn('[Audio] Spatial SFX failed:', url, e);
+        }
+    }
+
     playChannel(channel, url) {
         this._initAudioContext();
         if (!this._channels[channel]) return;

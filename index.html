@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Mesa do Mestre — Plataforma completa de RPG para D&D 5e.">
-    <title>Mesa Psigologos — V19.3.0</title>
+    <title>Mesa Psigologos — V21.0.0</title>
     <link rel="icon" href="assets/logo.png">
 
     <!-- Fonts -->
@@ -13,41 +13,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Outfit:wght@300;400;600;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
-    <!-- Tailwind CSS (V19.3.0) -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        accent: '#c5a059',
-                        bgbase: '#1a1a1a'
-                    },
-                    fontFamily: {
-                        sans: ['Outfit', 'sans-serif'],
-                        serif: ['Cinzel', 'serif']
-                    }
-                }
-            }
-        }
-    </script>
-
-    <!-- Design System -->
-    <link rel="stylesheet" href="assets/tome-master.css?v=32">
+    <!-- Design System (Vite will inject CSS here) -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#c5a059">
-
-    <script type="importmap">
-    {
-      "imports": {
-        "@preact/signals": "https://esm.sh/@preact/signals@1.2.2?external=preact",
-        "preact": "https://esm.sh/preact@10.19.3",
-        "preact/hooks": "https://esm.sh/preact@10.19.3/hooks",
-        "htm/preact": "https://esm.sh/htm@3.1.1/preact?external=preact",
-        "konva": "https://esm.sh/konva@9.3.15"
-      }
-    }
-    </script>    <!-- Versão e cache são gerenciados pelo Service Worker (service-worker.js) -->
+    <!-- Versão e cache são gerenciados pelo Service Worker (service-worker.js) -->
     <script>
     // Limpa apenas se há um parâmetro ?reset=1 na URL (link de emergência)
     if (new URLSearchParams(location.search).get('reset') === '1') {
@@ -93,56 +62,7 @@
     <!-- Socket.io -->
     <script src="/socket.io/socket.io.js"></script>
 
-    <!-- Bootstrap -->
-    <script type="module">
-        import { TOME } from './core/Registry.js';
-        import { AudioService } from './services/AudioService.js';
-        import { AIService } from './services/AIService.js';
-        import { PersistenceService } from './services/PersistenceService.js';
-        import { Sidebar } from './ui/components/Sidebar.js';
-        import { Dashboard } from './ui/pages/Dashboard.js';
-        import { Dice } from './utils/Dice.js';
-        import { AuthScreen } from './ui/components/AuthScreen.js';
-        import { IndexedDBService } from './services/IndexedDBService.js';
-        import { TelemetryService } from './services/TelemetryService.js';
-        import { FXEngine } from './services/FXEngine.js';
-        (async () => {
-            if (window.location.search.includes('reset=1')) {
-                localStorage.removeItem('DM_JWT_TOKEN');
-                localStorage.removeItem('DM_ACTIVE_TABLE');
-                window.location.search = '';
-                return;
-            }
-
-            // Carrega a lógica de inicialização de forma modular
-            const { startApp } = await import('./ui/Boot.js');
-
-            const token = localStorage.getItem('DM_JWT_TOKEN');
-            if (!token) {
-                const { AuthScreen } = await import('./ui/components/AuthScreen.js');
-                const auth = new AuthScreen({ 
-                    element: document.getElementById('view-target'),
-                    onLogin: () => startApp()
-                });
-                auth.mount();
-                return; // Bloqueia o carregamento até logar e escolher mesa
-            }
-
-            startApp().catch(error => {
-                console.error('[Boot] Falhou:', error);
-                document.getElementById('view-target').innerHTML = `
-                    <div style="padding:3rem; color:#f43f5e; text-align:center; font-family:system-ui;">
-                        <h2>Erro de Inicializacao</h2>
-                        <p style="color:#7a7a8e;">${error && error.message ? error.message : error}</p>
-                        <p style="margin-top:20px;">
-                        <a href="/index.html?reset=1" style="color:#fbbf24; text-decoration:underline;">
-                            Limpar cache e tentar novamente
-                        </a>
-                        </p>
-                    </div>
-                `;
-            });
-        })();
-    </script>
+    <!-- Bootstrap App via Vite -->
+    <script type="module" src="/main.js"></script>
 </body>
 </html>
