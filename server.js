@@ -782,6 +782,9 @@ app.use((req, res, next) => {
     next();
 });
 
+// Ignore favicon requests
+app.get('/favicon.ico', (req, res) => res.status(204).end());
+
 // Serve estáticos da pasta /dist se o build do Vite foi feito, caso contrário serve da raiz
 const distPath = path.join(PSScriptRoot, 'dist');
 const cacheOptions = {
@@ -989,8 +992,8 @@ async function start() {
             }
         }
         console.log(`\n================================================================================`);
-        console.log(`           ✨ TOME V17.1 — VTT PREMIUM EDITION ✨           `);
-        console.log(`================================================================================`);
+        console.log(`           ✨ TOME V19.2.1 — THE ATOMIC ENGINE ✨           
+=====================================================================================================`);
         console.log(` [MESA DO MESTRE]    http://localhost:${finalPort}/`);
         console.log(` [TELÃO / PROJETOR]  http://localhost:${finalPort}/player-view.html`);
         console.log(` [APP LAN JOGADORES] http://${localIp}:${finalPort}/ (Conecte via Wi-Fi ou QR Code)`);

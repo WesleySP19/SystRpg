@@ -251,9 +251,9 @@
                         id: g.id(),
                         x: g.id() === data.data.id ? data.data.x : g.x(),
                         y: g.id() === data.data.id ? data.data.y : g.y(),
-                        name: g.findOne('Text').text(),
-                        size: g.findOne('Circle').radius() * 2,
-                        color: g.findOne('Circle').fill()
+                        name: g.findOne('Text') ? g.findOne('Text').text() : 'Token',
+                        size: g.findOne('Circle') ? g.findOne('Circle').radius() * 2 : 50,
+                        color: g.findOne('Circle') ? g.findOne('Circle').fill() : '#eab308'
                     }));
                     
                     // Adiciona o token se for novo (simplificado, ideal seria manter um array)
@@ -266,6 +266,16 @@
             }
             if (data.type === 'PING') {
                 mapEngine.showPing(data.position.x, data.position.y, data.color);
+            }
+            if (data.type === 'CAMERA_UPDATE') {
+                if (data.data) {
+                    mapEngine.setCamera(data.data.x, data.data.y, data.data.scale);
+                }
+            }
+            if (data.type === 'FOG_PATH_UPDATE') {
+                if (data.data && data.data.points) {
+                    mapEngine.addFogPath(data.data.points);
+                }
             }
         };
 

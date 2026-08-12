@@ -176,7 +176,7 @@ export class CampaignManager extends ReactiveComponent {
                     </div>
 
                     <!-- COMMAND PANEL & DYNAMIC INTEGRATED SECTIONS (Prime Dashboard) -->
-                    <div class="flex flex-col gap-5">
+                    <div class="flex flex-col gap-5 min-w-0">
 
                         <!-- PRIME CAMPAIGN INFO BANNER -->
                         ${this._renderCampaignBanner()}

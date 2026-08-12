@@ -37,7 +37,7 @@ function printHeader() {
      
   ================================================================
   ` + colors.reset);
-  console.log(colors.fgCyan + "          V17.1 PREMIUM VTT - Mesa do Mestre\n" + colors.reset);
+  console.log(colors.fgCyan + "          V19.2.1 PREMIUM VTT - The Atomic Engine\n" + colors.reset);
 }
 
 function checkDependencies() {
@@ -72,7 +72,7 @@ function openBrowser(url) {
 function startServer(mode) {
   console.log(colors.fgGreen + "\nInvocando o Servidor Arcano Node.js..." + colors.reset);
   
-  const server = spawn(process.execPath, ['server.js'], { cwd: ROOT_DIR, stdio: 'inherit' });
+  const server = spawn(process.execPath, ['--expose-gc', '--max-old-space-size=4096', 'server.js'], { cwd: ROOT_DIR, stdio: 'inherit' });
 
   // Dá um pequeno tempo para o servidor iniciar antes de abrir abas
   setTimeout(() => {

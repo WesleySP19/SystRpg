@@ -1,6 +1,6 @@
 import { Component } from '../core/Component.js';
 import { html } from 'htm/preact';
-import { CombatTrackerV14 } from './combat/CombatTrackerV14.js';
+import { CombatTrackerV19 } from './combat/CombatTrackerV19.js';
 import { Bestiary } from '../pages/Bestiary.js';
 import { SessionJournal } from './SessionJournal.js';
 import { EncounterGenerator } from './EncounterGenerator.js';
@@ -188,7 +188,7 @@ export class DMTable extends Component {
         const trackerContainer = this.$('#dmtable-tracker');
         if (trackerContainer) {
             trackerContainer.innerHTML = '';
-            this._tracker = new CombatTrackerV14({ store: this.store, root: trackerContainer });
+            this._tracker = new CombatTrackerV19({ store: this.store, root: trackerContainer });
             this._tracker.mount();
         }
 

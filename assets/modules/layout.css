@@ -1,1 +1,115 @@
-/* Layout Grid V17.9 */
+/* Layout Grid V19.2.1 - The Atomic Engine */
+
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background-color: var(--bgbase, #1a1a1a);
+    color: #f1f5f9;
+    font-family: 'Outfit', sans-serif;
+}
+
+#app-root {
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.sidebar {
+    flex-shrink: 0;
+}
+
+.main-stage {
+    flex-grow: 1;
+    height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    position: relative;
+    background: #0a0c12; /* Darker background for the main stage */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(197, 160, 89, 0.5) transparent;
+}
+
+.main-stage::-webkit-scrollbar {
+    width: 6px;
+}
+
+.main-stage::-webkit-scrollbar-thumb {
+    background-color: rgba(197, 160, 89, 0.5);
+    border-radius: 4px;
+}
+
+.dice-roller-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+}
+
+.dice-roller-tray {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: rgba(10, 12, 16, 0.9);
+    padding: 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(197, 160, 89, 0.3);
+    backdrop-filter: blur(8px);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(20px) scale(0.9);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.dice-roller-tray.active {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0) scale(1);
+}
+
+.dice-btn {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), rgba(0, 0, 0, 0.5));
+    border: 1px solid rgba(197, 160, 89, 0.5);
+    color: #c5a059;
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.dice-btn:hover {
+    background: rgba(197, 160, 89, 0.2);
+    color: #fff;
+    transform: translateX(-2px);
+    box-shadow: 0 0 10px rgba(197, 160, 89, 0.3);
+}
+
+.dice-fab {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #c5a059, #8b6d3b);
+    border: none;
+    color: #000;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    transition: all 0.3s;
+}
+
+.dice-fab:hover {
+    transform: scale(1.1) rotate(15deg);
+    box-shadow: 0 8px 25px rgba(197, 160, 89, 0.5);
+}
