@@ -10,8 +10,6 @@ import { IndexedDBService } from './services/IndexedDBService.js';
 import { TelemetryService } from './services/TelemetryService.js';
 import { FXEngine } from './services/FXEngine.js';
 
-import './assets/tailwind.css';
-import './assets/tome-master.css';
 
 (async () => {
     if (window.location.search.includes('reset=1')) {

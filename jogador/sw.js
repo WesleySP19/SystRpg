@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tome-jogador-v17.2';
+const CACHE_NAME = 'tome-jogador-v18.0';
 const STATIC_ASSETS = [
   '/jogador/index.html',
   '/jogador/css/jogador.css',

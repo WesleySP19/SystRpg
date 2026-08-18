@@ -1,4 +1,5 @@
-import React, { createContext, useState, useMemo } from 'react';
+import { createContext } from 'preact';
+import { useState, useMemo } from 'preact/hooks';
 
 // Context to share map state across components
 export const MapStateContext = createContext({

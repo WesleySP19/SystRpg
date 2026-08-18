@@ -13,7 +13,24 @@
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Outfit:wght@300;400;600;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
-    <!-- Design System (Vite will inject CSS here) -->
+    <!-- Import Map para ES Modules Nativos -->
+    <script type="importmap">
+    {
+      "imports": {
+        "preact": "/node_modules/preact/dist/preact.module.js",
+        "htm": "/node_modules/htm/dist/htm.module.js",
+        "htm/preact": "/node_modules/htm/preact/index.module.js",
+        "preact/hooks": "/node_modules/preact/hooks/dist/hooks.module.js",
+        "@preact/signals": "/node_modules/@preact/signals/dist/signals.module.js",
+        "@preact/signals-core": "/node_modules/@preact/signals-core/dist/signals-core.module.js"
+      }
+    }
+    </script>
+
+    <!-- Design System (Native CSS Load) -->
+    <link rel="stylesheet" href="/assets/tailwind.css">
+    <link rel="stylesheet" href="/assets/tome-master.css">
+    
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#c5a059">
     <!-- Versão e cache são gerenciados pelo Service Worker (service-worker.js) -->

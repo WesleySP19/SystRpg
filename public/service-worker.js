@@ -7,7 +7,7 @@
  *   - Recursos externos: Stale-While-Revalidate
  */
 
-const CACHE_VERSION = 'tome-v17-1-1';
+const CACHE_VERSION = 'tome-v18-0-0';
 const CACHE_STATIC = `${CACHE_VERSION}-static`;
 const CACHE_DATA = `${CACHE_VERSION}-data`;
 
