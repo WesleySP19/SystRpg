@@ -191,12 +191,50 @@ export class TomeSinalPanel extends Component {
         // Listen to online presence using Yjs Awareness
         if (CRDTManager.provider && CRDTManager.provider.awareness) {
             CRDTManager.provider.awareness.on('change', () => {
-                if (!CRDTManager.provider || !CRDTManager.provider.awareness) return;
-                const states = Array.from(CRDTManager.provider.awareness.getStates().values());
-                const onlineIds = states.map(s => s.user?.charId).filter(Boolean);
-                this.updateOnlineStatus(onlineIds.map(id => ({ id })));
+                this.syncPresence();
             });
         }
+        
+        // Listen to Socket.IO fallback presence (ping heartbeat)
+        if (window.TOME && window.TOME.socket) {
+            window.TOME.socket.on('player_presence', (data) => {
+                if (!data || !data.charId) return;
+                const char = this.characterTokens.find(c => c.characterId === data.charId);
+                if (char) {
+                    char.lastSocketPing = Date.now();
+                    this.syncPresence();
+                }
+            });
+        }
+        
+        // Periodic check for stale Socket.IO pings (15s timeout)
+        this.presenceInterval = setInterval(() => {
+            this.syncPresence();
+        }, 5000);
+    }
+
+    syncPresence() {
+        if (!this.sessionActive) return;
+        
+        let onlineIds = [];
+        const now = Date.now();
+        
+        // 1. Gather from Yjs Awareness
+        if (CRDTManager.provider && CRDTManager.provider.awareness) {
+            const states = Array.from(CRDTManager.provider.awareness.getStates().values());
+            onlineIds = states.map(s => s.user?.charId).filter(Boolean);
+        }
+        
+        // 2. Gather from Socket.IO recent pings
+        this.characterTokens.forEach(char => {
+            if (char.lastSocketPing && (now - char.lastSocketPing < 15000)) {
+                if (!onlineIds.includes(char.characterId)) {
+                    onlineIds.push(char.characterId);
+                }
+            }
+        });
+        
+        this.updateOnlineStatus(onlineIds.map(id => ({ id })));
     }
 
     updateOnlineStatus(onlinePlayers) {
@@ -372,6 +410,7 @@ export class TomeSinalPanel extends Component {
     }
 
     unmount() {
+        if (this.presenceInterval) clearInterval(this.presenceInterval);
         CRDTManager.disconnect();
         super.unmount();
     }

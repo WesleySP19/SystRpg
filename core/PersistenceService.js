@@ -7,59 +7,81 @@ import { TOME } from './Registry.js';
 export class PersistenceService {
     /**
      * Saves the state using the active Socket.IO connection.
-     * Fallbacks to REST API if Socket is unavailable (e.g. initial load or network issues).
+     * Uses exponential backoff (2s→4s→8s) with 3 retries before falling back to REST.
      */
     static async saveState(filename, data) {
-        return new Promise((resolve, reject) => {
-            if (TOME.socket && TOME.socket.connected) {
-                // Configura listener temporário para pegar a resposta do save
-                const onSuccess = (response) => {
-                    if (response.filename === filename) {
-                        TOME.socket.off('save_success', onSuccess);
-                        TOME.socket.off('save_error', onError);
-                        resolve(true);
+        if (TOME.socket && TOME.socket.connected) {
+            const MAX_RETRIES = 3;
+            let attempt = 0;
+
+            while (attempt < MAX_RETRIES) {
+                try {
+                    await PersistenceService._saveViaSocket(filename, data, 2000 * Math.pow(2, attempt));
+                    return true;
+                } catch (err) {
+                    attempt++;
+                    if (attempt < MAX_RETRIES) {
+                        console.warn(`[PersistenceService] Save timeout (tentativa ${attempt}/${MAX_RETRIES}), retentando em ${2000 * Math.pow(2, attempt)}ms...`);
                     }
-                };
-
-                const onError = (error) => {
-                    TOME.socket.off('save_success', onSuccess);
-                    TOME.socket.off('save_error', onError);
-                    console.error('[PersistenceService] Save error from server:', error);
-                    reject(new Error(error.error || 'Unknown save error'));
-                };
-
-                TOME.socket.on('save_success', onSuccess);
-                TOME.socket.on('save_error', onError);
-
-                // Timeout de segurança (5 segundos)
-                setTimeout(() => {
-                    TOME.socket.off('save_success', onSuccess);
-                    TOME.socket.off('save_error', onError);
-                    reject(new Error('Save timeout via WebSocket'));
-                }, 5000);
-
-                TOME.socket.emit('save_state', { filename, data });
-            } else {
-                // Fallback para REST se o socket caiu
-                const token = localStorage.getItem('DM_JWT_TOKEN');
-                const headers = { 'Content-Type': 'application/json' };
-                if (token) headers['Authorization'] = `Bearer ${token}`;
-
-                fetch('/api/save', {
-                    method: 'POST',
-                    headers,
-                    body: JSON.stringify({ filename, data })
-                }).then(res => {
-                    if (!res.ok) {
-                        if (res.status === 401 || res.status === 403) TOME.events.emit('AUTH_REQUIRED');
-                        throw new Error(`REST Save Error: ${res.status}`);
-                    }
-                    resolve(true);
-                }).catch(err => {
-                    PersistenceService._queueOfflineSave(filename, data);
-                    reject(err);
-                });
+                }
             }
+            console.warn('[PersistenceService] WebSocket esgotou tentativas, fallback para REST...');
+        }
+
+        // Fallback para REST
+        try {
+            const token = localStorage.getItem('DM_JWT_TOKEN');
+            const headers = { 'Content-Type': 'application/json' };
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+
+            const res = await fetch('/api/save', {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ filename, data })
+            });
+
+            if (!res.ok) {
+                if (res.status === 401 || res.status === 403) TOME.events.emit('AUTH_REQUIRED');
+                throw new Error(`REST Save Error: ${res.status}`);
+            }
+            return true;
+        } catch (err) {
+            PersistenceService._queueOfflineSave(filename, data);
+            throw err;
+        }
+    }
+
+    /**
+     * Tenta salvar via WebSocket com timeout configurável.
+     */
+    static _saveViaSocket(filename, data, timeoutMs) {
+        return new Promise((resolve, reject) => {
+            const onSuccess = (response) => {
+                if (response.filename === filename) {
+                    TOME.socket.off('save_success', onSuccess);
+                    TOME.socket.off('save_error', onError);
+                    clearTimeout(timer);
+                    resolve(true);
+                }
+            };
+
+            const onError = (error) => {
+                TOME.socket.off('save_success', onSuccess);
+                TOME.socket.off('save_error', onError);
+                clearTimeout(timer);
+                reject(new Error(error.error || 'Unknown save error'));
+            };
+
+            TOME.socket.on('save_success', onSuccess);
+            TOME.socket.on('save_error', onError);
+
+            const timer = setTimeout(() => {
+                TOME.socket.off('save_success', onSuccess);
+                TOME.socket.off('save_error', onError);
+                reject(new Error(`Save timeout (${timeoutMs}ms)`));
+            }, timeoutMs);
+
+            TOME.socket.emit('save_state', { filename, data });
         });
     }
 

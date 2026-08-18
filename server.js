@@ -17,7 +17,7 @@ import registerAuthRoutes from './routes/auth.js';
 import registerSystemRoutes from './routes/system.js';
 import registerMediaRoutes from './routes/media.js';
 import { getOrCreateMasterInDb, createAuthMiddleware } from './controllers/AuthController.js';
-import { setupSyncEngine } from './sockets/SyncEngine.js';
+import { setupSyncEngine, cleanupSession } from './sockets/SyncEngine.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -270,6 +270,7 @@ app.post('/api/sessao/encerrar', (req, res) => {
         }
         activeTables.delete(tableId);
         saveSessions(); // Atualiza persistência
+        cleanupSession(tableId); // Limpa memória do SyncEngine
         broadcastPlayerStatus(tableId);
     }
     res.json({ status: 'success' });
@@ -517,6 +518,14 @@ app.use((req, res, next) => {
 // Ignore favicon requests
 app.get('/favicon.ico', (req, res) => res.status(204).end());
 
+// Explicitly serve service-worker and manifest from public when in dev mode
+app.get('/service-worker.js', (req, res) => {
+    res.sendFile(path.join(PSScriptRoot, 'public', 'service-worker.js'));
+});
+app.get('/manifest.json', (req, res) => {
+    res.sendFile(path.join(PSScriptRoot, 'public', 'manifest.json'));
+});
+
 // Serve estáticos da pasta /dist se o build do Vite foi feito, caso contrário serve da raiz
 const distPath = path.join(PSScriptRoot, 'dist');
 const cacheOptions = {
@@ -630,7 +639,7 @@ async function start() {
 
     const finalPort = await getAvailablePort(port);
     
-    server.listen(finalPort, '0.0.0.0', () => {
+    server.listen(finalPort, '0.0.0.0', async () => {
         const interfaces = os.networkInterfaces();
         let localIp = '127.0.0.1';
         for (const name of Object.keys(interfaces)) {
@@ -647,6 +656,20 @@ async function start() {
         console.log(` [MESA DO MESTRE]    http://localhost:${finalPort}/`);
         console.log(` [TELÃO / PROJETOR]  http://localhost:${finalPort}/player-view.html`);
         console.log(` [APP LAN JOGADORES] http://${localIp}:${finalPort}/ (Conecte via Wi-Fi ou QR Code)`);
+        
+        // ── NOVO ACESSO ALTERNATIVO (Secundário) ──
+        try {
+            const secondaryPort = await getAvailablePort(8080);
+            const serverLivre = http.createServer(app);
+            io.attach(serverLivre); // Compartilha o mesmo WebSocket Engine
+            serverLivre.listen(secondaryPort, '0.0.0.0', () => {
+                console.log(`--------------------------------------------------------------------------------`);
+                console.log(` [ACESSO ALTERNATIVO] http://${localIp}:${secondaryPort}/ (Livre para qualquer PC)`);
+            });
+        } catch(e) {
+            console.log(` [ACESSO ALTERNATIVO] Indisponível no momento.`);
+        }
+
         console.log(`--------------------------------------------------------------------------------`);
         console.log(` [STATUS] Yjs CRDT + Sockets LAN Ativos | Sincronização Delta (<16ms)`);
         console.log(` [STATUS] Banco de Dados (${getDbType()}) Integrado`);

@@ -170,6 +170,18 @@ export class Engine {
                         this.hydrate(data, true); // true = via WebSocket, não forçar re-render sujo
                     }
                 });
+                
+                // Heartbeat de Presença (a cada 10s)
+                if (this.presencePingInterval) clearInterval(this.presencePingInterval);
+                this.presencePingInterval = setInterval(() => {
+                    if (this.socket && this.socket.connected) {
+                        this.socket.emit('player_ping', { 
+                            charId: this.currentCharId || this.playerId,
+                            tableId: this.currentTable 
+                        });
+                    }
+                }, 10000);
+                
             } catch(e) { console.warn('[Engine] Falha ao vincular Socket Sync-Mesh:', e); }
         }
     }
@@ -274,32 +286,32 @@ export class Engine {
         // Eco local instantâneo (UI 100% responsiva no cel)
         this._renderCRDTMessage(newEntry, false);
 
-        // Tenta mandar no canal Yjs CRDT primeiro
-        if (this.isSocketConnected && this.provider) {
+        // Canal Único com Fallback Cascata:
+        // 1. Socket.IO (primário, menor latência)
+        // 2. REST HTTP (backup silencioso, garante entrega)
+        // O servidor injeta no Yjs CRDT automaticamente — não duplicamos aqui
+        let sentViaSocket = false;
+        if (this.socket && this.socket.connected) {
             try {
-                this.chatHistory.push([newEntry]);
-                if (this.chatHistory.length > 100) {
-                    this.chatHistory.delete(0, this.chatHistory.length - 100);
-                }
+                this.socket.emit('chat_message', Object.assign({ tableId: this.currentTable }, newEntry));
+                sentViaSocket = true;
             } catch(e) {
-                console.warn("Falha no push Yjs, disparando por REST...");
+                console.warn("[Engine] Falha no Socket.IO, tentando REST...");
             }
         }
-        
-        // Envia instantaneamente via canal rápido de Socket (Sync-Mesh)
-        if (this.socket && this.socket.connected) {
-            try { this.socket.emit('chat_message', Object.assign({ tableId: this.currentTable }, newEntry)); } catch(e){}
-        }
 
-        // SEMPRE envia no fallback REST /api/chat/send para garantia de entrega no Mestre e histórico LAN
-        try {
-            await fetch('/api/chat/send', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ tableId: this.currentTable, message: newEntry })
-            });
-        } catch(e) {
-            console.warn("Mensagem pendurada - Wi-Fi instável.");
+        // REST como backup silencioso (fire-and-forget)
+        if (!sentViaSocket) {
+            try {
+                await fetch('/api/chat/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tableId: this.currentTable, message: newEntry })
+                });
+            } catch(e) {
+                // Wi-Fi instável — mensagem fica no eco local, será sincronizada no próximo polling
+                console.warn("[Engine] Mensagem em fila offline — será sincronizada ao reconectar.");
+            }
         }
     }
 

@@ -5,10 +5,30 @@ import { WebSocketServer } from 'ws';
 import { setupWSConnection, setPersistence } from 'y-websocket/bin/utils';
 import { getDocument, saveDocument, getDbType, getPrisma } from '../utils/db.js';
 import { battleManager } from '../services/BattleManager.js';
+import { generatePatch, isPatchEmpty, patchSize } from '../utils/DeltaSync.js';
 import * as Y from 'yjs';
 
 const activeYDocs = new Map();
 const messageHistory = new Map();
+const stateSnapshots = new Map(); // mesaId -> último estado salvo (para calcular deltas)
+
+// LRU Set para deduplicação robusta de mensagens por ID
+class LRUSet {
+    constructor(maxSize = 500) {
+        this._set = new Set();
+        this._maxSize = maxSize;
+    }
+    has(id) { return this._set.has(id); }
+    add(id) {
+        if (this._set.has(id)) return;
+        this._set.add(id);
+        if (this._set.size > this._maxSize) {
+            const first = this._set.values().next().value;
+            this._set.delete(first);
+        }
+    }
+}
+const processedMessageIds = new Map(); // tableId -> LRUSet
 
 export function normalizeChatMessage(msg = {}) {
     const id = msg.id || crypto.randomUUID();
@@ -112,12 +132,18 @@ async function saveTableChatHistory(tableId, history, dataDir) {
 async function processAndBroadcastMessage(io, dataDir, tableId, rawMsg, source = 'unknown') {
     const cleanId = (tableId || 'global').replace(/^table-/, '');
     const norm = normalizeChatMessage(rawMsg);
-    const history = await getTableChatHistory(cleanId, dataDir);
 
-    if (history.some(m => m.id === norm.id || (m.timestamp === norm.timestamp && m.conteudo === norm.conteudo && m.sender === norm.sender))) {
+    // Dedup robusto por message ID (LRU Set por mesa)
+    if (!processedMessageIds.has(cleanId)) {
+        processedMessageIds.set(cleanId, new LRUSet(500));
+    }
+    const dedupSet = processedMessageIds.get(cleanId);
+    if (dedupSet.has(norm.id)) {
         return { status: 'duplicate', entry: norm };
     }
+    dedupSet.add(norm.id);
 
+    const history = await getTableChatHistory(cleanId, dataDir);
     history.push(norm);
     if (history.length > 300) {
         history.splice(0, history.length - 300);
@@ -198,8 +224,25 @@ export function setupSyncEngine(server, io, dataDir, app) {
                 const match = safeName.match(/^mesa_(\d+)\.json$/);
                 if (match) {
                     const mesaId = match[1];
-                    io.to(mesaId).emit('state_update', data);
-                    console.log(`[NodeServer] [Socket.io] State Update salvo e repassado para a sala: ${mesaId}`);
+                    const previousState = stateSnapshots.get(mesaId);
+                    
+                    if (previousState) {
+                        // Calcula e envia delta (muito menor que o estado completo)
+                        const patches = generatePatch(previousState, data);
+                        if (!isPatchEmpty(patches)) {
+                            const deltaBytes = patchSize(patches);
+                            const fullBytes = JSON.stringify(data).length;
+                            console.log(`[Sync-Mesh] Delta: ${deltaBytes}B vs Full: ${fullBytes}B (${Math.round((1 - deltaBytes/fullBytes) * 100)}% economia)`);
+                            io.to(mesaId).emit('delta_state_update', { patches, version: Date.now() });
+                        }
+                    } else {
+                        // Primeiro save — envia estado completo
+                        io.to(mesaId).emit('state_update', data);
+                    }
+                    
+                    // Atualiza snapshot em memória
+                    stateSnapshots.set(mesaId, JSON.parse(JSON.stringify(data)));
+                    console.log(`[Sync-Mesh] State salvo e sincronizado via delta para sala: ${mesaId}`);
                 }
                 socket.emit('save_success', { filename: safeName });
             } catch (err) {
@@ -210,6 +253,31 @@ export function setupSyncEngine(server, io, dataDir, app) {
         
         socket.on('ping_perf', (sentTimestamp) => {
             socket.emit('pong_perf', sentTimestamp);
+        });
+
+        socket.on('player_ping', (payload) => {
+            if (payload && payload.charId && payload.tableId) {
+                // Broadcast to the DM's room so TomeSinalPanel can update presence
+                io.to(payload.tableId).emit('player_presence', {
+                    charId: payload.charId,
+                    status: 'online',
+                    timestamp: Date.now()
+                });
+                // Attach info to socket for disconnect handling
+                socket._charId = payload.charId;
+                socket._tableId = payload.tableId;
+            }
+        });
+
+        socket.on('disconnect', () => {
+            console.log(`[NodeServer] [Socket] Cliente desconectado: ${socket.id}`);
+            if (socket._charId && socket._tableId) {
+                io.to(socket._tableId).emit('player_offline', {
+                    charId: socket._charId,
+                    status: 'offline',
+                    timestamp: Date.now()
+                });
+            }
         });
 
         socket.on('state_update', (data) => {
@@ -399,4 +467,36 @@ export function setupSyncEngine(server, io, dataDir, app) {
             });
         });
     });
+}
+
+/**
+ * Limpa todos os recursos em memória associados a uma sessão/mesa.
+ * Deve ser chamado quando uma sessão é encerrada via /api/sessao/encerrar.
+ * @param {string} tableId
+ */
+export function cleanupSession(tableId) {
+    const cleanId = (tableId || '').replace(/^table-/, '');
+    
+    // Limpa Yjs docs
+    const ydocKey1 = `table-${cleanId}`;
+    const ydocKey2 = cleanId;
+    if (activeYDocs.has(ydocKey1)) {
+        try { activeYDocs.get(ydocKey1).destroy(); } catch {}
+        activeYDocs.delete(ydocKey1);
+    }
+    if (activeYDocs.has(ydocKey2)) {
+        try { activeYDocs.get(ydocKey2).destroy(); } catch {}
+        activeYDocs.delete(ydocKey2);
+    }
+    
+    // Limpa histórico de chat em memória
+    messageHistory.delete(cleanId);
+    
+    // Limpa snapshot de estado
+    stateSnapshots.delete(cleanId);
+    
+    // Limpa dedup set
+    processedMessageIds.delete(cleanId);
+    
+    console.log(`[Sync-Mesh] Sessão ${cleanId} limpa da memória (YDocs, Chat, Snapshots, Dedup).`);
 }

@@ -112,6 +112,26 @@ export async function startApp() {
                 }
             }
         });
+
+        // Delta State Update — recebe apenas patches (RFC 6902) ao invés do estado completo
+        window.TOME.socket.on('delta_state_update', async (payload) => {
+            if (payload && payload.patches && Array.isArray(payload.patches)) {
+                try {
+                    const { applyPatch } = await import('../utils/DeltaSync.js');
+                    const SessionManager = (await import('../services/SessionManager.js')).SessionManager;
+                    SessionManager._isApplyingNetworkState = true;
+                    
+                    const currentState = TOME.store.snapshot();
+                    const patched = applyPatch(currentState, payload.patches);
+                    TOME.store.update(s => Object.assign(s, patched));
+                    
+                    console.log(`[Boot] Delta sync aplicado: ${payload.patches.length} patches (v${payload.version})`);
+                    setTimeout(() => SessionManager._isApplyingNetworkState = false, 500);
+                } catch(e) {
+                    console.error('[Boot] Erro no delta_state_update, solicitando estado completo:', e);
+                }
+            }
+        });
     }
 
     const persistence = new PersistenceService();

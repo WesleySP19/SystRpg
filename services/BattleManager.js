@@ -4,6 +4,32 @@
  */
 import { RulesEngine } from '../core/RulesEngine.js';
 
+/**
+ * Validadores manuais (fallback para quando o pacote zod não está compilado/disponível).
+ * Espelham as regras do sync-protocol/schemas.ts.
+ */
+const validatePosition = (pos) => {
+    if (!pos || typeof pos !== 'object') return { x: 0, y: 0 };
+    return {
+        x: typeof pos.x === 'number' ? pos.x : (typeof pos.q === 'number' ? pos.q : 0),
+        y: typeof pos.y === 'number' ? pos.y : (typeof pos.r === 'number' ? pos.r : 0),
+        z: typeof pos.z === 'number' ? pos.z : 0
+    };
+};
+
+const validateEntity = (e) => {
+    if (!e || typeof e !== 'object') return null;
+    return {
+        entityId: String(e.entityId || e.id || 'unknown'),
+        position: validatePosition(e.position || { x: e.x, y: e.y, q: e.q, r: e.r }),
+        hp: typeof e.hp === 'number' ? e.hp : 10,
+        maxHp: typeof e.maxHp === 'number' ? e.maxHp : 10,
+        conditions: Array.isArray(e.conditions) ? e.conditions : [],
+        visible: e.visible !== false
+    };
+};
+
+
 class BattleManager {
     constructor() {
         // Map<sessionId, { entities: Map, activeEntityId: string, roundNumber: number, lastActivity: number }>
@@ -128,21 +154,19 @@ class BattleManager {
         const battle = this._getOrCreateBattle(sessionId);
         
         // Converte o Map de entidades para Array compatível com TOME e CartoRPG
-        const entitiesArray = Array.from(battle.entities.values()).map(e => ({
-            entityId: e.entityId || e.id || 'unknown',
-            position: e.position || { x: e.x !== undefined ? e.x : (e.q || 0), y: e.y !== undefined ? e.y : (e.r || 0) },
-            hp: e.hp || 10,
-            maxHp: e.maxHp || 10,
-            conditions: e.conditions || [],
-            visible: e.visible !== false
-        }));
+        // e aplica a validação rigorosa espelhando o BattleSnapshotResponseSchema
+        const entitiesArray = Array.from(battle.entities.values())
+            .map(e => validateEntity(e))
+            .filter(Boolean);
 
-        return {
-            battleId: battle.battleId,
-            roundNumber: battle.roundNumber,
-            activeEntityId: battle.activeEntityId,
+        const snapshot = {
+            battleId: String(battle.battleId || ''),
+            roundNumber: typeof battle.roundNumber === 'number' ? battle.roundNumber : 1,
+            activeEntityId: battle.activeEntityId ? String(battle.activeEntityId) : null,
             entities: entitiesArray
         };
+        
+        return snapshot;
     }
 
     /**
@@ -156,14 +180,21 @@ class BattleManager {
         // Extrair coordenadas unificadas (Mesa: position.{x,y} | CartoRPG: {q,r} ou {x,y})
         const getCoord = (e) => {
             if (!e) return null;
-            if (e.position) return e.position;
-            if (e.q !== undefined && e.r !== undefined) return { q: e.q, r: e.r };
+            if (e.position && typeof e.position.x === 'number') return e.position;
+            if (e.q !== undefined && e.r !== undefined) return { x: e.q, y: e.r }; // Mapeamento q/r para x/y
             if (e.x !== undefined && e.y !== undefined) return { x: e.x, y: e.y };
             return null;
         };
 
         const oldPos = getCoord(oldEntity);
         const newPos = getCoord(newEntityData);
+
+        // Validação de integridade da entidade recebida
+        const validNewEntity = validateEntity(newEntityData);
+        if (!validNewEntity) {
+            console.warn(`[BattleManager] Payload CRDT de entidade inválido descartado.`);
+            return false;
+        }
 
         // Se é uma entidade nova ou não tinha posição antiga, aceita no registro
         if (!oldEntity || !oldPos || !newPos) {

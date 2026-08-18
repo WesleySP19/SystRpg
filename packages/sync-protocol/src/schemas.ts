@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-// Flexible table / session ID format (supports 'Mesa-01', 'table-Mesa-01', 'session:X', or UUIDs)
+// Flexible table / session ID format (supports 'Mesa-01', 'table-Mesa-01', 'session:X', numeric IDs, or UUIDs)
 export const SessionIdSchema = z.string().min(1);
 export const EntityIdSchema = z.string(); // Can be uuid or local id
 
@@ -139,7 +139,72 @@ export const BattleSnapshotResponseSchema = z.object({
   }),
 });
 
+// ============================================================================
+// SYNC-MESH SCHEMAS (Fase 2) — Real-world synchronization events
+// ============================================================================
+
+// --- Chat Message Schema (matches normalizeChatMessage output) ---
+export const ChatMessageSchema = z.object({
+  id: z.string(),
+  sender: z.string(),
+  message: z.string(),
+  isSystem: z.boolean().default(false),
+  isRoll: z.boolean().default(false),
+  formula: z.string().default(''),
+  total: z.number().nullable().default(null),
+  details: z.string().default(''),
+  timestamp: z.number(),
+  avatar: z.string().default(''),
+  tipo: z.enum(['geral', 'sistema', 'rolagem', 'sussurro', 'voz_divina', 'alerta']).default('geral'),
+  nome: z.string(),
+  de: z.string(),
+  para: z.string().default('todos'),
+  conteudo: z.string(),
+});
+
+// --- Player Profile Schema (jogador connecting via QR/token) ---
+export const PlayerProfileSchema = z.object({
+  characterId: z.string(),
+  tableId: z.string(),
+  sessionToken: z.string().optional(),
+  nome: z.string(),
+  avatar: z.string().default(''),
+  classe: z.string().default(''),
+  connected: z.boolean().default(false),
+});
+
+// --- Delta State Update Schema (RFC 6902 JSON Patch) ---
+export const PatchOperationSchema = z.object({
+  op: z.enum(['add', 'remove', 'replace']),
+  path: z.string(),
+  value: z.any().optional(),
+});
+
+export const DeltaStateUpdateSchema = z.object({
+  patches: z.array(PatchOperationSchema),
+  version: z.number(),
+});
+
+// --- Player Presence Schema (Awareness/Heartbeat) ---
+export const PlayerPresenceSchema = z.object({
+  charId: z.string(),
+  name: z.string(),
+  tableId: z.string(),
+  status: z.enum(['online', 'idle', 'offline']).default('online'),
+  lastSeen: z.number(),
+});
+
+// --- State Update with Version (full state broadcast with version tracking) ---
+export const VersionedStateSchema = z.object({
+  version: z.number(),
+  data: z.record(z.any()),
+});
+
+// ============================================================================
 // Type Exports
+// ============================================================================
+
+// Original types
 export type SessionId = z.infer<typeof SessionIdSchema>;
 export type Position = z.infer<typeof PositionSchema>;
 
@@ -156,3 +221,11 @@ export type MapRevealEvent = z.infer<typeof MapRevealEventSchema>;
 export type RequestEntityMove = z.infer<typeof RequestEntityMoveSchema>;
 export type BattleSnapshotRequest = z.infer<typeof BattleSnapshotRequestSchema>;
 export type BattleSnapshotResponse = z.infer<typeof BattleSnapshotResponseSchema>;
+
+// Sync-Mesh types (Fase 2)
+export type ChatMessage = z.infer<typeof ChatMessageSchema>;
+export type PlayerProfile = z.infer<typeof PlayerProfileSchema>;
+export type PatchOperation = z.infer<typeof PatchOperationSchema>;
+export type DeltaStateUpdate = z.infer<typeof DeltaStateUpdateSchema>;
+export type PlayerPresence = z.infer<typeof PlayerPresenceSchema>;
+export type VersionedState = z.infer<typeof VersionedStateSchema>;
