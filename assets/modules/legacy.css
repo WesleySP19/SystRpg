@@ -1255,33 +1255,45 @@ input[type="text"]:focus:not(.form-input), input[type="number"]:focus:not(.form-
     background: var(--sheet-label-color);
 }
 
-/* --- Form Inputs (Official Style) --- */
+/* --- Form Inputs (V19 Premium Style) --- */
 .legacy-input {
-    background: var(--sheet-accent-blue) !important;
-    border: none !important;
-    border-bottom: 1px solid var(--sheet-border-color) !important;
-    border-radius: 4px !important;
-    padding: 5px 8px !important;
-    color: var(--sheet-text-color) !important;
-    font-weight: 600 !important;
+    background: rgba(15, 17, 26, 0.7) !important; /* Obsidian 900 */
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 6px !important;
+    padding: 6px 10px !important;
+    color: #f8fafc !important; /* slate-50 */
+    font-weight: 500 !important;
+    transition: all 0.2s ease-out !important;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2) !important;
+}
+.legacy-input:hover {
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    background: rgba(15, 17, 26, 0.9) !important;
 }
 .legacy-input:focus {
-    border-bottom-color: var(--sheet-label-color) !important;
-    background: rgba(197, 160, 89, 0.05) !important;
-    outline: none;
+    border-color: #d4af37 !important; /* tomeGold */
+    background: rgba(6, 7, 10, 0.95) !important;
+    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.25), inset 0 2px 4px rgba(0,0,0,0.2) !important;
+    outline: none !important;
 }
 .legacy-textarea {
-    background: var(--sheet-accent-blue) !important;
-    border: 1px solid var(--sheet-border-color) !important;
-    color: var(--sheet-text-color) !important;
+    background: rgba(15, 17, 26, 0.7) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    color: #f8fafc !important;
     width: 100%;
     padding: 10px;
     border-radius: 6px;
     font-family: inherit;
+    transition: all 0.2s ease-out !important;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2) !important;
+}
+.legacy-textarea:hover {
+    border-color: rgba(255, 255, 255, 0.15) !important;
 }
 .legacy-textarea:focus {
-    border-color: var(--sheet-label-color) !important;
-    outline: none;
+    border-color: #d4af37 !important;
+    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.25), inset 0 2px 4px rgba(0,0,0,0.2) !important;
+    outline: none !important;
 }
 
 /* --- Tabs Content Animation --- */

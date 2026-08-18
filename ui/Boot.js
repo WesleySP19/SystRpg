@@ -19,6 +19,12 @@ export async function startApp() {
         localStorage.setItem('DM_SESSION_START', Date.now().toString());
     }
 
+    TOME.events.on('AUTH_REQUIRED', () => {
+        console.error('[Boot] AUTH_REQUIRED recebido. Limpando token e recarregando...');
+        localStorage.removeItem('DM_JWT_TOKEN');
+        window.location.reload();
+    });
+
     try {
         let sentryDsn = null;
         try {

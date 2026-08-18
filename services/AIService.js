@@ -99,23 +99,29 @@ export class AIService {
         return 'Instinto de Combate: Ataca quem estiver mais perto. Troca de alvo se receber golpe crítico.';
     }
 
-    async ask(prompt, systemContext = '') {
+    async ask(prompt, systemContext = '', onChunk = null) {
         try {
             const data = await this._fetch('/ai/ask', { prompt, context: systemContext });
-            if (data && (data.text || data.response)) return data.text || data.response;
+            if (data && (data.text || data.response)) {
+                const res = data.text || data.response;
+                if (onChunk) onChunk(res);
+                return res;
+            }
         } catch (_) {}
 
         try {
-            const ollamaRes = await this._fetchOllama(prompt, systemContext);
+            const ollamaRes = await this._fetchOllama(prompt, systemContext, onChunk);
             if (ollamaRes) return ollamaRes;
         } catch (_) {}
 
-        return await this._localAsk(prompt);
+        const localRes = await this._localAsk(prompt);
+        if (onChunk) onChunk(localRes);
+        return localRes;
     }
 
-    async _fetchOllama(prompt, systemContext) {
+    async _fetchOllama(prompt, systemContext, onChunk = null) {
         const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 6000);
+        const timer = setTimeout(() => controller.abort(), onChunk ? 60000 : 6000); // 1 minuto para streams longos
         try {
             const res = await fetch(this._ollamaUrl, {
                 method: 'POST',
@@ -123,22 +129,45 @@ export class AIService {
                 body: JSON.stringify({
                     model: this._ollamaModel,
                     prompt: systemContext ? `${systemContext}\n\nPergunta: ${prompt}` : prompt,
-                    stream: false,
+                    stream: !!onChunk,
                     options: { temperature: 0.7 }
                 }),
                 signal: controller.signal
             });
             clearTimeout(timer);
             if (!res.ok) return null;
-            const data = await res.json();
-            return data.response ? data.response.trim() : null;
+            
+            if (onChunk) {
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder();
+                let fullResponse = '';
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    const chunk = decoder.decode(value, { stream: true });
+                    const lines = chunk.split('\n').filter(l => l.trim());
+                    for (const line of lines) {
+                        try {
+                            const parsed = JSON.parse(line);
+                            if (parsed.response) {
+                                fullResponse += parsed.response;
+                                onChunk(parsed.response);
+                            }
+                        } catch(e) {}
+                    }
+                }
+                return fullResponse.trim();
+            } else {
+                const data = await res.json();
+                return data.response ? data.response.trim() : null;
+            }
         } catch (_) {
             clearTimeout(timer);
             return null;
         }
     }
 
-    async oracleSearch(query, store) {
+    async oracleSearch(query, store, onChunk = null) {
         if (!store || !store.state) return "Nenhum arquivo de campanha carregado no Oráculo.";
         
         // Otimização v15.9: Despacha para o Web Worker se disponível
@@ -149,12 +178,20 @@ export class AIService {
                 if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('tome:ai_processing', { detail: { active: false } }));
                 
                 try {
+                    if (onChunk) onChunk(`✨ **Resposta do Oráculo:**\n\n`);
                     const aiSynthesis = await this._fetchOllama(
-                        `A partir das notas de RPG abaixo, responda concisamente em bom português de fantasia: "${query}"\n\nNotas:\n${workerResult}`
+                        `A partir das notas de RPG abaixo, responda concisamente em bom português de fantasia: "${query}"\n\nNotas:\n${workerResult}`,
+                        null,
+                        onChunk
                     );
-                    if (aiSynthesis) return `✨ **Resposta do Oráculo:**\n${aiSynthesis}\n\n*Fontes Originais:*\n${workerResult}`;
+                    if (aiSynthesis) {
+                        const finalNote = `\n\n*Fontes Originais:*\n${workerResult}`;
+                        if (onChunk) onChunk(finalNote);
+                        return `✨ **Resposta do Oráculo:**\n\n${aiSynthesis}${finalNote}`;
+                    }
                 } catch(_) {}
                 
+                if (onChunk) onChunk(workerResult);
                 return workerResult;
             } catch (err) {
                 if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('tome:ai_processing', { detail: { active: false } }));
