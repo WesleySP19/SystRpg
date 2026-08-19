@@ -1,6 +1,6 @@
 import { TOME } from '../core/Registry.js';
 import { Sidebar } from './components/Sidebar.js';
-import { Dashboard } from './pages/Dashboard.js';
+import { Dashboard } from './pages/Dashboard.jsx';
 import { Dice } from '../utils/Dice.js';
 import { PersistenceService } from '../services/PersistenceService.js';
 import { AudioService } from '../services/AudioService.js';

@@ -3,9 +3,9 @@ import { AudioService } from './services/AudioService.js';
 import { AIService } from './services/AIService.js';
 import { PersistenceService } from './core/PersistenceService.js';
 import { Sidebar } from './ui/components/Sidebar.js';
-import { Dashboard } from './ui/pages/Dashboard.js';
+import { Dashboard } from './ui/pages/Dashboard.jsx';
 import { Dice } from './utils/Dice.js';
-import { AuthScreen } from './ui/components/AuthScreen.js';
+import { AuthScreen } from './ui/components/AuthScreen.jsx';
 import { IndexedDBService } from './services/IndexedDBService.js';
 import { TelemetryService } from './services/TelemetryService.js';
 import { FXEngine } from './services/FXEngine.js';
@@ -24,7 +24,7 @@ import { FXEngine } from './services/FXEngine.js';
 
     const token = localStorage.getItem('DM_JWT_TOKEN');
     if (!token) {
-        const { AuthScreen } = await import('./ui/components/AuthScreen.js');
+        const { AuthScreen } = await import('./ui/components/AuthScreen.jsx');
         const auth = new AuthScreen({ 
             element: document.getElementById('view-target'),
             onLogin: () => startApp()

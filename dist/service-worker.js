@@ -45,7 +45,7 @@ const STATIC_ASSETS = [
   '/ui/utils/imageExport.js',
 
   // Components base
-  '/ui/components/MainPanel.js',
+  '/ui/components/MainPanel.jsx',
   '/ui/components/PartyStatusHUD.js',
   '/ui/components/ChatBox.js',
   '/ui/components/HeroHub.js',
@@ -69,7 +69,7 @@ const STATIC_ASSETS = [
   '/ui/components/TomeSinalPanel.js',
 
   // Pages
-  '/ui/pages/Dashboard.js',
+  '/ui/pages/Dashboard.jsx',
   '/ui/pages/Bestiary.js',
   '/data/schemas.js',
   '/data/spells-5e.js',

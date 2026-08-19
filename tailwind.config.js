@@ -5,6 +5,7 @@ export default {
     "./player-view.html",
     "./master-map.html",
     "./ui/**/*.js",
+    "./ui/**/*.jsx",
     "./engine/**/*.js",
   ],
   theme: {

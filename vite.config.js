@@ -9,18 +9,7 @@ const __dirname = path.dirname(__filename);
 
 export default defineConfig({
   plugins: [
-    preact({
-      babel: {
-        plugins: [
-          ['htm', {
-            import: 'preact',
-            pragma: 'h',
-            useBuiltIns: true,
-            useNativeSpread: true
-          }]
-        ]
-      }
-    })
+    preact()
   ],
   build: {
     rollupOptions: {

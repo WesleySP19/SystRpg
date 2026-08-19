@@ -105,4 +105,3 @@ export async function getOrCreateMasterInDb(name, phone, dataDir) {
         }
         return master;
     }
-}

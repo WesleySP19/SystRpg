@@ -1,3 +1,5 @@
+import { IndexedDBService } from './IndexedDBService.js';
+
 /**
  * DIRECTORY SERVICE
  * Lida com o registro global de Mestres e Mesas no servidor (masters_directory.json e tables_directory.json)
@@ -39,11 +41,11 @@ export class FrontendDirectoryService {
             const data = await response.json();
             return Array.isArray(data) ? data : [];
         } catch (err) {
-            console.warn('[DirectoryService] Diretorio de mestres nao encontrado via HTTP. Tentando localStorage.', err);
-            const localData = localStorage.getItem('TOME_MASTERS_DIRECTORY');
+            console.warn('[DirectoryService] Diretorio de mestres nao encontrado via HTTP. Tentando IndexedDB.', err);
+            const localData = await IndexedDBService.get('TOME_MASTERS_DIRECTORY');
             if (localData) {
                 try {
-                    const parsed = JSON.parse(localData);
+                    const parsed = typeof localData === 'string' ? JSON.parse(localData) : localData;
                     return Array.isArray(parsed) ? parsed : [];
                 } catch(e) {}
             }
@@ -62,15 +64,15 @@ export class FrontendDirectoryService {
                 })
             });
             if (response.status === 401 || response.status === 403) {
-                console.warn('[DirectoryService] Auth fail on save, falling back to localStorage');
-                localStorage.setItem('TOME_MASTERS_DIRECTORY', JSON.stringify(directory));
+                console.warn('[DirectoryService] Auth fail on save, falling back to IndexedDB');
+                await IndexedDBService.set('TOME_MASTERS_DIRECTORY', JSON.stringify(directory));
                 return true;
             }
             if (!response.ok) throw new Error('Erro na resposta do servidor ao salvar diretorio de mestres.');
             return true;
         } catch (err) {
-            console.warn('[DirectoryService] Erro ao salvar diretorio de mestres no servidor, usando localStorage:', err);
-            localStorage.setItem('TOME_MASTERS_DIRECTORY', JSON.stringify(directory));
+            console.warn('[DirectoryService] Erro ao salvar diretorio de mestres no servidor, usando IndexedDB:', err);
+            await IndexedDBService.set('TOME_MASTERS_DIRECTORY', JSON.stringify(directory));
             return true;
         }
     }
@@ -122,11 +124,11 @@ export class FrontendDirectoryService {
             const data = await response.json();
             return Array.isArray(data) ? data : [];
         } catch (err) {
-            console.warn('[DirectoryService] Diretorio de mesas nao encontrado via HTTP. Tentando localStorage.', err);
-            const localData = localStorage.getItem('TOME_TABLES_DIRECTORY');
+            console.warn('[DirectoryService] Diretorio de mesas nao encontrado via HTTP. Tentando IndexedDB.', err);
+            const localData = await IndexedDBService.get('TOME_TABLES_DIRECTORY');
             if (localData) {
                 try {
-                    const parsed = JSON.parse(localData);
+                    const parsed = typeof localData === 'string' ? JSON.parse(localData) : localData;
                     return Array.isArray(parsed) ? parsed : [];
                 } catch(e) {}
             }
@@ -145,15 +147,15 @@ export class FrontendDirectoryService {
                 })
             });
             if (response.status === 401 || response.status === 403) {
-                console.warn('[DirectoryService] Auth fail on save, falling back to localStorage');
-                localStorage.setItem('TOME_TABLES_DIRECTORY', JSON.stringify(directory));
+                console.warn('[DirectoryService] Auth fail on save, falling back to IndexedDB');
+                await IndexedDBService.set('TOME_TABLES_DIRECTORY', JSON.stringify(directory));
                 return true;
             }
             if (!response.ok) throw new Error('Erro na resposta do servidor ao salvar diretorio.');
             return true;
         } catch (err) {
-            console.warn('[DirectoryService] Erro ao salvar diretorio de mesas no servidor, usando localStorage:', err);
-            localStorage.setItem('TOME_TABLES_DIRECTORY', JSON.stringify(directory));
+            console.warn('[DirectoryService] Erro ao salvar diretorio de mesas no servidor, usando IndexedDB:', err);
+            await IndexedDBService.set('TOME_TABLES_DIRECTORY', JSON.stringify(directory));
             return true;
         }
     }
