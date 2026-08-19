@@ -43,6 +43,18 @@ app.use(compression());
 const PSScriptRoot = __dirname;
 process.chdir(PSScriptRoot);
 
+// Middleware de Relatório de Requisições (Debug Console)
+app.use((req, res, next) => {
+    const start = Date.now();
+    res.on('finish', () => {
+        if (req.url.startsWith('/api/') || req.url.startsWith('/socket.io/')) {
+            const statusColor = res.statusCode >= 400 ? '\x1b[31m' : '\x1b[32m'; // Red for errors, Green for success
+            console.log(`[REQ] ${req.method} ${req.url} -> ${statusColor}Status ${res.statusCode}\x1b[0m (${Date.now() - start}ms)`);
+        }
+    });
+    next();
+});
+
 // Garante que os diretórios necessários existam
 const dataDir = path.join(PSScriptRoot, 'data');
 if (!fs.existsSync(dataDir)) {

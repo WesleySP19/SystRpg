@@ -273,23 +273,23 @@ export class AuthScreen {
                 width: 100%;
                 padding: 15px;
                 border-radius: 10px;
-                border: 1px solid rgba(197, 160, 89, 0.25);
-                background: rgba(5, 5, 8, 0.65);
+                border: 2px solid rgba(197, 160, 89, 0.25);
+                background: rgba(0, 0, 0, 0.65);
                 color: #fff;
                 font-size: 1.1rem;
                 outline: none;
                 box-sizing: border-box;
                 font-family: 'JetBrains Mono', monospace;
                 transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-                box-shadow: inset 0 2px 4px rgba(0,0,0,0.6);
+                box-shadow: inset 0 2px 6px rgba(0,0,0,0.8);
                 text-align: center;
                 margin-bottom: 20px;
             }
 
             .auth-input:focus {
-                border-color: #ef4444;
-                background: rgba(153, 27, 27, 0.1);
-                box-shadow: 0 0 15px rgba(239, 68, 68, 0.2), 
+                border-color: #fbbf24;
+                background: rgba(153, 27, 27, 0.15);
+                box-shadow: 0 0 20px rgba(239, 68, 68, 0.3), 
                             inset 0 2px 4px rgba(0,0,0,0.6);
             }
 
@@ -796,7 +796,7 @@ export class AuthScreen {
                         btn.innerHTML = 'Enviar Código SMS';
                     }
                 } catch (e) {
-                    console.warn('[AuthScreen] Endpoint /api/auth/send-code falhou (Servidor PowerShell offline?). Usando fallback local simulado.', e);
+                    console.warn('[AuthScreen] Endpoint /api/auth/send-code falhou (Servidor offline/local?). Usando fallback simulado.', e);
                     this.generatedCode = Math.floor(100000 + Math.random() * 900000).toString();
                     this.step = 'code';
                     this.render();
@@ -869,7 +869,7 @@ export class AuthScreen {
                     } catch (e) {
                         console.warn('[AuthScreen] Endpoint /api/auth/verify-code falhou. Usando fallback offline.', e);
                         
-                        // Fallback local caso o servidor não suporte o endpoint verify-code (ex: PowerShell)
+                        // Fallback local se o backend não estiver respondendo na verificação
                         if (input.value === this.generatedCode) {
                             try {
                                 const master = await PersistenceService.getOrCreateMaster(this.masterName, this.phone);
@@ -880,6 +880,9 @@ export class AuthScreen {
                                 localStorage.setItem('DM_MASTER_NAME', master.name);
                                 localStorage.setItem('DM_MASTER_ID', master.masterId);
                                 localStorage.setItem('DM_INTERNAL_ID', master.internalId);
+                                
+                                // Simula um token vazio para que as requisições autenticadas locais não falhem se implementadas
+                                localStorage.setItem('DM_JWT_TOKEN', 'offline_mode');
                                 
                                 this.step = 'tables';
                                 this.loadTables();
@@ -892,7 +895,7 @@ export class AuthScreen {
                             input.style.borderColor = '#ef4444';
                             input.style.animation = 'shake 0.4s';
                             setTimeout(() => input.style.animation = '', 400);
-                            this.showInlineError(e.message || 'Código incorreto — verifique o código e tente novamente.');
+                            this.showInlineError('Código incorreto — verifique o código e tente novamente.');
                             btn.disabled = false;
                             btn.innerHTML = 'Confirmar e Logar';
                         }

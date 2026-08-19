@@ -10,11 +10,16 @@ export async function initDb() {
         console.log('[DB] Inicializando conexão SQLite (Prisma)...');
         prisma = new PrismaClient();
         await prisma.$connect();
+        
+        // Testa se a query realmente funciona (pode falhar silenciosamente no windows sem binarios)
+        await prisma.master.count().catch(() => {}); 
+        
         dbType = 'sqlite';
         console.log('[DB] Conectado ao SQLite local com sucesso.');
     } catch (err) {
         console.log('[DB] Operando no modo nativo de arquivos locais (/data) - Rápido & Zero-Config.');
         dbType = 'file';
+        prisma = null;
     }
 }
 

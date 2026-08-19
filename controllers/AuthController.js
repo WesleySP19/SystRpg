@@ -29,45 +29,52 @@ export async function getOrCreateMasterInDb(name, phone, dataDir) {
     const normalizedPhone = phone.replace(/\D/g, '');
     
     if (getDbType() === 'sqlite' && prisma) {
-        let master = await prisma.master.findUnique({
-            where: { phone: normalizedPhone }
-        });
-        
-        if (!master) {
-            const cleanName = name.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-            const masterId = `${cleanName}-${normalizedPhone}`;
-            let internalId = '';
-            let isUnique = false;
-            while (!isUnique) {
-                const hex = Math.floor(0x100000 + Math.random() * 0xefffff).toString(16).toUpperCase();
-                internalId = `DGH-MST-${hex}`;
-                const existing = await prisma.master.findUnique({ where: { internalId } });
-                isUnique = !existing;
+        try {
+            let master = await prisma.master.findUnique({
+                where: { phone: normalizedPhone }
+            });
+            
+            if (!master) {
+                const cleanName = name.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+                const masterId = `${cleanName}-${normalizedPhone}`;
+                let internalId = '';
+                let isUnique = false;
+                while (!isUnique) {
+                    const hex = Math.floor(0x100000 + Math.random() * 0xefffff).toString(16).toUpperCase();
+                    internalId = `DGH-MST-${hex}`;
+                    const existing = await prisma.master.findUnique({ where: { internalId } });
+                    isUnique = !existing;
+                }
+                
+                master = await prisma.master.create({
+                    data: {
+                        name: name.trim(),
+                        phone: normalizedPhone,
+                        masterId: masterId,
+                        internalId: internalId,
+                        tables: '[]'
+                    }
+                });
+            } else if (name && name.trim() && master.name !== name.trim()) {
+                master = await prisma.master.update({
+                    where: { phone: normalizedPhone },
+                    data: { name: name.trim() }
+                });
             }
             
-            master = await prisma.master.create({
-                data: {
-                    name: name.trim(),
-                    phone: normalizedPhone,
-                    masterId: masterId,
-                    internalId: internalId,
-                    tables: '[]'
-                }
-            });
-        } else if (name && name.trim() && master.name !== name.trim()) {
-            master = await prisma.master.update({
-                where: { phone: normalizedPhone },
-                data: { name: name.trim() }
-            });
+            return {
+                ...master,
+                tables: JSON.parse(master.tables || '[]'),
+                createdAt: master.createdAt.getTime()
+            };
+        } catch (err) {
+            console.error('[AuthController] Prisma error, falling back to file persistence:', err);
+            // Fallthrough to file mode
         }
-        
-        return {
-            ...master,
-            tables: JSON.parse(master.tables || '[]'),
-            createdAt: master.createdAt.getTime()
-        };
-    } else {
-        const directory = await getDocument('masters_directory.json', dataDir) || [];
+    }
+    
+    // Fallback file persistence
+    const directory = await getDocument('masters_directory.json', dataDir) || [];
         let master = directory.find(m => m.phone.replace(/\D/g, '') === normalizedPhone);
         
         if (!master) {

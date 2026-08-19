@@ -12,16 +12,41 @@ export class FrontendDirectoryService {
         return newHeaders;
     }
 
+    static forceLogout() {
+        console.warn('[DirectoryService] Sessão inválida ou expirada. Forçando logout...');
+        localStorage.removeItem('DM_JWT_TOKEN');
+        localStorage.removeItem('DM_SESSION_ID');
+        localStorage.removeItem('DM_SESSION_START');
+        localStorage.removeItem('DM_ACTIVE_TABLE');
+        localStorage.removeItem('DM_PHONE');
+        localStorage.removeItem('DM_MASTER_NAME');
+        localStorage.removeItem('DM_MASTER_ID');
+        localStorage.removeItem('DM_INTERNAL_ID');
+        localStorage.removeItem('TOME_ACTIVE_SESSION');
+        window.location.reload();
+    }
+
     static async getMastersDirectory() {
         try {
             const response = await fetch(`/data/masters_directory.json?t=${Date.now()}`, {
                 headers: this._getAuthHeaders()
             });
-            if (!response.ok) return [];
+            if (response.status === 401 || response.status === 403) {
+                this.forceLogout();
+                return [];
+            }
+            if (!response.ok) throw new Error('Não ok');
             const data = await response.json();
             return Array.isArray(data) ? data : [];
         } catch (err) {
-            console.warn('[DirectoryService] Diretorio de mestres nao encontrado ou vazio.', err);
+            console.warn('[DirectoryService] Diretorio de mestres nao encontrado via HTTP. Tentando localStorage.', err);
+            const localData = localStorage.getItem('TOME_MASTERS_DIRECTORY');
+            if (localData) {
+                try {
+                    const parsed = JSON.parse(localData);
+                    return Array.isArray(parsed) ? parsed : [];
+                } catch(e) {}
+            }
             return [];
         }
     }
@@ -36,11 +61,17 @@ export class FrontendDirectoryService {
                     data: directory
                 })
             });
+            if (response.status === 401 || response.status === 403) {
+                console.warn('[DirectoryService] Auth fail on save, falling back to localStorage');
+                localStorage.setItem('TOME_MASTERS_DIRECTORY', JSON.stringify(directory));
+                return true;
+            }
             if (!response.ok) throw new Error('Erro na resposta do servidor ao salvar diretorio de mestres.');
             return true;
         } catch (err) {
-            console.error('[DirectoryService] Erro ao salvar diretorio de mestres:', err);
-            return false;
+            console.warn('[DirectoryService] Erro ao salvar diretorio de mestres no servidor, usando localStorage:', err);
+            localStorage.setItem('TOME_MASTERS_DIRECTORY', JSON.stringify(directory));
+            return true;
         }
     }
 
@@ -83,11 +114,22 @@ export class FrontendDirectoryService {
             const response = await fetch(`/data/tables_directory.json?t=${Date.now()}`, {
                 headers: this._getAuthHeaders()
             });
-            if (!response.ok) return [];
+            if (response.status === 401 || response.status === 403) {
+                this.forceLogout();
+                return [];
+            }
+            if (!response.ok) throw new Error('Não ok');
             const data = await response.json();
             return Array.isArray(data) ? data : [];
         } catch (err) {
-            console.warn('[DirectoryService] Diretorio de mesas nao encontrado ou vazio.', err);
+            console.warn('[DirectoryService] Diretorio de mesas nao encontrado via HTTP. Tentando localStorage.', err);
+            const localData = localStorage.getItem('TOME_TABLES_DIRECTORY');
+            if (localData) {
+                try {
+                    const parsed = JSON.parse(localData);
+                    return Array.isArray(parsed) ? parsed : [];
+                } catch(e) {}
+            }
             return [];
         }
     }
@@ -102,11 +144,17 @@ export class FrontendDirectoryService {
                     data: directory
                 })
             });
+            if (response.status === 401 || response.status === 403) {
+                console.warn('[DirectoryService] Auth fail on save, falling back to localStorage');
+                localStorage.setItem('TOME_TABLES_DIRECTORY', JSON.stringify(directory));
+                return true;
+            }
             if (!response.ok) throw new Error('Erro na resposta do servidor ao salvar diretorio.');
             return true;
         } catch (err) {
-            console.error('[DirectoryService] Erro ao salvar diretorio de mesas:', err);
-            return false;
+            console.warn('[DirectoryService] Erro ao salvar diretorio de mesas no servidor, usando localStorage:', err);
+            localStorage.setItem('TOME_TABLES_DIRECTORY', JSON.stringify(directory));
+            return true;
         }
     }
 

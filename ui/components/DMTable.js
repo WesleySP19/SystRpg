@@ -8,12 +8,9 @@ import { Bestiary } from '../pages/Bestiary.js';
 import { SessionJournal } from './SessionJournal.js';
 
 import { TacticalEyeModal } from './TacticalEyeModal.js';
-import { EncounterGeneratorModal } from './EncounterGeneratorModal.js';
-import { SpellBookModal } from './SpellBookModal.js';
-import { LootGeneratorModal } from './LootGeneratorModal.js';
 import { HeroInspectorModal } from './HeroInspectorModal.js';
 import { SoundboardModal } from './SoundboardModal.js';
-import { exportCampaignBackup, importCampaignBackup } from '../../utils/ExportUtils.js';
+import { exportCampaignBackup, importCampaignBackup } from '../utils/tomeBackup.js';
 import { render } from 'preact';
 
 export function DMTable() {
@@ -67,23 +64,15 @@ export function DMTable() {
     };
 
     const openTacticalEye = () => mountModal(TacticalEyeModal);
-    const openEncounterGenerator = () => mountModal(EncounterGeneratorModal);
+    const openEncounterGenerator = () => import('./EncounterGenerator.js').then(m => mountModal(m.EncounterGenerator));
     const openSoundboard = () => mountModal(SoundboardModal);
     
     const openLootGenerator = () => {
-        try {
-            if (typeof LootGeneratorModal !== 'undefined') mountModal(LootGeneratorModal);
-        } catch (e) {
-            import('./LootGenerator.js').then(m => mountModal(m.LootGenerator));
-        }
+        import('./LootGenerator.js').then(m => mountModal(m.LootGenerator));
     };
 
     const openSpellBook = () => {
-        try {
-            mountModal(SpellBookModal);
-        } catch(e) {
-            import('./SpellBook.js').then(m => mountModal(m.SpellBook));
-        }
+        import('./SpellBook.js').then(m => mountModal(m.SpellBook));
     };
 
     const openOracle = () => {

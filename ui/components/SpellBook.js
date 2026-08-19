@@ -413,7 +413,6 @@ export class SpellBook extends ReactiveComponent {
                         ${this._renderFilterPanel(stats)}
                     </div>
                 </div>
-                </div>
             </div>
             ${popupHTML}
         </div>

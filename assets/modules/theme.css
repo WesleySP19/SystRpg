@@ -145,12 +145,37 @@ body {
     font-family: 'Cinzel', serif;
     font-weight: 800;
     box-shadow: 0 4px 20px rgba(197, 160, 89, 0.3);
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.btn-magic::before {
+    content: '';
+    position: absolute;
+    top: -2px; left: -2px; right: -2px; bottom: -2px;
+    background: linear-gradient(45deg, #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000);
+    z-index: -1;
+    filter: blur(10px);
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.btn-magic:hover::before {
+    opacity: 0.3;
+    animation: glowing 20s linear infinite;
+}
+
+@keyframes glowing {
+    0% { background-position: 0 0; }
+    50% { background-position: 400% 0; }
+    100% { background-position: 0 0; }
 }
 
 .btn-magic:hover {
     background-position: 100% 0;
     transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 8px 30px rgba(197, 160, 89, 0.5);
+    box-shadow: 0 8px 30px rgba(197, 160, 89, 0.6);
 }
 
 /* Custom Scrollbar for V19 */

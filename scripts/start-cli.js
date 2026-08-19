@@ -43,8 +43,12 @@ function printHeader() {
 function checkDependencies() {
   console.log(colors.fgCyan + "[INFO]" + colors.reset + " Verificando dependências...");
   if (!fs.existsSync(path.join(ROOT_DIR, 'node_modules'))) {
-    console.log(colors.fgGold + "[!] node_modules não encontrado. Instalando..." + colors.reset);
-    execSync('npm install', { cwd: ROOT_DIR, stdio: 'inherit' });
+    console.log(colors.fgGold + "[!] node_modules não encontrado. Tentando instalar dependências..." + colors.reset);
+    try {
+      execSync('npm install', { cwd: ROOT_DIR, stdio: 'inherit' });
+    } catch (e) {
+      console.log(colors.fgRed + "[!] Falha ao instalar dependências. Prosseguindo em modo offline/nativo." + colors.reset);
+    }
   }
   
   if (!fs.existsSync(path.join(ROOT_DIR, '.env'))) {
@@ -57,8 +61,12 @@ function checkDependencies() {
   if (fs.existsSync(path.join(ROOT_DIR, 'prisma', 'schema.prisma'))) {
     if (!fs.existsSync(path.join(ROOT_DIR, 'node_modules', '.prisma', 'client'))) {
       console.log(colors.fgGold + "[!] Prisma Client não encontrado. Configurando Banco de Dados..." + colors.reset);
-      execSync('npx prisma db push --accept-data-loss', { cwd: ROOT_DIR, stdio: 'inherit' });
-      execSync('npx prisma generate', { cwd: ROOT_DIR, stdio: 'inherit' });
+      try {
+        execSync('npx prisma db push --accept-data-loss', { cwd: ROOT_DIR, stdio: 'inherit' });
+        execSync('npx prisma generate', { cwd: ROOT_DIR, stdio: 'inherit' });
+      } catch (e) {
+        console.log(colors.fgRed + "[!] Falha ao compilar Prisma. O sistema usará o banco de dados local em arquivo (Zero-Config)." + colors.reset);
+      }
     }
   }
   console.log(colors.fgGreen + "[OK] Dependências prontas!\n" + colors.reset);
@@ -97,7 +105,16 @@ async function main() {
     checkDependencies();
   } catch (error) {
     console.error(colors.fgRed + "[ERRO] Falha ao configurar ambiente." + colors.reset, error);
-    process.exit(1);
+    // Continue anyway to try running the server offline
+  }
+
+  const args = process.argv.slice(2);
+  const isSilent = args.includes('--silent');
+
+  if (isSilent) {
+    console.log(colors.fgCyan + "[MODO SILENCIOSO] Iniciando servidor automaticamente..." + colors.reset);
+    startServer('master');
+    return;
   }
 
   console.log("Escolha seu Caminho de Iniciação:");

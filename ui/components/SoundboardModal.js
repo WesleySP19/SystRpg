@@ -77,8 +77,8 @@ export class SoundboardModal extends Component {
                                     ${cat.sounds.map(s => html`
                                         <button class="btn flex flex-col items-center gap-2 p-3 rounded-lg border border-white/10 bg-white/5 transition-all cursor-pointer hover:scale-105"
                                                 style="border-color: ${s.color}40;"
-                                                onMouseOver=${e => { e.currentTarget.style.background = \`\${s.color}20\`; e.currentTarget.style.borderColor = s.color; }}
-                                                onMouseOut=${e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.borderColor = \`\${s.color}40\`; }}
+                                                onMouseOver=${e => { e.currentTarget.style.background = s.color + '20'; e.currentTarget.style.borderColor = s.color; }}
+                                                onMouseOut=${e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.borderColor = s.color + '40'; }}
                                                 onClick=${() => this.playSound(s.url)}>
                                             <i class="fa-solid fa-volume-high text-xl" style="color: ${s.color};"></i>
                                             <span class="text-xs font-bold text-white text-center">${s.name}</span>
