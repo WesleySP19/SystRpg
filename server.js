@@ -371,8 +371,8 @@ app.get(['/transmissao', '/transmissão', '/espectador'], (req, res) => {
 
 
 // Intercepta arquivos JSON do diretório /data/ servindo via Banco de Dados
-app.get('/data/:filename', async (req, res, next) => {
-    const filename = req.params.filename;
+app.get('/data/*', async (req, res, next) => {
+    const filename = req.params[0];
     
     if (filename.endsWith('.json')) {
         try {
@@ -665,7 +665,7 @@ async function start() {
             }
         }
         console.log(`\n================================================================================`);
-        console.log(`           ✨ Mesa Psigologos V21.0.0 — THE ATOMIC ENGINE ✨           
+        console.log(`           ✨ Mesa Psigologos V22.0.0 — THE ATOMIC ENGINE ✨           
 =====================================================================================================`);
         console.log(` [MESA DO MESTRE]    http://localhost:${finalPort}/`);
         console.log(` [TELÃO / PROJETOR]  http://localhost:${finalPort}/player-view.html`);

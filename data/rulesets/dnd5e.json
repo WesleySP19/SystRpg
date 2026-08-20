@@ -1,0 +1,41 @@
+{
+    "id": "dnd5e",
+    "name": "D&D 5e",
+    "stats": [
+      { "id": "str", "label": "Força", "short": "FOR" },
+      { "id": "dex", "label": "Destreza", "short": "DES" },
+      { "id": "con", "label": "Constituição", "short": "CON" },
+      { "id": "int", "label": "Inteligência", "short": "INT" },
+      { "id": "wis", "label": "Sabedoria", "short": "SAB" },
+      { "id": "cha", "label": "Carisma", "short": "CAR" }
+    ],
+    "skills": [
+      { "id": "athletics", "label": "Atletismo", "stat": "str" },
+      { "id": "acrobatics", "label": "Acrobacia", "stat": "dex" },
+      { "id": "sleightOfHand", "label": "Prestidigitação", "stat": "dex" },
+      { "id": "stealth", "label": "Furtividade", "stat": "dex" },
+      { "id": "arcana", "label": "Arcanismo", "stat": "int" },
+      { "id": "history", "label": "História", "stat": "int" },
+      { "id": "investigation", "label": "Investigação", "stat": "int" },
+      { "id": "nature", "label": "Natureza", "stat": "int" },
+      { "id": "religion", "label": "Religião", "stat": "int" },
+      { "id": "insight", "label": "Intuição", "stat": "wis" },
+      { "id": "medicine", "label": "Medicina", "stat": "wis" },
+      { "id": "perception", "label": "Percepção", "stat": "wis" },
+      { "id": "survival", "label": "Sobrevivência", "stat": "wis" },
+      { "id": "animalHandling", "label": "Adestrar Animais", "stat": "wis" },
+      { "id": "deception", "label": "Enganação", "stat": "cha" },
+      { "id": "intimidation", "label": "Intimidação", "stat": "cha" },
+      { "id": "performance", "label": "Atuação", "stat": "cha" },
+      { "id": "persuasion", "label": "Persuasão", "stat": "cha" }
+    ],
+    "derived": [
+      { "id": "ac", "label": "CA", "type": "number", "default": 10 },
+      { "id": "initiative", "label": "INICIATIVA", "type": "number", "default": 0 },
+      { "id": "speed", "label": "DESLOC.", "type": "number", "default": 30 }
+    ],
+    "mechanics": {
+      "modifier_formula": "floor((val - 10) / 2)",
+      "default_dice": "1d20"
+    }
+}

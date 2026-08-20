@@ -1,5 +1,5 @@
 @echo off
-title Mesa Psigologos V21.0.0 - The Atomic Engine
+title Mesa Psigologos V22.0.0 - The Atomic Engine
 cls
 cd /d "%~dp0"
 
@@ -17,9 +17,9 @@ if exist "%~dp0node-v20.11.1-win-x64\node.exe" (
     )
 )
 
-echo [Mesa Psigologos V21.0.0] Iniciando The Atomic Engine com Alta Performance...
-echo [Mesa Psigologos V21.0.0] Habilitando Garbage Collection Manual e expandindo memoria para 4GB...
-echo [Mesa Psigologos V21.0.0] Console de Relatorios ATIVO. Mantenha esta janela aberta para ver logs de API.
+echo [Mesa Psigologos V22.0.0] Iniciando The Atomic Engine com Alta Performance...
+echo [Mesa Psigologos V22.0.0] Habilitando Garbage Collection Manual e expandindo memoria para 4GB...
+echo [Mesa Psigologos V22.0.0] Console de Relatorios ATIVO. Mantenha esta janela aberta para ver logs de API.
 "%NODE_EXE%" --expose-gc --max-old-space-size=4096 "%~dp0scripts\start-cli.js" %*
 
 if /i "%~1"=="--silent" exit /b 0

@@ -17,10 +17,10 @@ export class TacticalMapEngine {
             draggable: this.isDM // DM can pan by default
         });
 
-        this.bgLayer = new Konva.Layer();
-        this.gridLayer = new Konva.Layer();
+        this.bgLayer = new Konva.Layer({ listening: false, perfectDrawEnabled: false });
+        this.gridLayer = new Konva.Layer({ listening: false, perfectDrawEnabled: false });
         this.wallLayer = new Konva.Layer(); // Phase 9: Walls
-        this.fogLayer = new Konva.Layer();
+        this.fogLayer = new Konva.Layer({ listening: false, perfectDrawEnabled: false });
         this.tokenLayer = new Konva.Layer();
         this.uiLayer = new Konva.Layer();
         
@@ -417,9 +417,16 @@ export class TacticalMapEngine {
                 circle.fillPatternOffset({ x: img.width / 2, y: img.height / 2 });
                 circle.fillPatternScale({ x: ((data.size || 25) * 2) / img.width, y: ((data.size || 25) * 2) / img.height });
                 text.hide(); 
+                
+                // Cache the token to improve performance (convert to bitmap)
+                group.cache({ pixelRatio: 2 });
+                
                 if (this.isVisible) this.tokenLayer.draw();
             };
             img.src = data.avatar;
+        } else {
+            // Cache text-only token as well
+            group.cache({ pixelRatio: 2 });
         }
 
         if (this.isDM) {
@@ -447,6 +454,10 @@ export class TacticalMapEngine {
                     }
                 }
 
+                // Recache to avoid bleeding
+                group.clearCache();
+                group.cache({ pixelRatio: 2 });
+
                 const evt = new CustomEvent('tome:token_moved', {
                     detail: { id: data.id, x, y }
                 });
@@ -460,11 +471,15 @@ export class TacticalMapEngine {
     _updateToken(group, data) {
         // Only animate if position actually changed significantly
         if (Math.abs(group.x() - data.x) > 2 || Math.abs(group.y() - data.y) > 2) {
+            group.clearCache();
             group.to({
                 x: data.x,
                 y: data.y,
                 duration: 0.4,
-                easing: Konva.Easings.EaseInOut
+                easing: Konva.Easings.EaseInOut,
+                onFinish: () => {
+                    group.cache({ pixelRatio: 2 });
+                }
             });
         }
     }

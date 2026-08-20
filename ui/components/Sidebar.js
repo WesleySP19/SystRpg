@@ -87,33 +87,33 @@ export function Sidebar() {
         ];
 
         modal.innerHTML = `
-            <div class="card glass" style="max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; padding: 25px; border-radius: 16px; border: 1px solid rgba(197, 160, 89, 0.4); background: rgba(10,12,16,0.96); box-shadow: 0 20px 40px rgba(0,0,0,0.8); display: flex; flex-direction: column; gap: 18px;">
-                <div style="border-bottom: 1px solid rgba(197, 160, 89, 0.2); padding-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+            <div class="card glass-accent animate-fadeIn" style="max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; padding: 25px; display: flex; flex-direction: column; gap: 18px;">
+                <div class="border-b border-accent/20 pb-3 flex justify-between items-center">
                     <div>
-                        <span style="font-size: 0.6rem; color: var(--accent); font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; font-family: 'Cinzel';">Evocação Arcana</span>
-                        <h3 style="margin: 4px 0 0; font-family: 'Cinzel', serif; font-size: 1.3rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+                        <span class="text-[0.6rem] text-accent font-extrabold uppercase tracking-[1.5px] font-cinzel">Evocação Arcana</span>
+                        <h3 class="font-cinzel text-[1.3rem] text-white flex items-center gap-2 m-0 mt-1">
                             ⚔️ Portão de Invocação de Tolkien
                         </h3>
                     </div>
-                    <button class="btn btn-ghost close-btn" style="border-radius: 50%; width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-xmark"></i></button>
+                    <button class="btn btn-ghost close-btn w-8 h-8 rounded-full p-0 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
                 </div>
                 
-                <div style="display: flex; flex-direction: column; gap: 10px;">
+                <div class="flex flex-col gap-2.5">
                     ${monsters.map(m => `
-                        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 12px; display: flex; align-items: center; gap: 15px;">
-                            <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(0,0,0,0.5); border: 2px solid ${m.id === 'tolk_balrog' ? 'var(--danger)' : 'var(--accent)'}; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; flex-shrink: 0;">
+                        <div class="bg-white/5 border border-white/10 rounded-xl p-3 flex items-center gap-4 transition-all hover:bg-white/10 hover:border-accent/30">
+                            <div class="w-12 h-12 rounded-full bg-black/50 border-2 flex items-center justify-center text-3xl shrink-0 ${m.id === 'tolk_balrog' ? 'border-red-500' : 'border-accent'}">
                                 ${m.emoji}
                             </div>
-                            <div style="flex: 1; min-width: 0;">
-                                <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <strong style="color: #fff; font-size: 0.9rem;">${m.name}</strong>
-                                    <span style="font-size: 0.7rem; background: rgba(197, 160, 89, 0.15); color: var(--accent); padding: 2px 6px; border-radius: 4px; font-weight: bold;">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex justify-between items-center">
+                                    <strong class="text-white text-[0.9rem]">${m.name}</strong>
+                                    <span class="text-[0.7rem] bg-accent/15 text-accent px-1.5 py-0.5 rounded font-bold">
                                         CA ${m.ac} • HP ${m.hp_max}
                                     </span>
                                 </div>
-                                <p style="font-size: 0.7rem; color: var(--text-dim); margin: 4px 0 0; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${m.desc}</p>
+                                <p class="text-[0.7rem] text-slate-400 m-0 mt-1 leading-snug truncate">${m.desc}</p>
                             </div>
-                            <button class="btn btn-primary btn-sm summon-btn" data-monster='${JSON.stringify(m)}' style="font-size: 0.7rem; border-radius: 6px; padding: 6px 12px;">Invocar</button>
+                            <button class="btn btn-primary btn-sm summon-btn text-[0.7rem] rounded-lg px-3 py-1.5" data-monster='${JSON.stringify(m)}'>Invocar</button>
                         </div>
                     `).join('')}
                 </div>
@@ -171,25 +171,25 @@ export function Sidebar() {
         `;
 
         modal.innerHTML = `
-            <div class="card glass-accent" style="max-width: 800px; width: 90%; max-height: 90vh; overflow-y: auto; padding: 30px; border-radius: 18px; border: 2px solid rgba(197, 160, 89, 0.35); background: rgba(10,12,16,0.98); box-shadow: 0 20px 50px rgba(0,0,0,0.9);">
-                <div style="border-bottom: 1.5px solid rgba(197, 160, 89, 0.25); padding-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+            <div class="card glass-accent animate-fadeIn" style="max-width: 800px; width: 90%; max-height: 90vh; overflow-y: auto; padding: 30px;">
+                <div class="border-b-[1.5px] border-accent/25 pb-3 flex justify-between items-center">
                     <div>
-                        <span style="font-size: 0.65rem; color: var(--accent); font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; font-family: 'Cinzel';">Fechamento do Grimório</span>
-                        <h3 style="margin: 5px 0 0; font-family: 'Cinzel', serif; font-size: 1.5rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+                        <span class="text-[0.65rem] text-accent font-extrabold uppercase tracking-[1.5px] font-cinzel">Fechamento do Grimório</span>
+                        <h3 class="m-0 mt-1 font-cinzel text-[1.5rem] text-white flex items-center gap-2">
                             🏁 Portal de Encerramento da Sessão
                         </h3>
                     </div>
-                    <button class="btn btn-ghost close-btn" style="border-radius: 50%; width: 36px; height: 36px;"><i class="fa-solid fa-xmark"></i></button>
+                    <button class="btn btn-ghost close-btn w-9 h-9 rounded-full"><i class="fa-solid fa-xmark"></i></button>
                 </div>
 
-                <div style="margin-top:20px; font-size: 0.8rem; line-height: 1.6;">
+                <div class="mt-5 text-[0.8rem] leading-relaxed">
                     <p>Mesa: ${sessionTitle || 'Padrão'}</p>
                     <p>XP Distribuido: ${xpDistributed || 0}</p>
                 </div>
 
-                <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 20px; margin-top:20px; display: flex; justify-content: flex-end; gap: 12px; flex-wrap: wrap;">
-                    <button class="btn btn-ghost cancel-btn" style="border-radius: 8px; font-weight: 700;">Voltar ao Jogo</button>
-                    <button class="btn btn-primary finalize-btn" style="background: linear-gradient(135deg, #7f1d1d, #c5a059); border-radius: 8px; font-weight: 800;">
+                <div class="border-t border-white/5 pt-5 mt-5 flex justify-end gap-3 flex-wrap">
+                    <button class="btn btn-ghost cancel-btn font-bold rounded-lg">Voltar ao Jogo</button>
+                    <button class="btn btn-primary finalize-btn bg-gradient-to-br from-red-900 to-accent font-extrabold rounded-lg">
                         <i class="fa-solid fa-flag-checkered"></i> Encerrar e Sair
                     </button>
                 </div>
@@ -221,9 +221,9 @@ export function Sidebar() {
     };
 
     return html`
-        <aside class="flex flex-col w-[265px] h-screen bg-[#08090d] border-r border-accent/10 shadow-[4px_0_24px_rgba(0,0,0,0.65)] overflow-hidden shrink-0 z-[100]">
+        <aside class="flex flex-col w-[265px] h-screen bg-black/40 backdrop-blur-3xl border-r border-accent/15 shadow-[10px_0_30px_rgba(0,0,0,0.8)] overflow-hidden shrink-0 z-[100] transition-all">
             <!-- Cabeçalho -->
-            <div class="flex items-center gap-3 px-4 py-5 border-b border-accent/10 bg-[#0a0c12] shrink-0">
+            <div class="flex items-center gap-3 px-4 py-5 border-b border-accent/15 bg-black/20 shrink-0">
                 <div class="w-[34px] h-[34px] rounded-lg bg-gradient-to-br from-accent/20 to-black/80 border border-accent/30 shadow-[0_0_10px_rgba(212,175,55,0.15)] flex items-center justify-center text-accent text-[0.95rem] shrink-0">
                     <i class="fa-solid fa-dice-d20"></i>
                 </div>
@@ -232,7 +232,7 @@ export function Sidebar() {
                         Mesa do Mestre
                     </span>
                     <span class="text-[0.58rem] text-accent uppercase tracking-widest font-bold opacity-90">
-                        V21.0.0
+                        V22.0.0
                     </span>
                 </div>
             </div>
@@ -257,7 +257,7 @@ export function Sidebar() {
             </nav>
 
             <!-- Rodapé com ações -->
-            <div class="p-3 border-t border-accent/10 bg-[#0a0c12] flex flex-col gap-1.5 shrink-0">
+            <div class="p-3 border-t border-accent/15 bg-black/30 flex flex-col gap-1.5 shrink-0">
                 <div class="grid grid-cols-2 gap-1.5">
                     <button class="flex items-center gap-2 px-2.5 py-2 rounded-lg border border-transparent bg-transparent text-slate-500 font-outfit text-[0.76rem] font-medium text-left w-full transition-all hover:bg-white/5 hover:text-slate-300" 
                             onClick=${exportCampaign}>

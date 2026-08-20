@@ -4,11 +4,11 @@ import { Dashboard } from './pages/Dashboard.jsx';
 import { Dice } from '../utils/Dice.js';
 import { PersistenceService } from '../services/PersistenceService.js';
 import { AudioService } from '../services/AudioService.js';
-import { AIService } from '../services/AIService.js';
 import { FXEngine } from '../services/FXEngine.js';
 import { IndexedDBService } from '../services/IndexedDBService.js';
 import { TelemetryService } from '../services/TelemetryService.js';
-import { DiceBoxService } from '../services/DiceBoxService.js';
+import { RulesEngine } from '../core/RulesEngine.js';
+import { WebRTCManager } from '../services/WebRTCManager.js';
 import { io } from "https://cdn.socket.io/4.7.4/socket.io.esm.min.js";
 import { render } from 'preact';
 import { html } from 'htm/preact';
@@ -77,6 +77,14 @@ export async function startApp() {
                     socket.emit('joinRoom', { mesaId: activeTable });
                     console.log(`[Boot] GM entrou na sala: ${activeTable}`);
                 }
+                
+                // Inicializa WebRTC após ter o socket conectado
+                try {
+                    const webrtc = new WebRTCManager();
+                    TOME.registerService('webrtc', webrtc);
+                } catch (e) {
+                    console.warn('[Boot] Falha ao inicializar WebRTC:', e);
+                }
             });
         }
     } catch (e) {
@@ -84,7 +92,12 @@ export async function startApp() {
     }
 
     TOME.registerService('audio', new AudioService());
-    TOME.registerService('ai', new AIService());
+    
+    // Lazy Load AIService
+    import('../services/AIService.js').then(({ AIService }) => {
+        TOME.registerService('ai', new AIService());
+    }).catch(e => console.warn('[Boot] Failed to load AIService', e));
+
     FXEngine.init();
 
     if (window.TOME.socket) {
@@ -146,16 +159,27 @@ export async function startApp() {
         corePersistence.initNetworkListeners();
     } catch (e) { console.warn('[Boot] persistence skipped:', e); }
 
+    // Carregar Ruleset do Sistema
+    try {
+        await RulesEngine.loadRuleset('dnd5e'); // Fallback para dnd5e, pode ser lido do localStorage depois
+    } catch (e) {
+        console.warn('[Boot] Failed to load ruleset', e);
+    }
+
     // Render UI directly using Preact
     render(html`<${Sidebar} />`, document.getElementById('sidebar-target'));
     render(html`<${Dashboard} />`, document.getElementById('view-target'));
 
-    const dice3d = new DiceBoxService();
-    TOME.registerService('dice3d', dice3d);
-
+    // Lazy load DiceBoxService only when requested
     TOME.events.on('DICE_ROLL_REQUESTED', async (sides) => {
-        // Usa o motor 3D ao invés do rolador simples
         try {
+            let dice3d = TOME.dice3d;
+            if (!dice3d) {
+                const { DiceBoxService } = await import('../services/DiceBoxService.js');
+                dice3d = new DiceBoxService();
+                TOME.registerService('dice3d', dice3d);
+            }
+            
             const total = await dice3d.roll(sides);
             import('./components/Toast.js').then(m => {
                 m.Toast.show(`Rolou d${sides}: Resultou em ${total}! 🎲`, 'success');

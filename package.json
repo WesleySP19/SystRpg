@@ -1,6 +1,6 @@
 {
   "name": "tome-rpg-manager",
-  "version": "15.0.0",
+  "version": "22.0.0",
   "description": "Sistema VTT Offline/LAN para Campanhas de RPG",
   "main": "server.js",
   "type": "module",
@@ -17,6 +17,7 @@
     "@preact/signals": "^2.11.0",
     "@prisma/client": "^5.22.0",
     "compression": "^1.7.4",
+    "dexie": "^4.4.5",
     "express": "^4.19.2",
     "htm": "^3.1.1",
     "jsonwebtoken": "^9.0.2",

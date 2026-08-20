@@ -3,7 +3,7 @@
 Select a Node.js version below to view the changelog history:
 
 * [Node.js 20](doc/changelogs/CHANGELOG_V20.md) **Long Term Support**
-* [Node.js 19](doc/changelogs/CHANGELOG_V19.md) End-of-Life
+* [Node.js 19](doc/changelogs/CHANGELOG_V22.md) End-of-Life
 * [Node.js 18](doc/changelogs/CHANGELOG_V18.md) Long Term Support
 * [Node.js 17](doc/changelogs/CHANGELOG_V17.md) End-of-Life
 * [Node.js 16](doc/changelogs/CHANGELOG_V16.md) End-of-Life

@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'preact/hooks';
 import { useStore } from '../core/hooks.js';
 import { TOME } from '../../core/Registry.js';
 
-import { CombatTrackerV19 } from './combat/CombatTrackerV19.jsx';
+import { CombatTrackerV22 } from './combat/CombatTrackerV22.jsx';
 import { Bestiary } from '../pages/Bestiary.js';
 import { SessionJournal } from './SessionJournal.js';
 
@@ -31,7 +31,7 @@ export function DMTable() {
         window.addEventListener('tome:ai_processing', handleAiStatus);
 
         if (trackerRef.current) {
-            trackerInstance.current = new CombatTrackerV19({ store: TOME.store, root: trackerRef.current, element: trackerRef.current });
+            trackerInstance.current = new CombatTrackerV22({ store: TOME.store, root: trackerRef.current, element: trackerRef.current });
             trackerInstance.current.mount();
         }
         if (bestiaryRef.current) {

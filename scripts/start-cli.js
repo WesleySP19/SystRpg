@@ -37,7 +37,7 @@ function printHeader() {
      
   ================================================================
   ` + colors.reset);
-  console.log(colors.fgCyan + "          Mesa Psigologos V21.0.0 PREMIUM VTT - The Atomic Engine\n" + colors.reset);
+  console.log(colors.fgCyan + "          Mesa Psigologos V22.0.0 PREMIUM VTT - The Atomic Engine\n" + colors.reset);
 }
 
 function checkDependencies() {
