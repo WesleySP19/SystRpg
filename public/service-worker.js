@@ -7,7 +7,7 @@
  *   - Recursos externos: Stale-While-Revalidate
  */
 
-const CACHE_VERSION = 'tome-v18-0-0';
+const CACHE_VERSION = 'tome-v22-0-0';
 const CACHE_STATIC = `${CACHE_VERSION}-static`;
 const CACHE_DATA = `${CACHE_VERSION}-data`;
 
@@ -15,66 +15,10 @@ const CACHE_DATA = `${CACHE_VERSION}-data`;
 const STATIC_ASSETS = [
   '/',
   '/index.html',
-  '/ui/components/AuthScreen.js',
   '/manifest.json',
   '/assets/tome-master.css',
   '/assets/logo.png',
-  
-  // Core
-  '/core/EventBus.js',
-  '/core/Store.js',
-  '/ui/core/Component.js',
-  '/ui/core/ReactiveComponent.js',
-  '/core/RulesEngine.js',
-  '/core/Registry.js',
-
-  // Services
-  '/services/PersistenceService.js',
-  '/ui/services/FrontendDirectoryService.js',
-  '/services/MediaService.js',
-  '/services/SessionManager.js',
-  '/services/CardRenderer.js',
-  '/services/TelemetryService.js',
-  '/services/MatchHistoryService.js',
-  '/services/MonsterArt.js',
-
-  // Utils
-  '/utils/Dice.js',
-  '/utils/combat.js',
-  '/utils/db.js',
-  '/ui/utils/imageExport.js',
-
-  // Components base
-  '/ui/components/MainPanel.jsx',
-  '/ui/components/PartyStatusHUD.js',
-  '/ui/components/ChatBox.js',
-  '/ui/components/HeroHub.js',
-  '/ui/components/PlayerForm.js',
-  '/ui/components/CampaignManager.js',
-  '/ui/components/combat/CombatTrackerV14.js',
-  '/ui/components/combat/CombatantList.js',
-  '/ui/components/combat/CombatControls.js',
-  '/ui/components/SessionJournal.js',
-  '/ui/components/QuestManager.js',
-  '/ui/components/LootGenerator.js',
-  '/ui/components/NPCHelper.js',
-  '/ui/components/SpellBook.js',
-  '/ui/components/DynamicCharacterBuilder.js',
-  '/ui/components/QuickReference.js',
-  '/ui/components/DMShield.js',
-  '/ui/components/WorldBuilder.js',
-  '/ui/components/InitiativeMonitor.js',
-  '/ui/components/EncounterGenerator.js',
-  '/ui/components/CardGenerator.js',
-  '/ui/components/TomeSinalPanel.js',
-
-  // Pages
-  '/ui/pages/Dashboard.jsx',
-  '/ui/pages/Bestiary.js',
-  '/data/schemas.js',
   '/data/spells-5e.js',
-  '/data/MonsterData.js',
-  '/data/MonsterLibrary.js',
 ];
 
 // --- INSTALL: pré-cacheia assets estáticos com resiliência ---

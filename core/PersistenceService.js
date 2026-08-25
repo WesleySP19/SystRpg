@@ -1,8 +1,9 @@
 import { TOME } from './Registry.js';
+import { saveLocalState, getLocalState, queueOfflineSave, popOfflineSaves } from './LocalDatabase.js';
 
 /**
- * PersistenceService V19.3.0
- * Unified service for real-time and persistent state synchronization via Socket.IO
+ * PersistenceService V22
+ * Unified service for local-first persistence via Dexie and real-time sync via Socket.IO
  */
 export class PersistenceService {
     /**
@@ -10,6 +11,10 @@ export class PersistenceService {
      * Uses exponential backoff (2s→4s→8s) with 3 retries before falling back to REST.
      */
     static async saveState(filename, data) {
+        // 1. Sempre salva localmente (Offline-First)
+        await saveLocalState(filename, data);
+
+        // 2. Tenta sincronizar com o servidor (se conectado)
         if (TOME.socket && TOME.socket.connected) {
             const MAX_RETRIES = 3;
             let attempt = 0;
@@ -46,7 +51,7 @@ export class PersistenceService {
             }
             return true;
         } catch (err) {
-            PersistenceService._queueOfflineSave(filename, data);
+            await PersistenceService._queueOfflineSave(filename, data);
             throw err;
         }
     }
@@ -86,12 +91,11 @@ export class PersistenceService {
     }
 
     /**
-     * Enfileira o estado no IndexedDB quando offline, mantendo apenas o mais recente.
+     * Enfileira o estado no Dexie quando offline.
      */
-    static _queueOfflineSave(filename, data) {
-        if (!TOME.db) return;
-        console.warn('[PersistenceService] Offline. Salvando snapshot no cache local (IndexedDB).');
-        TOME.db.set('offline_state_backup', { filename, data, timestamp: Date.now() });
+    static async _queueOfflineSave(filename, data) {
+        console.warn('[PersistenceService] Offline. Enfileirando snapshot no IndexedDB.');
+        await queueOfflineSave(filename, data);
     }
 
     /**
@@ -102,21 +106,25 @@ export class PersistenceService {
         this._networkListenersInitialized = true;
 
         window.addEventListener('online', async () => {
-            console.log('[PersistenceService] Conexão restaurada! Verificando fila offline...');
-            if (TOME.db) {
-                const backup = await TOME.db.get('offline_state_backup');
-                if (backup) {
-                    console.log('[PersistenceService] Sincronizando estado offline pendente...');
-                    try {
+            console.log('[PersistenceService] Conexão restaurada! Verificando fila offline (Dexie)...');
+            const saves = await popOfflineSaves();
+            
+            if (saves && saves.length > 0) {
+                console.log(`[PersistenceService] Sincronizando ${saves.length} estado(s) offline pendente(s)...`);
+                try {
+                    for (const backup of saves) {
                         await PersistenceService.saveState(backup.filename, backup.data);
-                        await TOME.db.delete('offline_state_backup');
-                        console.log('[PersistenceService] Sincronização offline concluída com sucesso.');
-                        
-                        if (TOME.events) {
-                            TOME.events.emit('SYSTEM_NOTIFICATION', { text: 'Sincronização offline concluída!', type: 'success' });
-                        }
-                    } catch (e) {
-                        console.error('[PersistenceService] Falha ao sincronizar o estado offline pendente:', e);
+                    }
+                    console.log('[PersistenceService] Sincronização offline concluída com sucesso.');
+                    
+                    if (TOME.events) {
+                        TOME.events.emit('SYSTEM_NOTIFICATION', { text: 'Sincronização offline concluída!', type: 'success' });
+                    }
+                } catch (e) {
+                    console.error('[PersistenceService] Falha ao sincronizar o estado offline pendente:', e);
+                    // Devolve para a fila em caso de erro na reconexão
+                    for (const backup of saves) {
+                        await queueOfflineSave(backup.filename, backup.data);
                     }
                 }
             }
@@ -124,9 +132,16 @@ export class PersistenceService {
     }
 
     /**
-     * Loads the initial state via REST (HTTP GET is cacheable and faster for initial heavy payloads)
+     * Loads the initial state via Local IndexedDB (First) -> REST -> Cache (Fallback)
      */
     static async loadState(filename) {
+        // Tenta sempre carregar do cache local primeiro (Offline-First)
+        const localData = await getLocalState(filename);
+        if (localData) {
+            console.log(`[PersistenceService] Carregado do Local-First (Dexie)`);
+            return localData;
+        }
+
         const token = localStorage.getItem('DM_JWT_TOKEN');
         const headers = {};
         if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -136,17 +151,13 @@ export class PersistenceService {
         if (!response || !response.ok) {
             if (response && (response.status === 401 || response.status === 403)) TOME.events.emit('AUTH_REQUIRED');
             
-            // Se falhou (offline), tenta recuperar do backup local mais recente
-            console.warn('[PersistenceService] Falha ao carregar estado da rede. Tentando cache offline...');
-            if (TOME.db) {
-                const backup = await TOME.db.get('offline_state_backup');
-                if (backup && backup.filename === filename) {
-                    console.log('[PersistenceService] Estado carregado do cache offline local!');
-                    return backup.data;
-                }
-            }
             throw new Error(`Load Error: Servidor inacessível e sem cache offline.`);
         }
-        return response.json();
+        
+        const data = await response.json();
+        // Salva localmente para uso futuro
+        await saveLocalState(filename, data);
+        
+        return data;
     }
 }

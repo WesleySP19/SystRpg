@@ -8,7 +8,7 @@
    Clean, Professional, and High-Contrast Fantasy Design
    ================================================================ */
 
-/* Removed :root variables - migrated to theme.css V19 */
+/* Removed :root variables - migrated to theme.css V22 */
 
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -1255,7 +1255,7 @@ input[type="text"]:focus:not(.form-input), input[type="number"]:focus:not(.form-
     background: var(--sheet-label-color);
 }
 
-/* --- Form Inputs (V19 Premium Style) --- */
+/* --- Form Inputs (V22 Premium Style) --- */
 .legacy-input {
     background: rgba(15, 17, 26, 0.7) !important; /* Obsidian 900 */
     border: 1px solid rgba(255, 255, 255, 0.08) !important;

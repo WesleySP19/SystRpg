@@ -5,6 +5,25 @@ import { Dice } from '../utils/Dice.js';
  * Parses generic dice expressions and resolves tests dynamically for multiple systems.
  */
 export class RulesEngine {
+    static currentRuleset = null;
+
+    static async loadRuleset(name = 'dnd5e') {
+        try {
+            const res = await fetch(`/data/rulesets/${name}.json`);
+            if (res.ok) {
+                this.currentRuleset = await res.json();
+                console.log(`[RulesEngine] Loaded ruleset: ${this.currentRuleset.name}`);
+                return this.currentRuleset;
+            }
+        } catch (e) {
+            console.error('[RulesEngine] Failed to load ruleset', e);
+        }
+        return null;
+    }
+
+    static getActiveRuleset() {
+        return this.currentRuleset;
+    }
     /**
      * Parses and rolls a dice expression like '1d20+5' or '2d6-1'.
      * @param {string} expression 

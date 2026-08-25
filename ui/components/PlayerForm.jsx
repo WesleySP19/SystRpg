@@ -13,6 +13,7 @@ import { HeroExporter } from '../utils/HeroExporter.js';
 import { useState, useEffect, useRef } from 'preact/hooks';
 import { useHeroData } from '../hooks/useHeroData.js';
 import { useVanillaActions } from '../hooks/useVanillaActions.js';
+import { RulesEngine } from '../../core/RulesEngine.js';
 
 export function PlayerForm({ store }) {
     const { heroData: p, isEditing, updateHero, draftData, setDraftData } = useHeroData();
@@ -25,45 +26,27 @@ export function PlayerForm({ store }) {
     const [, setTick] = useState(0);
     const forceUpdate = () => setTick(t => t + 1);
     
-    const skills = [
-        { id: 'athletics', label: 'Atletismo', stat: 'str' },
-        { id: 'acrobatics', label: 'Acrobacia', stat: 'dex' },
-        { id: 'sleightOfHand', label: 'Prestidigitação', stat: 'dex' },
-        { id: 'stealth', label: 'Furtividade', stat: 'dex' },
-        { id: 'arcana', label: 'Arcanismo', stat: 'int' },
-        { id: 'history', label: 'História', stat: 'int' },
-        { id: 'investigation', label: 'Investigação', stat: 'int' },
-        { id: 'nature', label: 'Natureza', stat: 'int' },
-        { id: 'religion', label: 'Religião', stat: 'int' },
-        { id: 'insight', label: 'Intuição', stat: 'wis' },
-        { id: 'medicine', label: 'Medicina', stat: 'wis' },
-        { id: 'perception', label: 'Percepção', stat: 'wis' },
-        { id: 'survival', label: 'Sobrevivência', stat: 'wis' },
-        { id: 'animalHandling', label: 'Adestrar Animais', stat: 'wis' },
-        { id: 'deception', label: 'Enganação', stat: 'cha' },
-        { id: 'intimidation', label: 'Intimidação', stat: 'cha' },
-        { id: 'performance', label: 'Atuação', stat: 'cha' },
-        { id: 'persuasion', label: 'Persuasão', stat: 'cha' }
-    ];
+    const rules = RulesEngine.getActiveRuleset();
+    const skills = rules ? rules.skills : [];
     
     const actions = {};
     const _renderInventoryRows = () => {
             return inventoryRows.map((item, i) => (
-                <div className="grid grid-cols-[1fr_60px_60px_25px] gap-1 mb-0.5">
+                <div className="grid grid-cols-[1fr_60px_60px_25px] gap-1.5 mb-0.5">
                     <input className="legacy-input inv-name text-[0.7rem] p-1" type="text" value={item.name || ''} placeholder="Nome do Item" />
                     <input className="legacy-input inv-qty text-[0.7rem] p-1 text-center" type="number" value={item.qty || 1} placeholder="Qtd" />
                     <input className="legacy-input inv-weight text-[0.7rem] p-1 text-center" type="number" value={item.weight || 0} step="0.1" placeholder="Peso" />
-                    <button type="button" className="btn btn-danger btn-sm p-0" data-action="removeInventoryRow" data-index={i}>✕</button>
+                    <button type="button" className="btn btn-danger btn-sm p-0 flex items-center justify-center" data-action="removeInventoryRow" data-index={i}>✕</button>
                 </div>
             )).join('');
         };
     const _renderAttackRows = () => {
             return attackRows.map((atk, i) => (
-                <div style={{ 'display': 'grid', 'gridTemplateColumns': '1fr 50px 80px 25px', 'gap': '5px', 'marginBottom': '5px' }}>
+                <div class="grid grid-cols-[1fr_50px_80px_25px] gap-1.5 mb-1.5">
                     <input className="legacy-input atk-name" type="text" value={atk.name || ''} placeholder="Nome" />
                     <input className="legacy-input atk-bonus" type="text" value={atk.bonus || ''} placeholder="+5" />
                     <input className="legacy-input atk-damage" type="text" value={atk.damage || ''} placeholder="1d8" />
-                    <button type="button" className="btn btn-danger btn-sm" data-action="removeAttackRow" data-index={i}>✕</button>
+                    <button type="button" className="btn btn-danger btn-sm flex items-center justify-center" data-action="removeAttackRow" data-index={i}>✕</button>
                 </div>
             )).join('');
         };
@@ -71,13 +54,13 @@ export function PlayerForm({ store }) {
             const { players } = TOME.store.state;
             if (!players?.length) return '';
             return players.map(p => (
-                <div className="card" style={{ 'display': 'flex', 'justifyContent': 'space-between', 'alignItems': 'center', 'borderLeft': '4px solid var(--accent)', 'background': 'rgba(255,255,255,0.02)' }}>
+                <div className="card flex justify-between items-center border-l-4 border-l-accent bg-white/5">
                     <div>
-                        <h4 style={{ 'margin': '0' }}>{p.name}</h4>
-                        <p style={{ 'fontSize': '0.7rem', 'margin': '5px 0 0', 'textTransform': 'uppercase' }}>{p.class || 'Sem Classe'} • NÍVEL {p.level || 1}</p>
+                        <h4 class="m-0">{p.name}</h4>
+                        <p class="text-[0.7rem] m-0 mt-1 uppercase text-slate-400">{p.class || 'Sem Classe'} • NÍVEL {p.level || 1}</p>
                     </div>
                     <div className="flex gap-2.5">
-                        <button type="button" className="btn btn-ghost btn-sm" style={{ 'background': 'rgba(255,255,255,0.05)', 'color': '#fff' }} data-action="editHero" data-id={p.id}>EDITAR</button>
+                        <button type="button" className="btn btn-ghost btn-sm bg-white/5 text-white hover:bg-white/10" data-action="editHero" data-id={p.id}>EDITAR</button>
                         <button type="button" className="btn btn-danger btn-sm" data-action="removePlayer" data-id={p.id}>✕</button>
                     </div>
                 </div>
@@ -332,6 +315,23 @@ export function PlayerForm({ store }) {
         };
     const _collectFormData = (f) => {
             const fd = new FormData(f);
+            const rules = RulesEngine.getActiveRuleset();
+            
+            const dynamicStats = {};
+            const dynamicSaves = {};
+            
+            if (rules) {
+                rules.stats.forEach(st => {
+                    dynamicStats[st.id] = parseInt(fd.get(`stat_${st.id}`)) || 10;
+                    dynamicSaves[st.id] = !!fd.get(`save_${st.id}`);
+                });
+            } else {
+                ['str', 'dex', 'con', 'int', 'wis', 'cha'].forEach(st => {
+                    dynamicStats[st] = parseInt(fd.get(`stat_${st}`)) || 10;
+                    dynamicSaves[st] = !!fd.get(`save_${st}`);
+                });
+            }
+
             const data = {
                 name: actions.$('#input-hero-name')?.value || 'Herói Sem Nome',
                 class: fd.get('class') || '', 
@@ -343,23 +343,9 @@ export function PlayerForm({ store }) {
                 xp: parseInt(fd.get('xp')) || 0,
                 inspiration: !!fd.get('inspiration'), 
                 proficiencyBonus: parseInt(fd.get('proficiencyBonus')) || 2,
-                stats: { 
-                    str: parseInt(fd.get('stat_str')) || 10, 
-                    dex: parseInt(fd.get('stat_dex')) || 10, 
-                    con: parseInt(fd.get('stat_con')) || 10, 
-                    int: parseInt(fd.get('stat_int')) || 10, 
-                    wis: parseInt(fd.get('stat_wis')) || 10, 
-                    cha: parseInt(fd.get('stat_cha')) || 10 
-                },
-                savingThrows: { 
-                    str: !!fd.get('save_str'), 
-                    dex: !!fd.get('save_dex'), 
-                    con: !!fd.get('save_con'), 
-                    int: !!fd.get('save_int'), 
-                    wis: !!fd.get('save_wis'), 
-                    cha: !!fd.get('save_cha') 
-                },
-                skills: skills.filter(sk => fd.get(`skill_${sk.id}`)).map(sk => sk.id),
+                stats: dynamicStats,
+                savingThrows: dynamicSaves,
+                skills: (rules ? rules.skills : skills).filter(sk => fd.get(`skill_${sk.id}`)).map(sk => sk.id),
                 ac: parseInt(fd.get('ac')) || 10, 
                 initiative: parseInt(fd.get('initiative')) || 0, 
                 speed: parseInt(fd.get('speed')) || 30,
@@ -570,68 +556,68 @@ export function PlayerForm({ store }) {
         };
     const _renderCardTab = () => {
             return (
-                <div style={{ 'display': 'flex', 'flexDirection': 'column', 'alignItems': 'center', 'gap': '20px', 'padding': '20px' }}>
-                    <p style={{ 'fontSize': '0.85rem', 'textAlign': 'center' }}>
+                <div class="flex flex-col items-center gap-5 p-5 animate-fadeIn">
+                    <p class="text-[0.85rem] text-center text-slate-400 max-w-2xl">
                         Esta é a visualização da <strong>Carta de Avatar</strong> oficial no formato TCG (proporção 5:7).<br />
                         Os dados são gerados em tempo real. Ajuste o enquadramento usando os controles ao lado e clique na carta para baixá-la.
                     </p>
-                    <div style={{ 'display': 'flex', 'gap': '30px', 'justifyContent': 'center', 'flexWrap': 'wrap', 'width': '100%', 'maxWidth': '1200px', 'marginTop': '20px' }}>
-                        <div style={{ 'display': 'flex', 'gap': '30px', 'justifyContent': 'center', 'flexWrap': 'wrap', 'flex': '1', 'minWidth': '320px' }}>
-                            <div style={{ 'display': 'flex', 'flexDirection': 'column', 'alignItems': 'center', 'gap': '10px' }}>
-                                <h4 style={{ 'margin': '0', 'fontSize': '0.8rem' }}>FRENTE (COMBATE)</h4>
-                                <canvas id="card-canvas-front" data-action="downloadCard" data-side="front" style={{ 'borderRadius': '15px', 'boxShadow': 'var(--shadow-accent)', 'maxWidth': '100%', 'width': '280px', 'height': '392px', 'cursor': 'pointer', 'border': '1px solid rgba(197, 160, 89, 0.3)', 'transition': 'transform 0.2s' }}></canvas>
+                    <div class="flex gap-8 justify-center flex-wrap w-full max-w-[1200px] mt-5">
+                        <div class="flex gap-8 justify-center flex-wrap flex-1 min-w-[320px]">
+                            <div class="flex flex-col items-center gap-2.5 group">
+                                <h4 class="m-0 text-[0.8rem] font-cinzel text-accent tracking-widest">FRENTE (COMBATE)</h4>
+                                <canvas id="card-canvas-front" data-action="downloadCard" data-side="front" class="rounded-[15px] shadow-[0_10px_30px_rgba(0,0,0,0.8),0_0_15px_rgba(197,160,89,0.2)] max-w-full w-[280px] h-[392px] cursor-pointer border border-accent/30 transition-transform duration-300 group-hover:-translate-y-2 group-hover:shadow-[0_15px_40px_rgba(0,0,0,0.9),0_0_25px_rgba(197,160,89,0.4)]"></canvas>
                             </div>
-                            <div style={{ 'display': 'flex', 'flexDirection': 'column', 'alignItems': 'center', 'gap': '10px' }}>
-                                <h4 style={{ 'margin': '0', 'fontSize': '0.8rem' }}>VERSO (HISTÓRIA)</h4>
-                                <canvas id="card-canvas-back" data-action="downloadCard" data-side="back" style={{ 'borderRadius': '15px', 'boxShadow': 'var(--shadow-accent)', 'maxWidth': '100%', 'width': '280px', 'height': '392px', 'cursor': 'pointer', 'border': '1px solid rgba(197, 160, 89, 0.3)', 'transition': 'transform 0.2s' }}></canvas>
+                            <div class="flex flex-col items-center gap-2.5 group">
+                                <h4 class="m-0 text-[0.8rem] font-cinzel text-accent tracking-widest">VERSO (HISTÓRIA)</h4>
+                                <canvas id="card-canvas-back" data-action="downloadCard" data-side="back" class="rounded-[15px] shadow-[0_10px_30px_rgba(0,0,0,0.8),0_0_15px_rgba(197,160,89,0.2)] max-w-full w-[280px] h-[392px] cursor-pointer border border-accent/30 transition-transform duration-300 group-hover:-translate-y-2 group-hover:shadow-[0_15px_40px_rgba(0,0,0,0.9),0_0_25px_rgba(197,160,89,0.4)]"></canvas>
                             </div>
                         </div>
                         
-                        <div className="skills-list" style={{ 'width': '340px', 'padding': '20px', 'display': 'flex', 'flexDirection': 'column', 'gap': '15px', 'background': 'rgba(0,0,0,0.3)', 'border': 'var(--sheet-border-thick)', 'borderRadius': '12px' }}>
-                            <h3 style={{ 'margin': '0', 'fontSize': '1.1rem', 'borderBottom': '1px solid rgba(255,255,255,0.1)', 'paddingBottom': '10px' }}>
-                                <i className="fa-solid fa-sliders" style={{ 'marginRight': '8px' }}></i> Ajustes do Card TCG
+                        <div className="skills-list glass-accent w-[340px] p-5 flex flex-col gap-4 rounded-xl border border-white/10 shadow-xl">
+                            <h3 class="m-0 text-[1.1rem] border-b border-white/10 pb-2.5 font-cinzel text-white flex items-center gap-2">
+                                <i className="fa-solid fa-sliders text-accent"></i> Ajustes do Card TCG
                             </h3>
                             
-                            <div style={{ 'display': 'flex', 'flexDirection': 'column', 'gap': '5px' }}>
-                                <label className="attr-label" style={{ 'fontSize': '0.6rem' }}>IMAGEM DO RETRATO</label>
-                                <button type="button" className="btn btn-ghost btn-block" style={{ 'border': '1px solid var(--accent)', 'fontSize': '0.75rem', 'display': 'flex', 'alignItems': 'center', 'justifyContent': 'center', 'gap': '8px' }} data-action="triggerPortrait">
+                            <div class="flex flex-col gap-1.5">
+                                <label className="attr-label text-[0.6rem]">IMAGEM DO RETRATO</label>
+                                <button type="button" className="btn btn-ghost btn-block border border-accent/50 text-[0.75rem] flex items-center justify-center gap-2 hover:bg-accent/10" data-action="triggerPortrait">
                                     <i className="fa-solid fa-upload"></i> Escolher Foto do Herói
                                 </button>
                             </div>
     
-                            <div style={{ 'display': 'flex', 'flexDirection': 'column', 'gap': '8px' }}>
-                                <div className="flex justify-between items-center mb-1.5">
-                                    <label className="attr-label" style={{ 'fontSize': '0.65rem', 'margin': '0' }}>ENQUADRAMENTO DA FOTO</label>
-                                    <button type="button" className="btn btn-ghost btn-sm" style={{ 'fontSize': '0.55rem', 'padding': '2px 6px' }} data-action="resetPortrait">CENTRALIZAR</button>
+                            <div class="flex flex-col gap-2 bg-black/20 p-3 rounded-lg border border-white/5">
+                                <div className="flex justify-between items-center mb-1.5 border-b border-white/5 pb-2">
+                                    <label className="attr-label text-[0.65rem] m-0 text-slate-300">ENQUADRAMENTO DA FOTO</label>
+                                    <button type="button" className="btn btn-ghost btn-sm text-[0.55rem] px-2 py-1 bg-white/5 hover:bg-white/10 text-white rounded" data-action="resetPortrait">CENTRALIZAR</button>
                                 </div>
                                 <div className="flex flex-col gap-1">
-                                    <div style={{ 'display': 'flex', 'justifyContent': 'space-between', 'fontSize': '0.65rem' }}>
-                                        <span>Zoom (Escala):</span>
-                                        <span id="label-val-scale">1.00x</span>
+                                    <div class="flex justify-between text-[0.65rem] text-slate-400 font-bold uppercase tracking-wider">
+                                        <span>Zoom (Escala)</span>
+                                        <span id="label-val-scale" class="text-accent">1.00x</span>
                                     </div>
-                                    <input type="range" min="0.5" max="3" step="0.05" value={portraitSettings.scale || 1} data-action="updatePortrait" data-key="scale" style={{ 'width': '100%' }} />
+                                    <input type="range" min="0.5" max="3" step="0.05" value={portraitSettings.scale || 1} data-action="updatePortrait" data-key="scale" class="w-full accent-accent" />
                                 </div>
-                                <div className="flex flex-col gap-1">
-                                    <div style={{ 'display': 'flex', 'justifyContent': 'space-between', 'fontSize': '0.65rem' }}>
-                                        <span>Posição Horizontal (X):</span>
-                                        <span id="label-val-x">0px</span>
+                                <div className="flex flex-col gap-1 mt-2">
+                                    <div class="flex justify-between text-[0.65rem] text-slate-400 font-bold uppercase tracking-wider">
+                                        <span>Posição Horizontal (X)</span>
+                                        <span id="label-val-x" class="text-accent">0px</span>
                                     </div>
-                                    <input type="range" min="-300" max="300" step="1" value={portraitSettings.x || 0} data-action="updatePortrait" data-key="x" style={{ 'width': '100%' }} />
+                                    <input type="range" min="-300" max="300" step="1" value={portraitSettings.x || 0} data-action="updatePortrait" data-key="x" class="w-full accent-accent" />
                                 </div>
-                                <div className="flex flex-col gap-1">
-                                    <div style={{ 'display': 'flex', 'justifyContent': 'space-between', 'fontSize': '0.65rem' }}>
-                                        <span>Posição Vertical (Y):</span>
-                                        <span id="label-val-y">0px</span>
+                                <div className="flex flex-col gap-1 mt-2">
+                                    <div class="flex justify-between text-[0.65rem] text-slate-400 font-bold uppercase tracking-wider">
+                                        <span>Posição Vertical (Y)</span>
+                                        <span id="label-val-y" class="text-accent">0px</span>
                                     </div>
-                                    <input type="range" min="-300" max="300" step="1" value={portraitSettings.y || 0} data-action="updatePortrait" data-key="y" style={{ 'width': '100%' }} />
+                                    <input type="range" min="-300" max="300" step="1" value={portraitSettings.y || 0} data-action="updatePortrait" data-key="y" class="w-full accent-accent" />
                                 </div>
                             </div>
     
-                            <div style={{ 'borderTop': '1px solid rgba(255,255,255,0.1)', 'paddingTop': '15px', 'display': 'flex', 'flexDirection': 'column', 'gap': '10px' }}>
-                                <button type="button" className="btn btn-primary btn-block" data-action="downloadPrintablePair" style={{ 'fontSize': '0.75rem', 'fontWeight': '800', 'display': 'flex', 'alignItems': 'center', 'justifyContent': 'center', 'gap': '8px' }}>
+                            <div class="border-t border-white/10 pt-4 flex flex-col gap-2.5 mt-2">
+                                <button type="button" className="btn btn-magic btn-block text-[0.75rem] font-extrabold flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(197,160,89,0.2)]" data-action="downloadPrintablePair">
                                     <i className="fa-solid fa-file-image"></i> Baixar Par Imprimível (5:7)
                                 </button>
-                                <p style={{ 'fontSize': '0.6rem', 'textAlign': 'center', 'margin': '0', 'lineHeight': '1.3' }}>
+                                <p class="text-[0.6rem] text-center m-0 leading-[1.3] text-slate-500">
                                     * O par imprimível gera as imagens lado a lado no tamanho oficial de TCG (7.0 x 9.8 cm) sem esticar a arte.
                                 </p>
                             </div>
@@ -705,35 +691,35 @@ export function PlayerForm({ store }) {
         
 
         return (
-            <div className="page legacy-sheet-container" ref={containerRef} style={{ 'maxWidth': '1400px', 'margin': '0 auto', 'animation': 'fadeIn 0.5s ease-out' }}>
+            <div className="page legacy-sheet-container max-w-[1400px] mx-auto animate-fadeIn" ref={containerRef}>
                 <form id="hero-form" onSubmit={e => e.preventDefault()}>
                 
                 {isEditing ? html`
-                    <div className="edit-mode-banner" style={{ 'background': 'linear-gradient(90deg, var(--accent), #f39c12)', 'color': '#000', 'padding': '10px', 'textAlign': 'center', 'fontWeight': '900', 'marginBottom': '20px', 'borderRadius': '8px', 'border': '2px solid #000', 'display': 'flex', 'justifyContent': 'space-between', 'alignItems': 'center' }}>
+                    <div className="edit-mode-banner bg-gradient-to-r from-accent to-[#f39c12] text-black p-2.5 text-center font-extrabold mb-5 rounded-lg border-2 border-black flex justify-between items-center">
                         <span><i className="fa-solid fa-pen-fancy"></i> MODO EDIÇÃO: ${p.name || 'Herói'}</span>
-                        <button className="btn btn-ghost btn-sm" style={{ 'color': '#000', 'border': '1px solid #000' }} data-action="resetForm">CANCELAR / NOVO</button>
+                        <button className="btn btn-ghost btn-sm text-black border border-black hover:bg-black/10" data-action="resetForm">CANCELAR / NOVO</button>
                     </div>
                 ` : ''}
                 
                 {/* ════ HEADER SECTION (D&D 5E OFFICIAL LAYOUT) ════ */}
-                <div style={{ 'marginBottom': '20px' }}>
+                <div className="mb-5">
                     <button type="button" className="btn btn-ghost" data-action="closeBuilder"><i className="fa-solid fa-arrow-left"></i> Voltar para Monitoria</button>
                 </div>
-                <header style={{ 'display': 'grid', 'gridTemplateColumns': '300px 1fr', 'gap': '40px', 'marginBottom': '40px', 'alignItems': 'end' }}>
-                    <div style={{ 'display': 'flex', 'flexDirection': 'column', 'gap': '10px' }}>
-                        <div className="portrait-box-legacy" style={{ 'height': '350px', 'border': 'var(--sheet-border-thick)', 'borderRadius': '15px', 'position': 'relative', 'overflow': 'hidden', 'background': 'rgba(0,0,0,0.2)', 'cursor': 'pointer' }} data-action="triggerPortrait">
-                            <div id="portrait-preview" style={{ 'width': '100%', 'height': '100%', 'display': 'flex', 'alignItems': 'center', 'justifyContent': 'center', 'overflow': 'hidden' }}>
-                                {portraitData ? <img src={portraitData} style={{ width: '100%', height: '100%', objectFit: 'cover', transform: `scale(${portraitSettings.scale || 1}) translate(${portraitSettings.x || 0}px, ${portraitSettings.y || 0}px)`, transition: 'transform 0.1s ease-out' }} /> : <i className="fa-solid fa-user-shield fa-4x" style={{ color: 'rgba(197, 160, 89, 0.2)' }}></i>}
+                <header className="grid grid-cols-[300px_1fr] gap-10 mb-10 items-end">
+                    <div className="flex flex-col gap-2.5">
+                        <div className="portrait-box-legacy h-[350px] border-2 border-tomeGold/30 rounded-2xl relative overflow-hidden bg-black/20 cursor-pointer" data-action="triggerPortrait">
+                            <div id="portrait-preview" className="w-full h-full flex items-center justify-center overflow-hidden">
+                                {portraitData ? <img src={portraitData} style={{ width: '100%', height: '100%', objectFit: 'cover', transform: `scale(${portraitSettings.scale || 1}) translate(${portraitSettings.x || 0}px, ${portraitSettings.y || 0}px)`, transition: 'transform 0.1s ease-out' }} /> : <i className="fa-solid fa-user-shield fa-4x text-tomeGold/20"></i>}
                             </div>
-                            <span style={{ 'position': 'absolute', 'bottom': '10px', 'width': '100%', 'textAlign': 'center', 'fontSize': '0.6rem', 'fontWeight': '800', 'background': 'rgba(0,0,0,0.6)', 'color': 'var(--sheet-label-color)' }}>MUDAR RETRATO</span>
-                            <input type="file" id="portrait-input" style={{ 'display': 'none' }} accept="image/*" />
+                            <span className="absolute bottom-2.5 w-full text-center text-[0.6rem] font-extrabold bg-black/60 text-sheetLabel">MUDAR RETRATO</span>
+                            <input type="file" id="portrait-input" className="hidden" accept="image/*" />
                         </div>
                         
                         {/* PORTRAIT CONTROLS */}
-                        <div className="skills-list" style={{ 'padding': '10px', 'fontSize': '0.6rem', 'display': portraitData ? 'flex' : 'none', 'flexDirection': 'column', 'gap': '5px' }}>
+                        <div className="skills-list p-2.5 text-[0.6rem] flex flex-col gap-1.5" style={{ display: portraitData ? 'flex' : 'none' }}>
                             <div className="flex justify-between items-center mb-1.5">
-                                <label style={{ 'fontWeight': '800' }}>CONTROLE DE FOTO</label>
-                                <button type="button" className="btn btn-ghost btn-sm" style={{ 'fontSize': '0.5rem', 'padding': '2px 5px' }} data-action="resetPortrait">CENTRALIZAR</button>
+                                <label class="font-extrabold">CONTROLE DE FOTO</label>
+                                <button type="button" className="btn btn-ghost btn-sm text-[0.5rem] px-1.5 py-0.5" data-action="resetPortrait">CENTRALIZAR</button>
                             </div>
                             <label>ZOOM: <input type="range" min="0.5" max="3" step="0.1" value={portraitSettings.scale || 1} data-action="updatePortrait" data-key="scale" /></label>
                             <label>POS X: <input type="range" min="-200" max="200" step="1" value={portraitSettings.x || 0} data-action="updatePortrait" data-key="x" /></label>
@@ -741,15 +727,15 @@ export function PlayerForm({ store }) {
                         </div>
                     </div>
 
-                    <div style={{ 'display': 'flex', 'flexDirection': 'column', 'gap': '15px' }}>
-                        <div style={{ 'borderBottom': 'var(--sheet-border-thick)', 'paddingBottom': '5px', 'display': 'flex', 'justifyContent': 'space-between', 'alignItems': 'center', 'gap': '10px' }}>
-                            <input className="legacy-input" type="text" id="input-hero-name" name="name" value={p.name || ''} placeholder="NOME DO PERSONAGEM" style={{ 'fontSize': '3rem', 'flex': '1', 'fontFamily': 'var(--sheet-font-header)', 'fontWeight': '900' }} />
-                            <div style={{ 'display': 'flex', 'gap': '5px' }}>
-                                <button type="button" className="btn btn-ghost" style={{ 'border': '1px solid rgba(197, 160, 89, 0.3)', 'fontSize': '0.6rem' }} data-action="openImporter" title="Importar PDF/Texto">📥 PDF/Texto</button>
-                                <button type="button" className="btn btn-ghost" style={{ 'border': '1px solid rgba(197, 160, 89, 0.3)', 'fontSize': '0.6rem' }} data-action="importHeroJSON" title="Importar JSON">📂 JSON</button>
-                                <button type="button" className="btn btn-ghost" style={{ 'border': '1px solid rgba(197, 160, 89, 0.3)', 'fontSize': '0.6rem' }} data-action="downloadHeroJSON" title="Exportar JSON">💾 JSON</button>
-                                <button type="button" className="btn btn-ghost" style={{ 'border': '1px solid rgba(197, 160, 89, 0.3)', 'fontSize': '0.6rem' }} data-action="printOfficialSheet" title="Imprimir PDF Oficial D&D 5e">🖨️ Imprimir</button>
-                                <button type="button" className="btn btn-ghost" style={{ 'border': '1px solid rgba(197, 160, 89, 0.3)', 'fontSize': '0.6rem', 'color': 'var(--danger)' }} data-action="cloneToBestiary" title="Clonar para Bestiário">😈 NPC</button>
+                    <div className="flex flex-col gap-4">
+                        <div className="border-b-2 border-tomeGold/30 pb-1.5 flex justify-between items-center gap-2.5">
+                            <input className="legacy-input text-5xl flex-1 font-header font-black" type="text" id="input-hero-name" name="name" value={p.name || ''} placeholder="NOME DO PERSONAGEM" />
+                            <div className="flex gap-1.5">
+                                <button type="button" className="btn btn-ghost border border-tomeGold/30 text-[0.6rem]" data-action="openImporter" title="Importar PDF/Texto">📥 PDF/Texto</button>
+                                <button type="button" className="btn btn-ghost border border-tomeGold/30 text-[0.6rem]" data-action="importHeroJSON" title="Importar JSON">📂 JSON</button>
+                                <button type="button" className="btn btn-ghost border border-tomeGold/30 text-[0.6rem]" data-action="downloadHeroJSON" title="Exportar JSON">💾 JSON</button>
+                                <button type="button" className="btn btn-ghost border border-tomeGold/30 text-[0.6rem]" data-action="printOfficialSheet" title="Imprimir PDF Oficial D&D 5e">🖨️ Imprimir</button>
+                                <button type="button" className="btn btn-ghost border border-tomeGold/30 text-[0.6rem] text-red-500" data-action="cloneToBestiary" title="Clonar para Bestiário">😈 NPC</button>
                             </div>
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-5 bg-black/20 p-5 border-2 border-tomeGold/30 rounded-xl">
@@ -761,13 +747,13 @@ export function PlayerForm({ store }) {
                             <div className="form-group"><label className="attr-label">RAÇA</label><input className="legacy-input" name="race" value={p.race || ''} placeholder="Draconato" /></div>
                             <div className="form-group"><label className="attr-label">TENDÊNCIA</label><input className="legacy-input" name="alignment" value={p.alignment || ''} placeholder="Caótico e Bom" /></div>
                             <div className="form-group"><label className="attr-label">PONTOS DE EXPERIÊNCIA</label><input className="legacy-input" type="number" name="xp" value={p.xp || 0} /></div>
-                            <div className="form-group" style={{ 'display': 'flex', 'alignItems': 'end', 'justifyContent': 'center', 'fontSize': '0.75rem', 'fontWeight': '800', 'fontFamily': 'Outfit', 'letterSpacing': '1px', 'textTransform': 'uppercase' }}>DOMÍNIO RPG 5E</div>
+                            <div className="form-group flex items-end justify-center text-[0.75rem] font-extrabold font-outfit tracking-wider uppercase">DOMÍNIO RPG 5E</div>
                         </div>
                     </div>
                 </header>
 
                 {/* ════ TAB NAVIGATION ════ */}
-                <nav className="sheet-tabs" style={{ 'justifyContent': 'center', 'gap': '20px', 'borderBottom': '3px solid var(--sheet-border-color)', 'marginBottom': '40px' }}>
+                <nav className="sheet-tabs flex justify-center gap-5 border-b-[3px] border-[var(--sheet-border-color)] mb-10">
                     <button type="button" className="sheet-tab-btn {currentTab === 'core' ? 'active' : ''}" data-action="switchTab" data-tab="core">ESSÊNCIA & COMBATE</button>
                     <button type="button" className="sheet-tab-btn {currentTab === 'bio' ? 'active' : ''}" data-action="switchTab" data-tab="bio">HISTÓRIA & POSSES</button>
                     <button type="button" className="sheet-tab-btn {currentTab === 'spells' ? 'active' : ''}" data-action="switchTab" data-tab="spells">GRIMÓRIO ARCANO</button>
@@ -788,8 +774,8 @@ export function PlayerForm({ store }) {
                     {actions._renderCardTab()}
                 </div>
 
-                <footer style={{ 'marginTop': '60px', 'textAlign': 'center', 'paddingBottom': '60px' }}>
-                    <button type="button" className="btn btn-primary" data-action="submitForm" style={{ 'padding': '20px 80px', 'fontSize': '1.5rem', 'fontFamily': 'var(--sheet-font-header)', 'letterSpacing': '3px', 'boxShadow': '0 0 15px var(--accent)' }}>
+                <footer class="mt-[60px] text-center pb-[60px]">
+                    <button type="button" className="btn btn-primary px-20 py-5 text-[1.5rem] font-header tracking-widest shadow-[0_0_15px_rgba(197,160,89,1)]" data-action="submitForm">
                         <i className="fa-solid fa-bookmark"></i> {isEditing ? 'ATUALIZAR HERÓI' : 'REGISTRAR LENDA'}
                     </button>
                 </footer>
@@ -799,34 +785,34 @@ export function PlayerForm({ store }) {
                 </div>
 
                 {/* IMPOSTER / IMPORT MODAL */}
-                <div id="importer-modal" className="modal" style={{ 'display': 'none', 'position': 'fixed', 'inset': '0', 'background': 'rgba(0,0,0,0.85)', 'zIndex': '2000', 'alignItems': 'center', 'justifyContent': 'center', 'backdropFilter': 'blur(10px)' }}>
-                    <div className="card glass-accent" style={{ 'width': '620px', 'padding': '35px', 'border': '2px solid var(--accent)', 'borderRadius': '15px', 'animation': 'scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)', 'background': 'rgba(18,18,22,0.95)', 'boxShadow': '0 20px 50px rgba(0,0,0,0.7)' }}>
-                        <h2 style={{ 'marginTop': '0', 'borderBottom': '1px solid rgba(255,255,255,0.1)', 'paddingBottom': '12px', 'display': 'flex', 'alignItems': 'center', 'gap': '10px' }}>
+                <div id="importer-modal" className="modal hidden fixed inset-0 bg-black/85 z-[2000] items-center justify-center backdrop-blur-md">
+                    <div className="card glass-accent w-[620px] p-[35px] border-2 border-accent rounded-[15px] animate-scaleIn bg-slate-900/95 shadow-[0_20px_50px_rgba(0,0,0,0.7)]">
+                        <h2 class="mt-0 border-b border-white/10 pb-3 flex items-center gap-2.5">
                             <i className="fa-solid fa-file-import"></i> IMPORTAR FICHA D&D 5E
                         </h2>
-                        <p style={{ 'fontSize': '0.75rem', 'marginBottom': '20px', 'lineHeight': '1.4' }}>
+                        <p class="text-[0.75rem] mb-5 leading-[1.4]">
                             Importe seus dados instantaneamente usando um arquivo **PDF Oficial** preenchido (D&D Beyond, Aurora, etc) ou colando o texto extraído da sua ficha.
                         </p>
                         
                         {/* Drag and Drop PDF Zone */}
-                        <div id="pdf-drop-zone" style={{ 'border': '2px dashed var(--accent)', 'borderRadius': '10px', 'padding': '25px', 'textAlign': 'center', 'cursor': 'pointer', 'background': 'rgba(0,0,0,0.3)', 'transition': 'all 0.2s', 'marginBottom': '15px' }} data-action="triggerPDFUpload">
-                            <i className="fa-solid fa-file-pdf fa-3x" style={{ 'marginBottom': '10px', 'opacity': '0.8' }}></i>
-                            <h4 style={{ 'margin': '0', 'color': '#fff', 'fontSize': '0.9rem' }}>Importar PDF Oficial</h4>
-                            <p style={{ 'margin': '5px 0 0', 'fontSize': '0.7rem' }}>Clique ou arraste o arquivo PDF preenchido da sua ficha aqui</p>
-                            <input type="file" id="pdf-file-input" style={{ 'display': 'none' }} accept=".pdf" />
+                        <div id="pdf-drop-zone" class="border-2 border-dashed border-accent rounded-lg p-6 text-center cursor-pointer bg-black/30 transition-all duration-200 mb-4 hover:bg-black/50 hover:border-accent/80" data-action="triggerPDFUpload">
+                            <i className="fa-solid fa-file-pdf fa-3x mb-2.5 opacity-80"></i>
+                            <h4 class="m-0 text-white text-[0.9rem]">Importar PDF Oficial</h4>
+                            <p class="mt-1 text-[0.7rem] text-slate-400">Clique ou arraste o arquivo PDF preenchido da sua ficha aqui</p>
+                            <input type="file" id="pdf-file-input" className="hidden" accept=".pdf" />
                         </div>
 
-                        <div style={{ 'textAlign': 'center', 'margin': '15px 0', 'fontSize': '0.75rem', 'display': 'flex', 'alignItems': 'center', 'justifyContent': 'center', 'gap': '10px' }}>
-                            <span style={{ 'display': 'inline-block', 'width': '40px', 'height': '1px', 'background': 'rgba(255,255,255,0.15)' }}></span>
+                        <div class="text-center my-4 text-[0.75rem] flex items-center justify-center gap-2.5 text-slate-400">
+                            <span class="inline-block w-10 h-[1px] bg-white/15"></span>
                             <span>OU VIA TEXTO COPIADO</span>
-                            <span style={{ 'display': 'inline-block', 'width': '40px', 'height': '1px', 'background': 'rgba(255,255,255,0.15)' }}></span>
+                            <span class="inline-block w-10 h-[1px] bg-white/15"></span>
                         </div>
 
-                        <textarea id="import-text" className="legacy-textarea" placeholder="Cole o texto copiado da ficha aqui..." style={{ 'height': '150px', 'fontSize': '0.75rem', 'padding': '10px', 'background': 'rgba(0,0,0,0.2) !important' }}></textarea>
+                        <textarea id="import-text" className="legacy-textarea h-[150px] text-[0.75rem] p-2.5 bg-black/20" placeholder="Cole o texto copiado da ficha aqui..."></textarea>
                         
-                        <div style={{ 'display': 'flex', 'gap': '15px', 'justifyContent': 'flex-end', 'marginTop': '20px' }}>
-                            <button type="button" className="btn btn-ghost" data-action="closeImporter" style={{ 'fontSize': '0.8rem' }}>CANCELAR</button>
-                            <button type="button" className="btn btn-primary" data-action="processImport" style={{ 'fontSize': '0.8rem', 'fontWeight': '800' }}>PROCESSAR DADOS</button>
+                        <div class="flex gap-4 justify-end mt-5">
+                            <button type="button" className="btn btn-ghost text-[0.8rem]" data-action="closeImporter">CANCELAR</button>
+                            <button type="button" className="btn btn-primary text-[0.8rem] font-extrabold" data-action="processImport">PROCESSAR DADOS</button>
                         </div>
                     </div>
                 </div>

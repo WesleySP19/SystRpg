@@ -22,6 +22,15 @@ export class MonsterForm extends ReactiveComponent {
                 e.preventDefault();
                 const fd = new FormData(f);
                 const notes = fd.get('notes') || '';
+                const rules = window.TOME?.RulesEngine?.getActiveRuleset() || null;
+                const dynamicStats = {};
+                
+                if (rules) {
+                    rules.stats.forEach(st => dynamicStats[st.id] = parseInt(fd.get(`stat_${st.id}`)) || 10);
+                } else {
+                    ['str', 'dex', 'con', 'int', 'wis', 'cha'].forEach(st => dynamicStats[st] = parseInt(fd.get(`stat_${st}`)) || 10);
+                }
+
                 const monster = {
                     id: 'm-' + Date.now(),
                     name: fd.get('name') || 'Nova Ameaça',
@@ -29,14 +38,7 @@ export class MonsterForm extends ReactiveComponent {
                     cr: fd.get('cr') || '1',
                     ac: parseInt(fd.get('ac')) || 10,
                     hp: { current: parseInt(fd.get('hp_max')) || 10, max: parseInt(fd.get('hp_max')) || 10 },
-                    stats: {
-                        str: parseInt(fd.get('stat_str')) || 10,
-                        dex: parseInt(fd.get('stat_dex')) || 10,
-                        con: parseInt(fd.get('stat_con')) || 10,
-                        int: parseInt(fd.get('stat_int')) || 10,
-                        wis: parseInt(fd.get('stat_wis')) || 10,
-                        cha: parseInt(fd.get('stat_cha')) || 10
-                    },
+                    stats: dynamicStats,
                     notes: notes,
                     actions: this._parseActionsFromNotes(notes)
                 };
@@ -130,6 +132,16 @@ export class MonsterForm extends ReactiveComponent {
     }
 
     _renderCreator() {
+        const rules = window.TOME?.RulesEngine?.getActiveRuleset() || null;
+        const stats = rules ? rules.stats : [
+            { id: 'str', label: 'FOR' },
+            { id: 'dex', label: 'DES' },
+            { id: 'con', label: 'CON' },
+            { id: 'int', label: 'INT' },
+            { id: 'wis', label: 'SAB' },
+            { id: 'cha', label: 'CAR' }
+        ];
+
         return html`
             <div style="max-width:800px; margin:0 auto; background:white; border:var(--sheet-border-thick); padding:30px; border-radius:10px; box-shadow:var(--shadow-sm);">
                 <form id="monster-form" style="display:flex; flex-direction:column; gap:20px;">
@@ -161,13 +173,13 @@ export class MonsterForm extends ReactiveComponent {
 
                     <div>
                         <label class="attr-label">ATRIBUTOS</label>
-                        <div style="display:grid; grid-template-columns: repeat(6, 1fr); gap:10px;">
-                            <div style="text-align:center;"><label style="font-size:0.6rem; font-weight:800;">FOR</label><input class="legacy-input" type="number" name="stat_str" value="10" style="text-align:center;" /></div>
-                            <div style="text-align:center;"><label style="font-size:0.6rem; font-weight:800;">DES</label><input class="legacy-input" type="number" name="stat_dex" value="10" style="text-align:center;" /></div>
-                            <div style="text-align:center;"><label style="font-size:0.6rem; font-weight:800;">CON</label><input class="legacy-input" type="number" name="stat_con" value="10" style="text-align:center;" /></div>
-                            <div style="text-align:center;"><label style="font-size:0.6rem; font-weight:800;">INT</label><input class="legacy-input" type="number" name="stat_int" value="10" style="text-align:center;" /></div>
-                            <div style="text-align:center;"><label style="font-size:0.6rem; font-weight:800;">SAB</label><input class="legacy-input" type="number" name="stat_wis" value="10" style="text-align:center;" /></div>
-                            <div style="text-align:center;"><label style="font-size:0.6rem; font-weight:800;">CAR</label><input class="legacy-input" type="number" name="stat_cha" value="10" style="text-align:center;" /></div>
+                        <div style="display:grid; grid-template-columns: repeat(${stats.length}, 1fr); gap:10px;">
+                            ${stats.map(st => html`
+                                <div style="text-align:center;">
+                                    <label style="font-size:0.6rem; font-weight:800;">${st.short || st.label}</label>
+                                    <input class="legacy-input" type="number" name="stat_${st.id}" value="10" style="text-align:center;" />
+                                </div>
+                            `)}
                         </div>
                     </div>
 

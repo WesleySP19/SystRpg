@@ -248,7 +248,7 @@ class FXEngineService {
         const link = document.createElement('link');
         link.id = 'tome-fx-styles';
         link.rel = 'stylesheet';
-        link.href = '/public/css/tome-fx.css';
+        link.href = '/css/tome-fx.css';
         document.head.appendChild(link);
     }
 }

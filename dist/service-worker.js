@@ -7,7 +7,7 @@
  *   - Recursos externos: Stale-While-Revalidate
  */
 
-const CACHE_VERSION = 'tome-v18-0-0';
+const CACHE_VERSION = 'tome-v22-0-0';
 const CACHE_STATIC = `${CACHE_VERSION}-static`;
 const CACHE_DATA = `${CACHE_VERSION}-data`;
 
@@ -23,6 +23,7 @@ const STATIC_ASSETS = [
   // Core
   '/core/EventBus.js',
   '/core/Store.js',
+  '/core/LocalDatabase.js',
   '/ui/core/Component.js',
   '/ui/core/ReactiveComponent.js',
   '/core/RulesEngine.js',

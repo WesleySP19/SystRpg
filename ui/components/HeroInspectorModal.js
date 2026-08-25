@@ -4,7 +4,7 @@ import { TOME } from '../../core/Registry.js';
 import { RulesEngine } from '../../core/RulesEngine.js';
 
 /**
- * HERO INSPECTOR MODAL v19.3.0
+ * HERO INSPECTOR MODAL V22.0.0
  * Allows DM to inspect a player's inventory, spells, and cards.
  */
 export class HeroInspectorModal extends ReactiveComponent {

@@ -1,0 +1,49 @@
+{
+    "id": "tormenta20",
+    "name": "Tormenta 20",
+    "stats": [
+      { "id": "for", "label": "Força", "short": "FOR" },
+      { "id": "des", "label": "Destreza", "short": "DES" },
+      { "id": "con", "label": "Constituição", "short": "CON" },
+      { "id": "int", "label": "Inteligência", "short": "INT" },
+      { "id": "sab", "label": "Sabedoria", "short": "SAB" },
+      { "id": "car", "label": "Carisma", "short": "CAR" }
+    ],
+    "skills": [
+      { "id": "acrobacia", "label": "Acrobacia", "stat": "des" },
+      { "id": "adestramento", "label": "Adestramento", "stat": "car" },
+      { "id": "atletismo", "label": "Atletismo", "stat": "for" },
+      { "id": "atuacao", "label": "Atuação", "stat": "car" },
+      { "id": "cavalgar", "label": "Cavalgar", "stat": "des" },
+      { "id": "conhecimento", "label": "Conhecimento", "stat": "int" },
+      { "id": "cura", "label": "Cura", "stat": "sab" },
+      { "id": "diplomacia", "label": "Diplomacia", "stat": "car" },
+      { "id": "enganação", "label": "Enganação", "stat": "car" },
+      { "id": "fortitude", "label": "Fortitude", "stat": "con" },
+      { "id": "furtividade", "label": "Furtividade", "stat": "des" },
+      { "id": "iniciativa", "label": "Iniciativa", "stat": "des" },
+      { "id": "intimidação", "label": "Intimidação", "stat": "car" },
+      { "id": "intuicao", "label": "Intuição", "stat": "sab" },
+      { "id": "investigacao", "label": "Investigação", "stat": "int" },
+      { "id": "jogatina", "label": "Jogatina", "stat": "car" },
+      { "id": "ladinagem", "label": "Ladinagem", "stat": "des" },
+      { "id": "luta", "label": "Luta", "stat": "for" },
+      { "id": "misticismo", "label": "Misticismo", "stat": "int" },
+      { "id": "nobreza", "label": "Nobreza", "stat": "int" },
+      { "id": "oficio", "label": "Ofício", "stat": "int" },
+      { "id": "percepcao", "label": "Percepção", "stat": "sab" },
+      { "id": "pontaria", "label": "Pontaria", "stat": "des" },
+      { "id": "reflexos", "label": "Reflexos", "stat": "des" },
+      { "id": "religiao", "label": "Religião", "stat": "sab" },
+      { "id": "sobrevivencia", "label": "Sobrevivência", "stat": "sab" },
+      { "id": "vontade", "label": "Vontade", "stat": "sab" }
+    ],
+    "derived": [
+      { "id": "ac", "label": "DEFESA", "type": "number", "default": 10 },
+      { "id": "speed", "label": "DESLOC.", "type": "number", "default": 9 }
+    ],
+    "mechanics": {
+      "modifier_formula": "val",
+      "default_dice": "1d20"
+    }
+}

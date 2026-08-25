@@ -1,5 +1,5 @@
 /* ================================================================
-   TOME PRO - "The Atomic Engine" UI V19.2.1
+   TOME PRO - "The Atomic Engine" UI V22.0.0
    Design Tokens & Core Themes
 ================================================================ */
 
@@ -52,24 +52,29 @@ body {
     -moz-osx-font-smoothing: grayscale;
 }
 
-/* Glassmorphism Classes V19 */
+/* Glassmorphism Classes V22 */
 .glass {
-    background: rgba(12, 14, 20, 0.65);
-    backdrop-filter: blur(20px) saturate(140%);
-    -webkit-backdrop-filter: blur(20px) saturate(140%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.8);
+    background: rgba(12, 14, 20, 0.45);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.8);
     border-radius: var(--radius);
 }
 
 .glass-accent {
-    background: linear-gradient(135deg, rgba(197, 160, 89, 0.08) 0%, rgba(10, 12, 16, 0.85) 100%);
-    backdrop-filter: blur(20px) saturate(150%);
-    -webkit-backdrop-filter: blur(20px) saturate(150%);
-    border: 1px solid rgba(197, 160, 89, 0.25);
-    border-top: 1px solid rgba(197, 160, 89, 0.4);
-    box-shadow: 0 20px 40px rgba(0,0,0,0.95), var(--shadow-accent);
+    background: linear-gradient(135deg, rgba(197, 160, 89, 0.06) 0%, rgba(10, 12, 16, 0.6) 100%);
+    backdrop-filter: blur(30px) saturate(180%);
+    -webkit-backdrop-filter: blur(30px) saturate(180%);
+    border: 1px solid rgba(197, 160, 89, 0.15);
+    border-top: 1px solid rgba(197, 160, 89, 0.35);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.95), inset 0 1px 0 rgba(255,255,255,0.05);
     border-radius: var(--radius);
+    transition: all 0.3s ease;
+}
+.glass-accent:hover {
+    border-color: rgba(197, 160, 89, 0.4);
+    box-shadow: 0 20px 40px rgba(0,0,0,1), 0 0 20px rgba(197, 160, 89, 0.15), inset 0 1px 0 rgba(255,255,255,0.1);
 }
 
 .card {
@@ -178,7 +183,7 @@ body {
     box-shadow: 0 8px 30px rgba(197, 160, 89, 0.6);
 }
 
-/* Custom Scrollbar for V19 */
+/* Custom Scrollbar for V22 */
 .custom-scroll::-webkit-scrollbar {
     width: 6px;
     height: 6px;

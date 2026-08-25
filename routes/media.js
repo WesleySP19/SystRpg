@@ -23,7 +23,7 @@ export default function registerMediaRoutes(app, { authenticateToken, uploadDir 
         limits: { fileSize: 50 * 1024 * 1024 } // 50MB
     });
 
-    // Rota de Upload Otimizada (Streaming via Multer - V19.2)
+    // Rota de Upload Otimizada (Streaming via Multer - V22.0.0)
     app.post('/api/upload', authenticateToken, upload.single('imageFile'), async (req, res) => {
         try {
             // Caso seja feito upload tradicional (form-data) via Multer
