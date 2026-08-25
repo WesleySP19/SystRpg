@@ -2,7 +2,8 @@ import { Component } from '../core/Component.js';
 import { TacticalMapEngine } from './TacticalMapEngine.js';
 import { MonsterArt } from '../../services/MonsterArt.js';
 import { Toast } from './Toast.js';
-import { InitiativeMonitor } from './InitiativeMonitor.js';
+import { h, render } from 'preact';
+import { InitiativeMonitor } from './InitiativeMonitor.jsx';
 
 export class TacticalEyeModal extends Component {
     constructor(opts) {
@@ -172,9 +173,8 @@ export class TacticalEyeModal extends Component {
         const initContainer = this.$('#tactical-initiative-container');
         if (initContainer) {
             initContainer.innerHTML = '';
-            this._initiativeMonitor = new InitiativeMonitor({ store: this.store });
-            this._initiativeMonitor.mount(initContainer);
-            this._initiativeMonitor.element.parentNode.__component = this._initiativeMonitor;
+            this._initiativeMonitor = { unmount: () => render(null, initContainer) };
+            render(h(InitiativeMonitor, { store: this.store }), initContainer);
         }
 
         // Event Listeners for Map Engine Events

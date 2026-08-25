@@ -49,11 +49,11 @@ export function PlayerForm({ store }) {
     const actions = {};
     const _renderInventoryRows = () => {
             return inventoryRows.map((item, i) => (
-                <div style={{ 'display': 'grid', 'gridTemplateColumns': '1fr 60px 60px 25px', 'gap': '5px', 'marginBottom': '2px' }}>
-                    <input className="legacy-input inv-name" type="text" value={item.name || ''} placeholder="Nome do Item" style={{ 'fontSize': '0.7rem', 'padding': '4px' }} />
-                    <input className="legacy-input inv-qty" type="number" value={item.qty || 1} placeholder="Qtd" style={{ 'fontSize': '0.7rem', 'padding': '4px', 'textAlign': 'center' }} />
-                    <input className="legacy-input inv-weight" type="number" value={item.weight || 0} step="0.1" placeholder="Peso" style={{ 'fontSize': '0.7rem', 'padding': '4px', 'textAlign': 'center' }} />
-                    <button type="button" className="btn btn-danger btn-sm" data-action="removeInventoryRow" data-index={i} style={{ 'padding': '0' }}>✕</button>
+                <div className="grid grid-cols-[1fr_60px_60px_25px] gap-1 mb-0.5">
+                    <input className="legacy-input inv-name text-[0.7rem] p-1" type="text" value={item.name || ''} placeholder="Nome do Item" />
+                    <input className="legacy-input inv-qty text-[0.7rem] p-1 text-center" type="number" value={item.qty || 1} placeholder="Qtd" />
+                    <input className="legacy-input inv-weight text-[0.7rem] p-1 text-center" type="number" value={item.weight || 0} step="0.1" placeholder="Peso" />
+                    <button type="button" className="btn btn-danger btn-sm p-0" data-action="removeInventoryRow" data-index={i}>✕</button>
                 </div>
             )).join('');
         };

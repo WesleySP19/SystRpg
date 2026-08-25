@@ -6,12 +6,12 @@ import { MainPanel } from '../components/MainPanel.jsx';
 import { render } from 'preact';
 
 const MODULE_MAP = {
-    'campaign': { path: () => import('../components/CampaignManager.js'), cls: 'CampaignManager' },
+    'campaign': { path: () => import('../components/CampaignManager.jsx'), cls: 'CampaignManager' },
     'dmtable': { path: () => import('../components/DMTable.jsx'), cls: 'DMTable' },
-    'dmshield': { path: () => import('../components/DMShield.js'), cls: 'DMShield' },
+    'dmshield': { path: () => import('../components/DMShield.jsx'), cls: 'DMShield' },
     'worldbuilder': { path: () => import('../components/WorldBuilder.js'), cls: 'WorldBuilder' },
     'combat': { path: () => import('../components/combat/CombatTrackerV19.jsx'), cls: 'CombatTrackerV19' },
-    'quest': { path: () => import('../components/QuestManager.js'), cls: 'QuestManager' },
+    'quest': { path: () => import('../components/QuestManager.jsx'), cls: 'QuestManager' },
     'chareditor': { path: () => import('../components/DynamicCharacterBuilder.js'), cls: 'DynamicCharacterBuilder' },
     'character': { path: () => import('../components/DynamicCharacterBuilder.js'), cls: 'DynamicCharacterBuilder' },
     'builder': { path: () => import('../components/PlayerForm.jsx'), cls: 'PlayerForm' },
@@ -24,7 +24,7 @@ const MODULE_MAP = {
     'spellbook': { path: () => import('../components/SpellBook.jsx'), cls: 'SpellBook' },
     'npc': { path: () => import('../components/NPCHelper.js'), cls: 'NPCHelper' },
     'settings': { path: () => import('../components/QuickReference.js'), cls: 'QuickReference' },
-    'initiative': { path: () => import('../components/InitiativeMonitor.js'), cls: 'InitiativeMonitor' },
+    'initiative': { path: () => import('../components/InitiativeMonitor.jsx'), cls: 'InitiativeMonitor' },
     'tomesinal': { path: () => import('../components/TomeSinalPanel.js'), cls: 'TomeSinalPanel' }
 };
 

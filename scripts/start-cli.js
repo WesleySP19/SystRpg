@@ -69,6 +69,19 @@ function checkDependencies() {
       }
     }
   }
+
+  console.log(colors.fgCyan + "[INFO]" + colors.reset + " Compilando nova interface com Vite...");
+  try {
+    const viteBin = path.join(ROOT_DIR, 'node_modules', 'vite', 'bin', 'vite.js');
+    if (fs.existsSync(viteBin)) {
+      execSync(`"${process.execPath}" "${viteBin}" build`, { cwd: ROOT_DIR, stdio: 'inherit' });
+    } else {
+      execSync('npm run build', { cwd: ROOT_DIR, stdio: 'inherit' });
+    }
+  } catch (e) {
+    console.log(colors.fgRed + "[!] Aviso: Falha ao rodar o build do Vite. Se você modificou arquivos .jsx, eles podem não aparecer atualizados." + colors.reset);
+  }
+
   console.log(colors.fgGreen + "[OK] Dependências prontas!\n" + colors.reset);
 }
 
