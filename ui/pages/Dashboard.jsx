@@ -191,29 +191,39 @@ function HomePage() {
                 </div>
             </div>
 
-            {/* BARRA DE STATUS */}
-            <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-                <div class="card glass-accent p-4 rounded-xl text-center border-b-4" style={{borderColor: combatColor}}>
-                    <div class="text-[0.65rem] text-slate-400 uppercase font-bold">Status da Sessão</div>
-                    <div class="text-[1.1rem] font-extrabold mt-1 font-cinzel" style={{color: combatColor, textShadow: `0 0 10px ${combatColor}`}}>
+            {/* BARRA DE STATUS PREMIUM */}
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-5 mb-10">
+                <div class="card bg-black/40 backdrop-blur-md p-5 rounded-2xl text-center border border-white/5 shadow-xl relative overflow-hidden group hover:border-accent/30 transition-all">
+                    <div class="absolute inset-0 bg-gradient-to-b from-transparent to-black/60 pointer-events-none"></div>
+                    <div class="absolute top-0 left-0 w-full h-[2px]" style={{backgroundColor: combatColor, boxShadow: `0 0 15px ${combatColor}`}}></div>
+                    <div class="text-[0.65rem] text-slate-400/80 uppercase font-bold tracking-widest relative z-10">Status da Sessão</div>
+                    <div class="text-[1.1rem] font-extrabold mt-2 font-cinzel relative z-10 transition-transform group-hover:scale-105" style={{color: combatColor, textShadow: `0 0 10px ${combatColor}`}}>
                         {activeCombat ? '⚔️ EM COMBATE' : '📜 EXPLORAÇÃO'}
                     </div>
                 </div>
-                <div class="card glass-accent p-4 rounded-xl text-center border-b-4 border-accent">
-                    <div class="text-[0.65rem] text-slate-400 uppercase font-bold">Heróis</div>
-                    <div class="text-[1.4rem] font-extrabold text-white mt-1 font-cinzel">{players.length}</div>
+                <div class="card bg-black/40 backdrop-blur-md p-5 rounded-2xl text-center border border-white/5 shadow-xl relative overflow-hidden group hover:border-accent/30 transition-all">
+                    <div class="absolute inset-0 bg-gradient-to-b from-transparent to-black/60 pointer-events-none"></div>
+                    <div class="absolute top-0 left-0 w-full h-[2px] bg-accent shadow-[0_0_15px_var(--accent)]"></div>
+                    <div class="text-[0.65rem] text-slate-400/80 uppercase font-bold tracking-widest relative z-10">Heróis</div>
+                    <div class="text-[1.6rem] font-extrabold text-white mt-1 font-cinzel relative z-10 drop-shadow-md group-hover:text-accent transition-colors">{players.length}</div>
                 </div>
-                <div class="card glass-accent p-4 rounded-xl text-center border-b-4 border-red-500">
-                    <div class="text-[0.65rem] text-slate-400 uppercase font-bold">Criaturas</div>
-                    <div class="text-[1.4rem] font-extrabold text-white mt-1 font-cinzel">{monsters.length}</div>
+                <div class="card bg-black/40 backdrop-blur-md p-5 rounded-2xl text-center border border-white/5 shadow-xl relative overflow-hidden group hover:border-red-500/30 transition-all">
+                    <div class="absolute inset-0 bg-gradient-to-b from-transparent to-black/60 pointer-events-none"></div>
+                    <div class="absolute top-0 left-0 w-full h-[2px] bg-red-500 shadow-[0_0_15px_#ef4444]"></div>
+                    <div class="text-[0.65rem] text-slate-400/80 uppercase font-bold tracking-widest relative z-10">Criaturas</div>
+                    <div class="text-[1.6rem] font-extrabold text-white mt-1 font-cinzel relative z-10 drop-shadow-md group-hover:text-red-400 transition-colors">{monsters.length}</div>
                 </div>
-                <div class="card glass-accent p-4 rounded-xl text-center border-b-4 border-blue-500">
-                    <div class="text-[0.65rem] text-slate-400 uppercase font-bold">NPCs Salvos</div>
-                    <div class="text-[1.4rem] font-extrabold text-white mt-1 font-cinzel">{savedNPCs.length}</div>
+                <div class="card bg-black/40 backdrop-blur-md p-5 rounded-2xl text-center border border-white/5 shadow-xl relative overflow-hidden group hover:border-blue-500/30 transition-all">
+                    <div class="absolute inset-0 bg-gradient-to-b from-transparent to-black/60 pointer-events-none"></div>
+                    <div class="absolute top-0 left-0 w-full h-[2px] bg-blue-500 shadow-[0_0_15px_#3b82f6]"></div>
+                    <div class="text-[0.65rem] text-slate-400/80 uppercase font-bold tracking-widest relative z-10">NPCs Salvos</div>
+                    <div class="text-[1.6rem] font-extrabold text-white mt-1 font-cinzel relative z-10 drop-shadow-md group-hover:text-blue-400 transition-colors">{savedNPCs.length}</div>
                 </div>
-                <div class="card glass-accent p-4 rounded-xl text-center border-b-4 border-green-500">
-                    <div class="text-[0.65rem] text-slate-400 uppercase font-bold">Data</div>
-                    <div class="text-base font-extrabold text-white mt-2 font-cinzel">{new Date().toLocaleDateString('pt-BR')}</div>
+                <div class="card bg-black/40 backdrop-blur-md p-5 rounded-2xl text-center border border-white/5 shadow-xl relative overflow-hidden group hover:border-green-500/30 transition-all">
+                    <div class="absolute inset-0 bg-gradient-to-b from-transparent to-black/60 pointer-events-none"></div>
+                    <div class="absolute top-0 left-0 w-full h-[2px] bg-green-500 shadow-[0_0_15px_#22c55e]"></div>
+                    <div class="text-[0.65rem] text-slate-400/80 uppercase font-bold tracking-widest relative z-10">Data</div>
+                    <div class="text-base font-extrabold text-white mt-3 font-cinzel relative z-10 group-hover:text-green-400 transition-colors">{new Date().toLocaleDateString('pt-BR')}</div>
                 </div>
             </div>
 
@@ -249,20 +259,21 @@ function HomePage() {
                 </div>
             </div>
 
-            {/* FERRAMENTAS */}
+            {/* FERRAMENTAS PREMIUM */}
             <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-10">
                 {[
                     { id: 'dmshield', icon: 'fa-shield-halved', label: 'Escudo' },
                     { id: 'worldbuilder', icon: 'fa-earth-americas', label: 'Construtor' },
                     { id: 'herohub', icon: 'fa-users', label: 'Heróis' },
                     { id: 'chareditor', icon: 'fa-user-pen', label: 'Editor' },
-                    { id: 'loot', icon: 'fa-coins', label: 'Loot' },
+                    { id: 'loot', icon: 'fa-coins', label: 'Loot', glow: true },
                     { id: 'spellbook', icon: 'fa-book-open', label: 'Grimório' },
                     { id: 'bestiary', icon: 'fa-dragon', label: 'Bestiário' }
                 ].map(tool => (
-                    <button class="btn btn-premium p-4 text-[0.8rem] flex flex-col items-center justify-center gap-2 h-auto" onClick={() => navigate(tool.id)} key={tool.id}>
-                        <i class={`fa-solid ${tool.icon} fa-xl text-accent`}></i>
-                        <span>{tool.label}</span>
+                    <button class={`btn p-4 rounded-xl flex flex-col items-center justify-center gap-2 h-auto relative overflow-hidden group transition-all duration-300 ${tool.glow ? 'bg-accent/10 border-accent/50 hover:bg-accent/20 hover:shadow-[0_0_20px_rgba(197,160,89,0.3)]' : 'bg-black/40 border-white/10 hover:border-accent/40 hover:bg-black/60'} backdrop-blur-sm border`} onClick={() => navigate(tool.id)} key={tool.id}>
+                        <div class="absolute inset-0 opacity-0 group-hover:opacity-100 bg-gradient-to-t from-accent/10 to-transparent transition-opacity"></div>
+                        <i class={`fa-solid ${tool.icon} text-2xl ${tool.glow ? 'text-accent drop-shadow-[0_0_8px_var(--accent)]' : 'text-slate-300 group-hover:text-accent transition-colors'}`}></i>
+                        <span class={`text-[0.75rem] font-bold tracking-wider uppercase mt-1 ${tool.glow ? 'text-accent' : 'text-slate-400 group-hover:text-white transition-colors'}`}>{tool.label}</span>
                     </button>
                 ))}
             </div>

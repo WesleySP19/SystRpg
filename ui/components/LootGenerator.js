@@ -256,11 +256,9 @@ export class LootGenerator extends ReactiveComponent {
     const selectedIds = this.selectedPlayers.value;
 
     return html`
-      <div class="modal-overlay animate-fadeIn loot-generator" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.85); z-index:99999; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(8px);">
-        <div class="card glass-accent animate-scaleIn" style="max-width:900px; width:100%; padding:30px; border:2px solid var(--accent); max-height:90vh; overflow-y:auto; background:rgba(15,12,16,0.95); position:relative;">
-            <button class="btn btn-ghost" onClick=${this.close} style="position:absolute; top:20px; right:20px; border-radius:50%; width:36px; height:36px; padding:0; z-index:10;">
-                <i class="fa-solid fa-times"></i>
-            </button>
+      <div class="page p-6 w-full max-w-[1100px] mx-auto animate-fadeIn relative loot-generator">
+        <div class="absolute top-0 left-0 w-64 h-64 bg-accent/10 rounded-full blur-[100px] pointer-events-none"></div>
+        <div class="card glass-accent relative z-10" style="width:100%; padding:30px; border:1px solid rgba(197,160,89,0.2); background:rgba(15,12,16,0.6); backdrop-filter:blur(10px); border-radius:16px;">
             
             <div class="section-header" style="border-bottom:1px solid rgba(197,160,89,0.3); padding-bottom:15px; margin-bottom:25px;">
                 <div>

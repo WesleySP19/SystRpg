@@ -18,115 +18,119 @@ export class NPCHelper extends ReactiveComponent {
 
     template() {
         return html`
-            <div class="page" style="max-width:800px; margin:0 auto;">
-                <div class="section-header">
-                    <div>
-                        <h2 class="section-title">👤 Gerador de NPCs</h2>
-                        <p class="section-subtitle">Crie personagens memoráveis instantaneamente</p>
-                    </div>
+            <div class="page p-6 w-full max-w-[900px] mx-auto animate-fadeIn">
+                <div class="mb-8 border-b border-accent/20 pb-4">
+                    <h2 class="font-cinzel text-3xl font-bold m-0 text-white drop-shadow-[0_0_10px_rgba(197,160,89,0.3)]">👤 Gerador Arcânico de NPCs</h2>
+                    <p class="font-outfit text-sm text-slate-400 mt-2 uppercase tracking-widest">Crie personagens memoráveis instantaneamente</p>
                 </div>
 
-                <div class="card" style="margin-bottom:var(--space-lg);">
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">
-                        <div class="form-group">
-                            <label class="form-label">Raça/Tipo</label>
-                            <input class="form-input" id="npc-race" type="text" placeholder="Ex: Elfo, Tabaxi, Guarda..." />
+                <div class="card glass-accent p-6 rounded-2xl border border-white/5 shadow-xl mb-8 relative overflow-hidden group">
+                    <div class="absolute inset-0 bg-gradient-to-br from-black/40 to-black/80 pointer-events-none"></div>
+                    <div class="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
+                        <div class="form-group flex flex-col gap-1.5">
+                            <label class="text-[0.7rem] uppercase tracking-wider font-bold text-accent">Raça/Tipo</label>
+                            <input class="legacy-input bg-black/50 border border-white/10 p-2.5 rounded-lg text-sm text-white focus:border-accent/50 outline-none transition-colors" id="npc-race" type="text" placeholder="Ex: Elfo, Tabaxi, Guarda..." />
                         </div>
-                        <div class="form-group">
-                            <label class="form-label">Ocupação</label>
-                            <input class="form-input" id="npc-job" type="text" placeholder="Ex: Taberneiro, Ferreiro, Nobre..." />
+                        <div class="form-group flex flex-col gap-1.5">
+                            <label class="text-[0.7rem] uppercase tracking-wider font-bold text-accent">Ocupação</label>
+                            <input class="legacy-input bg-black/50 border border-white/10 p-2.5 rounded-lg text-sm text-white focus:border-accent/50 outline-none transition-colors" id="npc-job" type="text" placeholder="Ex: Taberneiro, Ferreiro..." />
                         </div>
-                        <div class="form-group">
-                            <label class="form-label">Atmosfera (Vibe)</label>
-                            <select class="form-input" id="npc-vibe" onChange=${(e) => this.setVibe(e.target.value)}>
-                                <option value="friendly">😊 Amigável / Prestativo</option>
-                                <option value="hostile">😠 Hostil / Agressivo</option>
-                                <option value="sarcastic">😏 Sarcástico / Irônico</option>
-                                <option value="mysterious">🌑 Enigmático / Misterioso</option>
-                                <option value="greedy">💰 Ganancioso / Interesseiro</option>
+                        <div class="form-group flex flex-col gap-1.5">
+                            <label class="text-[0.7rem] uppercase tracking-wider font-bold text-accent">Atmosfera (Vibe)</label>
+                            <select class="legacy-input bg-black/50 border border-white/10 p-2.5 rounded-lg text-sm text-white focus:border-accent/50 outline-none transition-colors appearance-none" id="npc-vibe" onChange=${(e) => this.setVibe(e.target.value)}>
+                                <option value="friendly" class="bg-black text-white">😊 Amigável / Prestativo</option>
+                                <option value="hostile" class="bg-black text-white">😠 Hostil / Agressivo</option>
+                                <option value="sarcastic" class="bg-black text-white">😏 Sarcástico / Irônico</option>
+                                <option value="mysterious" class="bg-black text-white">🌑 Enigmático / Misterioso</option>
+                                <option value="greedy" class="bg-black text-white">💰 Ganancioso / Interesse</option>
                             </select>
                         </div>
                     </div>
-                    <button class="btn btn-primary btn-block" data-action="generateNPC" ${this._loading ? 'disabled' : ''}>
-                        ${this._loading ? html`<i class="fa-solid fa-spinner fa-spin"></i> Consultando Grimório...` : html`<i class="fa-solid fa-wand-sparkles"></i> Gerar Novo NPC`}
+                    <button class="relative z-10 w-full btn-magic py-3 rounded-xl font-bold tracking-widest text-sm flex items-center justify-center gap-2 transition-transform active:scale-95" data-action="generateNPC" ${this._loading ? 'disabled' : ''}>
+                        ${this._loading ? html`<i class="fa-solid fa-circle-notch fa-spin"></i> Conjurando Entidade...` : html`<i class="fa-solid fa-wand-sparkles"></i> Gerar Novo NPC`}
                     </button>
                 </div>
 
                 ${this._npc ? html`
-                    <div class="card glass-accent" style="animation: scaleIn 0.3s var(--ease-bounce);">
-                        <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:20px;">
+                    <div class="card bg-black/60 backdrop-blur-lg border border-accent/30 rounded-2xl p-6 shadow-[0_20px_40px_rgba(0,0,0,0.8)] animate-[scaleIn_0.4s_cubic-bezier(0.175,0.885,0.32,1.275)] relative overflow-hidden">
+                        <div class="absolute -right-10 -top-10 w-40 h-40 bg-accent/10 rounded-full blur-3xl pointer-events-none"></div>
+                        
+                        <div class="flex justify-between items-start border-b border-white/10 pb-4 mb-5 relative z-10">
                             <div>
-                                <h2 style="color:var(--accent); margin-bottom:4px;">${this._npc.name}</h2>
-                                <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px;">
-                                    ${this._npc.race} • ${this._npc.job}
+                                <h2 class="font-cinzel text-2xl font-bold text-accent m-0 flex items-center gap-2">${this._npc.name}</h2>
+                                <div class="text-[0.7rem] text-slate-400 uppercase tracking-[2px] mt-1.5 flex items-center gap-2">
+                                    <span class="bg-white/5 px-2 py-0.5 rounded-sm">${this._npc.race}</span>
+                                    <span class="text-accent/50">•</span>
+                                    <span class="bg-white/5 px-2 py-0.5 rounded-sm">${this._npc.job}</span>
                                 </div>
                             </div>
-                            <button class="btn btn-ghost btn-sm" data-action="copyNPC"><i class="fa-solid fa-copy"></i></button>
+                            <button class="btn hover:bg-white/10 text-slate-400 hover:text-white p-2 rounded-lg transition-colors" data-action="copyNPC" title="Copiar"><i class="fa-solid fa-copy"></i></button>
                         </div>
 
-                        <div class="grid grid-2" style="gap:20px;">
-                            <div class="form-group">
-                                <label class="form-label">Personalidade</label>
-                                <div style="font-size:0.85rem; line-height:1.6; color:var(--text);">${this._npc.personality}</div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
+                            <div class="bg-white/5 rounded-xl p-4 border border-white/5 hover:border-white/10 transition-colors">
+                                <label class="text-[0.65rem] uppercase tracking-widest text-slate-400 font-bold mb-2 block flex items-center gap-2"><i class="fa-solid fa-masks-theater text-accent/70"></i> Personalidade</label>
+                                <div class="text-sm leading-relaxed text-slate-200">${this._npc.personality}</div>
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">Aparência</label>
-                                <div style="font-size:0.85rem; line-height:1.6; color:var(--text);">${this._npc.appearance}</div>
+                            <div class="bg-white/5 rounded-xl p-4 border border-white/5 hover:border-white/10 transition-colors">
+                                <label class="text-[0.65rem] uppercase tracking-widest text-slate-400 font-bold mb-2 block flex items-center gap-2"><i class="fa-solid fa-eye text-accent/70"></i> Aparência</label>
+                                <div class="text-sm leading-relaxed text-slate-200">${this._npc.appearance}</div>
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">Motivação</label>
-                                <div style="font-size:0.85rem; line-height:1.6; color:var(--text);">${this._npc.motivation}</div>
+                            <div class="bg-white/5 rounded-xl p-4 border border-white/5 hover:border-white/10 transition-colors">
+                                <label class="text-[0.65rem] uppercase tracking-widest text-slate-400 font-bold mb-2 block flex items-center gap-2"><i class="fa-solid fa-bullseye text-accent/70"></i> Motivação</label>
+                                <div class="text-sm leading-relaxed text-slate-200">${this._npc.motivation}</div>
                             </div>
-                            <div class="form-group">
-                                <label class="form-label" style="color:var(--danger);">Segredo / Gancho</label>
-                                <div style="font-size:0.85rem; line-height:1.6; color:var(--text-muted); font-style:italic;">${this._npc.secret}</div>
+                            <div class="bg-red-500/5 rounded-xl p-4 border border-red-500/20 hover:border-red-500/40 transition-colors">
+                                <label class="text-[0.65rem] uppercase tracking-widest text-red-400 font-bold mb-2 block flex items-center gap-2"><i class="fa-solid fa-key text-red-500/70"></i> Segredo / Gancho</label>
+                                <div class="text-sm leading-relaxed text-red-200/80 font-serif italic">${this._npc.secret}</div>
                             </div>
                         </div>
                         
-                        
-                        <!-- NEW: DIALOGUE ORACLE -->
-                        <div style="margin-top:24px; padding:20px; background:rgba(0,0,0,0.2); border-radius:10px; border:1px dashed var(--accent);">
-                            <label class="form-label" style="color:var(--accent);">🔮 Oráculo de Diálogo</label>
-                            <div style="display:flex; gap:10px; margin-top:10px;">
-                                <input type="text" id="dialogue-intent" class="form-input" style="flex:1;" placeholder="O que ele quer dizer? (Ex: Expulsar da taverna)" />
-                                <button class="btn btn-primary btn-sm" data-action="generateDialogue">Como ele diria?</button>
+                        <!-- DIALOGUE ORACLE -->
+                        <div class="mt-8 p-5 bg-gradient-to-r from-accent/5 to-transparent rounded-xl border-l-4 border-accent relative z-10">
+                            <label class="text-sm font-cinzel font-bold text-accent flex items-center gap-2 mb-3"><i class="fa-solid fa-comment-dots"></i> Oráculo de Diálogo</label>
+                            <div class="flex gap-3">
+                                <input type="text" id="dialogue-intent" class="flex-1 bg-black/50 border border-white/10 rounded-lg px-4 text-sm focus:border-accent transition-colors outline-none" placeholder="O que ele quer dizer? (Ex: Expulsar da taverna)" />
+                                <button class="btn bg-accent/20 text-accent hover:bg-accent/40 hover:text-white px-4 rounded-lg font-bold text-xs uppercase tracking-wide transition-colors" data-action="generateDialogue">Como diria?</button>
                             </div>
                             ${this._lastDialogue ? html`
-                                <div style="margin-top:15px; padding:15px; background:var(--bg-surface); border-radius:8px; font-style:italic; border-left:3px solid var(--accent); animation:fadeIn 0.3s;">
-                                    "${this._lastDialogue}"
-                                    <div style="margin-top:10px; display:flex; gap:5px;">
-                                        <button class="btn btn-ghost btn-sm" style="font-size:0.6rem;" data-action="saveDialogueToTimeline">Enviar para Timeline</button>
+                                <div class="mt-4 p-4 bg-black/40 rounded-lg border border-accent/20 animate-fadeIn relative">
+                                    <i class="fa-solid fa-quote-left absolute top-3 left-3 text-accent/20 text-2xl"></i>
+                                    <p class="font-serif italic text-slate-300 relative z-10 pl-6 m-0 leading-relaxed">"${this._lastDialogue}"</p>
+                                    <div class="mt-3 flex justify-end">
+                                        <button class="text-[0.65rem] uppercase tracking-widest text-accent hover:text-white transition-colors" data-action="saveDialogueToTimeline"><i class="fa-solid fa-clock-rotate-left mr-1"></i> Enviar para Timeline</button>
                                     </div>
                                 </div>
                             ` : ''}
                         </div>
 
-                        <div style="margin-top:24px; padding-top:16px; border-top:var(--border-subtle); display:flex; gap:10px;">
-                            <button class="btn btn-ghost btn-sm" data-action="saveNPCToStore">💾 Salvar no Grimório</button>
-                            <button class="btn btn-ghost btn-sm" data-action="clearNPC">Limpar</button>
+                        <div class="mt-6 pt-5 border-t border-white/10 flex gap-3 relative z-10 justify-end">
+                            <button class="text-xs uppercase tracking-wider text-slate-400 hover:text-white px-4 py-2 transition-colors" data-action="clearNPC">Limpar</button>
+                            <button class="bg-accent/20 text-accent hover:bg-accent hover:text-black border border-accent/50 px-5 py-2 rounded-lg text-xs uppercase tracking-widest font-bold transition-all flex items-center gap-2" data-action="saveNPCToStore"><i class="fa-solid fa-book-bookmark"></i> Salvar no Grimório</button>
                         </div>
                     </div>
                 ` : html`
-                    <div class="empty-state" style="padding:var(--space-2xl);">
-                        <i class="fa-solid fa-users" style="font-size:3rem; opacity:0.1;"></i>
-                        <p>Preencha os campos ou deixe em branco para um NPC totalmente aleatório.</p>
+                    <div class="flex flex-col items-center justify-center p-16 bg-black/20 border border-white/5 rounded-2xl border-dashed">
+                        <i class="fa-solid fa-users text-5xl opacity-10 text-accent mb-4"></i>
+                        <p class="text-slate-500 text-sm font-medium">Preencha os campos ou deixe em branco para gerar aleatoriamente.</p>
                     </div>
                 `}
 
                 <!-- BIBLIOTECA DE NPCs SALVOS -->
                 ${(this.store.state.savedNPCs || []).length > 0 ? html`
-                    <div class="card" style="margin-top:var(--space-lg);">
-                        <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
-                            <span class="card-title">📚 NPCs Registrados (${(this.store.state.savedNPCs || []).length})</span>
-                            <button class="btn btn-ghost btn-sm" data-action="clearAllNPCs">Limpar Todos</button>
+                    <div class="mt-10">
+                        <div class="flex justify-between items-end border-b border-white/10 pb-3 mb-5">
+                            <span class="font-cinzel text-lg text-white font-bold flex items-center gap-2"><i class="fa-solid fa-book-journal-whills text-accent"></i> Grimório de Entidades (${(this.store.state.savedNPCs || []).length})</span>
+                            <button class="text-[0.65rem] uppercase tracking-widest text-slate-400 hover:text-red-400 transition-colors" data-action="clearAllNPCs">Limpar Todos</button>
                         </div>
-                        <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:12px; padding:12px;">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             ${(this.store.state.savedNPCs || []).map((n, i) => html`
-                                <div class="glass" style="padding:14px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
-                                    <div style="font-weight:700; color:var(--accent); font-size:0.85rem;">${n.name}</div>
-                                    <div style="font-size:0.65rem; opacity:0.6; margin:4px 0;">${n.race} • ${n.job}</div>
-                                    <div style="font-size:0.75rem; opacity:0.8; line-height:1.4;">${n.personality}</div>
-                                    <button class="btn btn-ghost btn-sm" style="margin-top:8px; font-size:0.6rem; width:100%;" data-action="loadSavedNPC" data-index="${i}">↩ Carregar</button>
+                                <div class="bg-black/40 backdrop-blur-sm p-4 rounded-xl border border-white/5 hover:border-accent/40 transition-colors group relative overflow-hidden">
+                                    <div class="absolute inset-0 bg-gradient-to-t from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                                    <div class="font-bold text-accent text-sm relative z-10">${n.name}</div>
+                                    <div class="text-[0.6rem] uppercase tracking-widest text-slate-400 my-1 relative z-10">${n.race} • ${n.job}</div>
+                                    <div class="text-xs text-slate-300 mt-2 line-clamp-3 relative z-10">${n.personality}</div>
+                                    <button class="w-full mt-3 py-1.5 border border-white/10 rounded text-[0.65rem] uppercase tracking-widest text-slate-400 hover:bg-white/5 hover:text-white transition-colors relative z-10" data-action="loadSavedNPC" data-index="${i}">↩ Conjurar</button>
                                 </div>
                             `)}
                         </div>

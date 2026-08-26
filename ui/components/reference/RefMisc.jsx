@@ -11,23 +11,23 @@ export function RefDC() {
     ];
 
     return (
-        <div className="animate-fade-in" style={{ animation: 'fadeIn 0.4s ease-out' }}>
-            <h3 style={{ fontFamily: "'Cinzel', serif", color: "var(--accent)", marginBottom: "15px", fontSize: "1.8rem", textShadow: "0 0 15px rgba(197,160,89,0.4)" }}>
-                <i className="fa-solid fa-bullseye" style={{ marginRight: "10px" }}></i> Escala de Classes de Dificuldade (CD)
+        <div className="animate-fadeIn">
+            <h3 className="font-cinzel text-tomeGold mb-4 text-[1.8rem] drop-shadow-[0_0_15px_rgba(197,160,89,0.4)]">
+                <i className="fa-solid fa-bullseye mr-2.5"></i> Escala de Classes de Dificuldade (CD)
             </h3>
-            <p style={{ fontSize: "0.9rem", color: "var(--text-dim)", marginBottom: "30px", lineHeight: "1.6" }}>
+            <p className="text-[0.9rem] text-slate-400 mb-8 leading-relaxed">
                 A Classe de Dificuldade (DC) determina o quão heróico ou excepcional deve ser o esforço de um personagem para realizar um teste de atributo e ter sucesso na história.
             </p>
             
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(350px, 1fr))", gap: "20px", maxHeight: "60vh", overflowY: "auto", paddingRight: "15px", scrollbarWidth: "thin" }}>
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(350px,1fr))] gap-5 max-h-[60vh] overflow-y-auto pr-4 [scrollbar-width:thin]">
                 {dcs.map((d, i) => (
-                    <div key={i} className="glass card-hover ref-card-gold" style={{ display: "flex", alignItems: "center", gap: "25px", padding: "20px", background: "rgba(0,0,0,0.3)", border: "1px solid rgba(197,160,89,0.1)", borderRadius: "12px", position: "relative" }}>
-                        <div style={{ width: "60px", height: "60px", borderRadius: "12px", background: "linear-gradient(135deg, rgba(197,160,89,0.2), rgba(255,170,0,0.1))", color: "var(--accent)", border: "1px solid rgba(197,160,89,0.4)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "900", fontFamily: "'Cinzel', serif", fontSize: "1.5rem", boxShadow: "0 0 15px rgba(197,160,89,0.1)", flexShrink: "0" }}>
+                    <div key={i} className="glass card-hover ref-card-gold flex items-center gap-6 p-5 bg-black/30 border border-tomeGold/10 rounded-xl relative">
+                        <div className="w-[60px] h-[60px] rounded-xl bg-gradient-to-br from-tomeGold/20 to-amber-500/10 text-tomeGold border border-tomeGold/40 flex items-center justify-center font-black font-cinzel text-2xl shadow-[0_0_15px_rgba(197,160,89,0.1)] shrink-0">
                             {d.val}
                         </div>
-                        <div style={{ flex: "1" }}>
-                            <div style={{ fontWeight: "800", fontSize: "1.1rem", color: "#fff", fontFamily: "'Cinzel', serif", letterSpacing: "0.5px", marginBottom: "4px" }}>{d.level}</div>
-                            <div style={{ fontSize: "0.85rem", color: "var(--text-dim)", lineHeight: "1.4" }}><em>Ex: {d.example}</em></div>
+                        <div className="flex-1">
+                            <div className="font-extrabold text-[1.1rem] text-white font-cinzel tracking-wide mb-1">{d.level}</div>
+                            <div className="text-[0.85rem] text-slate-400 leading-relaxed"><em>Ex: {d.example}</em></div>
                         </div>
                     </div>
                 ))}
@@ -51,19 +51,19 @@ export function RefAbbreviations() {
     ];
 
     return (
-        <div className="animate-fade-in" style={{ animation: 'fadeIn 0.4s ease-out' }}>
-            <h3 style={{ fontFamily: "'Cinzel', serif", color: "#fff", marginBottom: "15px", fontSize: "1.8rem", textShadow: "0 0 15px rgba(255,255,255,0.3)" }}>
-                <i className="fa-solid fa-language" style={{ marginRight: "10px" }}></i> Dicionário de Termos e Siglas
+        <div className="animate-fadeIn">
+            <h3 className="font-cinzel text-white mb-4 text-[1.8rem] drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
+                <i className="fa-solid fa-language mr-2.5"></i> Dicionário de Termos e Siglas
             </h3>
-            <p style={{ fontSize: "0.9rem", color: "var(--text-dim)", marginBottom: "30px", lineHeight: "1.6" }}>
+            <p className="text-[0.9rem] text-slate-400 mb-8 leading-relaxed">
                 Lista de siglas, definições rápidas e convenções mais comuns usadas pelas regras oficiais de D&D 5e e presentes nas fichas.
             </p>
             
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "20px", maxHeight: "60vh", overflowY: "auto", paddingRight: "15px", scrollbarWidth: "thin" }}>
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-5 max-h-[60vh] overflow-y-auto pr-4 [scrollbar-width:thin]">
                 {terms.map((t, i) => (
-                    <div key={i} className="glass card-hover ref-card-gold" style={{ padding: "20px", borderRadius: "12px", background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.05)", position: "relative" }}>
-                        <strong style={{ color: "var(--accent)", fontFamily: "'Cinzel', serif", fontSize: "1.1rem", display: "block", marginBottom: "8px", textShadow: "0 0 8px rgba(197,160,89,0.3)" }}>{t.s}</strong>
-                        <p style={{ fontSize: "0.85rem", color: "var(--text-dim)", lineHeight: "1.6", margin: "0" }}>{t.m}</p>
+                    <div key={i} className="glass card-hover ref-card-gold p-5 rounded-xl bg-black/30 border border-white/5 relative">
+                        <strong className="text-tomeGold font-cinzel text-[1.1rem] block mb-2 drop-shadow-[0_0_8px_rgba(197,160,89,0.3)]">{t.s}</strong>
+                        <p className="text-[0.85rem] text-slate-400 leading-relaxed m-0">{t.m}</p>
                     </div>
                 ))}
             </div>
@@ -73,20 +73,20 @@ export function RefAbbreviations() {
 
 export function RefQuickRef() {
     return (
-        <div style={{ display: "flex", flexDirection: "column", gap: "15px", height: "100%" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(197,160,89,0.3)", paddingBottom: "12px", marginBottom: "10px" }}>
-                <h3 style={{ fontFamily: "'Cinzel'", color: "var(--accent)", margin: "0", fontSize: "1.5rem" }}>
-                    <i className="fa-solid fa-compass" style={{ marginRight: "10px" }}></i> Guia Rápido Interativo D&D 5e (PT-BR)
+        <div className="flex flex-col gap-4 h-full">
+            <div className="flex justify-between items-center border-b border-tomeGold/30 pb-3 mb-2.5">
+                <h3 className="font-cinzel text-tomeGold m-0 text-2xl">
+                    <i className="fa-solid fa-compass mr-2.5"></i> Guia Rápido Interativo D&D 5e (PT-BR)
                 </h3>
-                <a href="https://diogoan.github.io/dnd5e-quickref/" target="_blank" className="btn btn-ghost btn-sm" style={{ fontSize: "0.7rem", border: "1px solid rgba(197,160,89,0.3)", color: "var(--accent)", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "5px" }}>
+                <a href="https://diogoan.github.io/dnd5e-quickref/" target="_blank" className="btn btn-ghost btn-sm text-[0.7rem] border border-tomeGold/30 text-tomeGold no-underline inline-flex items-center gap-1.5">
                     <i className="fa-solid fa-up-right-from-square"></i> Abrir em Nova Aba
                 </a>
             </div>
-            <p style={{ fontSize: "0.85rem", color: "var(--text-dim)", margin: "0", lineHeight: "1.5" }}>
+            <p className="text-[0.85rem] text-slate-400 m-0 leading-relaxed">
                 Clique nas abas e nos cartões abaixo para ver as descrições mecânicas completas em <strong>Português</strong> de ações, reações, movimentação e condições oficiais de D&D 5e.
             </p>
-            <div style={{ flex: "1", border: "var(--sheet-border-thick)", borderRadius: "12px", overflow: "hidden", background: "#ffffff", position: "relative", minHeight: "650px" }}>
-                <iframe src="https://diogoan.github.io/dnd5e-quickref/" style={{ width: "100%", height: "650px", border: "none" }} sandbox="allow-scripts allow-same-origin allow-popups allow-forms"></iframe>
+            <div className="flex-1 border border-white/10 rounded-xl overflow-hidden bg-white relative min-h-[650px]">
+                <iframe src="https://diogoan.github.io/dnd5e-quickref/" className="w-full h-[650px] border-none" sandbox="allow-scripts allow-same-origin allow-popups allow-forms"></iframe>
             </div>
         </div>
     );

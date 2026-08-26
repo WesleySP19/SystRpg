@@ -1,6 +1,6 @@
 import { h, Fragment } from 'preact';
 import { useState, useEffect } from 'preact/hooks';
-import { useStore } from '../../core/hooks.js';
+import { useStore } from '../core/hooks.js';
 import { TOME } from '../../core/Registry.js';
 import { Toast } from './Toast.js';
 import { Dice } from '../../utils/Dice.js';

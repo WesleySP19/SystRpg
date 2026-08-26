@@ -14,22 +14,22 @@ export function RefActions() {
     ];
 
     return (
-        <div className="animate-fade-in" style={{ animation: 'fadeIn 0.4s ease-out' }}>
-            <h3 style={{ fontFamily: "'Cinzel', serif", color: "var(--info)", marginBottom: "15px", fontSize: "1.8rem", textShadow: "0 0 15px rgba(59,130,246,0.4)" }}>
-                <i className="fa-solid fa-swords" style={{ marginRight: "10px" }}></i> Ações no Turno de Combate
+        <div className="animate-fadeIn">
+            <h3 className="font-cinzel text-sky-500 mb-4 text-[1.8rem] drop-shadow-[0_0_15px_rgba(59,130,246,0.4)]">
+                <i className="fa-solid fa-swords mr-2.5"></i> Ações no Turno de Combate
             </h3>
-            <p style={{ fontSize: "0.9rem", color: "var(--text-dim)", marginBottom: "30px", lineHeight: "1.6" }}>
+            <p className="text-[0.9rem] text-slate-400 mb-8 leading-relaxed">
                 Em um combate de D&D, seu turno tático é composto por <strong>Movimento</strong>, <strong>1 Ação</strong>, <strong>1 Reação</strong> (fora do turno) e <strong>1 Ação Bônus</strong> (se aplicável).
             </p>
             
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "20px", maxHeight: "60vh", overflowY: "auto", paddingRight: "15px", scrollbarWidth: "thin" }}>
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-5 max-h-[60vh] overflow-y-auto pr-4 [scrollbar-width:thin]">
                 {acts.map((a, i) => (
-                    <div key={i} className="card glass-accent ref-card-blue" style={{ background: "rgba(0,0,0,0.4)", padding: "20px", border: "1px solid rgba(59,130,246,0.15)", borderLeft: "4px solid var(--info)", borderRadius: "12px", position: "relative", overflow: "hidden" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-                            <strong style={{ color: "#fff", fontSize: "1.1rem", fontFamily: "'Cinzel', serif" }}>{a.name}</strong>
-                            <span className="badge" style={{ fontSize: "0.65rem", padding: "4px 8px", borderRadius: "6px", background: "rgba(59,130,246,0.2)", color: "#93c5fd", border: "1px solid rgba(59,130,246,0.3)", fontWeight: "800", letterSpacing: "0.5px" }}>{a.cost}</span>
+                    <div key={i} className="card glass-accent ref-card-blue bg-black/40 p-5 border border-sky-500/15 border-l-4 border-l-sky-500 rounded-xl relative overflow-hidden">
+                        <div className="flex justify-between items-center mb-3">
+                            <strong className="text-white text-[1.1rem] font-cinzel font-bold">{a.name}</strong>
+                            <span className="badge text-[0.65rem] px-2 py-1 rounded-md bg-sky-500/20 text-sky-300 border border-sky-500/30 font-extrabold tracking-wider">{a.cost}</span>
                         </div>
-                        <p style={{ fontSize: "0.85rem", lineHeight: "1.5", color: "var(--text-dim)", margin: "0" }}>{a.desc}</p>
+                        <p className="text-[0.85rem] leading-[1.5] text-slate-400 m-0">{a.desc}</p>
                     </div>
                 ))}
             </div>

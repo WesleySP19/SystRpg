@@ -250,7 +250,7 @@ function AuthScreenComponent({ closeAuthScreen, initialOnLogin }) {
     const renderPhoneStep = () => (
         <>
             <p className="auth-description">Digite seu nome de Mestre e número de telefone (com DDD) para confirmar sua identidade arcanamente.</p>
-            <input type="text" className="auth-input" placeholder="Nome do Mestre" value={masterName} onInput={(e) => setMasterName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && document.getElementById("auth-phone")?.focus()} style={{ marginBottom: "12px", fontFamily: "'Outfit', sans-serif" }} />
+            <input type="text" className="auth-input mb-3 font-outfit" placeholder="Nome do Mestre" value={masterName} onInput={(e) => setMasterName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && document.getElementById("auth-phone")?.focus()} />
             <input type="tel" id="auth-phone" className="auth-input" placeholder="(11) 99999-9999" value={phone} onInput={(e) => {
                 let v = e.target.value.replace(/\D/g, '');
                 if (v.length > 11) v = v.slice(0, 11);
@@ -266,13 +266,13 @@ function AuthScreenComponent({ closeAuthScreen, initialOnLogin }) {
 
     const renderCodeStep = () => (
         <>
-            <p className="auth-description">Enviamos um SMS para <strong style={{ color: "#c5a059" }}>{phone}</strong>. Digite o código de 6 dígitos abaixo.</p>
+            <p className="auth-description">Enviamos um SMS para <strong className="text-tomeGold">{phone}</strong>. Digite o código de 6 dígitos abaixo.</p>
             <div className="auth-sim-box">
                 <i className="fa-solid fa-tower-broadcast"></i>
                 <span>SIMULAÇÃO: Seu código é:</span>
                 <span className="auth-sim-code">{generatedCode}</span>
             </div>
-            <input type="text" className="auth-input" placeholder="000000" maxLength="6" value={code} onInput={(e) => setCode(e.target.value.replace(/\D/g, ''))} onKeyDown={(e) => e.key === "Enter" && handleVerifyCode()} style={{ fontSize: "1.4rem", letterSpacing: "8px" }} />
+            <input type="text" className="auth-input text-[1.4rem] tracking-[8px]" placeholder="000000" maxLength="6" value={code} onInput={(e) => setCode(e.target.value.replace(/\D/g, ''))} onKeyDown={(e) => e.key === "Enter" && handleVerifyCode()} />
             <button className="auth-btn" onClick={handleVerifyCode} disabled={loading}>
                 {loading ? <><i className="fa-solid fa-spinner fa-spin"></i> Autenticando...</> : "Confirmar e Logar"}
             </button>
@@ -283,9 +283,9 @@ function AuthScreenComponent({ closeAuthScreen, initialOnLogin }) {
     const renderTablesStep = () => {
         if (loading) {
             return (
-                <div style={{ padding: "40px 0", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "15px" }}>
-                    <i className="fa-solid fa-spinner fa-spin" style={{ fontSize: "2.5rem", color: "#c5a059" }}></i>
-                    <p style={{ color: "#94a3b8", fontSize: "0.9rem", letterSpacing: "1px" }}>Invocando o Grimório de Mesas...</p>
+                <div className="py-10 flex flex-col items-center justify-center gap-4">
+                    <i className="fa-solid fa-spinner fa-spin text-[2.5rem] text-tomeGold"></i>
+                    <p className="text-slate-400 text-[0.9rem] tracking-wide">Invocando o Grimório de Mesas...</p>
                 </div>
             );
         }
@@ -293,9 +293,9 @@ function AuthScreenComponent({ closeAuthScreen, initialOnLogin }) {
         return (
             <>
                 {tables.length === 0 ? (
-                    <div style={{ padding: "25px", borderRadius: "12px", background: "rgba(255,255,255,0.02)", border: "1px dashed rgba(197,160,89,0.2)", marginBottom: "25px", boxSizing: "border-box" }}>
-                        <i className="fa-solid fa-folder-open" style={{ fontSize: "2rem", color: "#94a3b8", marginBottom: "10px", display: "block" }}></i>
-                        <p style={{ color: "#94a3b8", fontSize: "0.85rem", lineHeight: "1.4", margin: "0" }}>Você ainda não possui mesas ativas.<br />Crie uma nova mesa ou vincule uma existente abaixo.</p>
+                    <div className="p-6 rounded-xl bg-white/5 border border-dashed border-tomeGold/20 mb-6 box-border">
+                        <i className="fa-solid fa-folder-open text-3xl text-slate-400 mb-2.5 block"></i>
+                        <p className="text-slate-400 text-[0.85rem] leading-relaxed m-0">Você ainda não possui mesas ativas.<br />Crie uma nova mesa ou vincule uma existente abaixo.</p>
                     </div>
                 ) : (
                     <div className="tables-scroll-container">
@@ -318,11 +318,11 @@ function AuthScreenComponent({ closeAuthScreen, initialOnLogin }) {
                         ))}
                     </div>
                 )}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginTop: "15px" }}>
+                <div className="grid grid-cols-2 gap-3 mt-4">
                     <button className="auth-btn-secondary" onClick={handleCreateTable} disabled={loading}><i className="fa-solid fa-plus"></i> Nova Mesa</button>
                     <button className="auth-btn-secondary" onClick={handleLinkTable} disabled={loading}><i className="fa-solid fa-link"></i> Vincular ID</button>
                 </div>
-                <button className="auth-back-link" onClick={handleLogout} style={{ marginTop: "25px" }}><i className="fa-solid fa-sign-out-alt"></i> Sair da Conta</button>
+                <button className="auth-back-link mt-6" onClick={handleLogout}><i className="fa-solid fa-sign-out-alt"></i> Sair da Conta</button>
             </>
         );
     };
@@ -335,22 +335,22 @@ function AuthScreenComponent({ closeAuthScreen, initialOnLogin }) {
 
         return (
             <>
-                <p className="auth-description" style={{ textAlign: "center", marginBottom: "20px", fontSize: "0.95rem", fontFamily: "'Outfit', sans-serif" }}>
-                    Mesa <strong style={{ color: "#c5a059" }}>#{selectedTableId}</strong> selecionada.<br />
-                    <span style={{ fontSize: "0.85rem", color: "#94a3b8" }}>Sessão Atual: <strong style={{ color: "#c5a059" }}>{sessionNum}ª Sessão</strong> ({lastTitle})</span><br />
-                    <span style={{ fontSize: "0.85rem", color: "#94a3b8" }}>Heróis no Grimório: <strong>{heroesCount}</strong></span>
+                <p className="auth-description text-center mb-5 text-[0.95rem] font-outfit">
+                    Mesa <strong className="text-tomeGold">#{selectedTableId}</strong> selecionada.<br />
+                    <span className="text-[0.85rem] text-slate-400">Sessão Atual: <strong className="text-tomeGold">{sessionNum}ª Sessão</strong> ({lastTitle})</span><br />
+                    <span className="text-[0.85rem] text-slate-400">Heróis no Grimório: <strong>{heroesCount}</strong></span>
                 </p>
-                <div style={{ display: "flex", flexDirection: "column", gap: "14px", marginBottom: "20px" }}>
-                    <button className="auth-btn" onClick={handleContinueSession} style={{ background: "linear-gradient(135deg, #1e293b, #0f172a)", border: "1px solid rgba(197, 160, 89, 0.4)", textAlign: "left", padding: "15px", display: "flex", flexDirection: "column", gap: "4px", height: "auto", borderRadius: "12px", cursor: "pointer", lineHeight: "1.3" }}>
-                        <span style={{ fontFamily: "'Cinzel'", fontWeight: 800, fontSize: "1rem", color: "#fff" }}><i className="fa-solid fa-play" style={{ color: "#22c55e", marginRight: "8px" }}></i> Continuar Sessão Atual</span>
-                        <span style={{ fontSize: "0.75rem", color: "#94a3b8", fontWeight: "normal", marginLeft: "24px", whiteSpace: "normal" }}>Continua exatamente de onde parou (combates, notas e logs ativos).</span>
+                <div className="flex flex-col gap-3.5 mb-5">
+                    <button className="auth-btn bg-gradient-to-br from-slate-800 to-slate-900 border border-tomeGold/40 text-left p-4 flex flex-col gap-1 h-auto rounded-xl cursor-pointer leading-tight" onClick={handleContinueSession}>
+                        <span className="font-cinzel font-extrabold text-base text-white"><i className="fa-solid fa-play text-green-500 mr-2"></i> Continuar Sessão Atual</span>
+                        <span className="text-xs text-slate-400 font-normal ml-6 whitespace-normal">Continua exatamente de onde parou (combates, notas e logs ativos).</span>
                     </button>
-                    <button className="auth-btn" onClick={handleNewSession} disabled={loading} style={{ background: "linear-gradient(135deg, #7f1d1d, #991b1b)", border: "1px solid #fbbf24", textAlign: "left", padding: "15px", display: "flex", flexDirection: "column", gap: "4px", height: "auto", borderRadius: "12px", cursor: "pointer", lineHeight: "1.3" }}>
-                        {loading ? <span style={{ fontFamily: "'Cinzel'", fontWeight: 800, fontSize: "1rem", color: "#fff" }}><i className="fa-solid fa-spinner fa-spin" style={{ color: "#fbbf24", marginRight: "8px" }}></i> Arquivando...</span> : <span style={{ fontFamily: "'Cinzel'", fontWeight: 800, fontSize: "1rem", color: "#fff" }}><i className="fa-solid fa-forward" style={{ color: "#fbbf24", marginRight: "8px" }}></i> Iniciar Nova Sessão (Capítulo {sessionNum + 1})</span>}
-                        <span style={{ fontSize: "0.75rem", color: "#fca5a5", fontWeight: "normal", marginLeft: "24px", whiteSpace: "normal" }}>Preserva os Heróis (fichas, itens e XP) e cria um novo capítulo limpo arquivando o anterior.</span>
+                    <button className="auth-btn bg-gradient-to-br from-red-900 to-red-800 border border-yellow-400 text-left p-4 flex flex-col gap-1 h-auto rounded-xl cursor-pointer leading-tight" onClick={handleNewSession} disabled={loading}>
+                        {loading ? <span className="font-cinzel font-extrabold text-base text-white"><i className="fa-solid fa-spinner fa-spin text-yellow-400 mr-2"></i> Arquivando...</span> : <span className="font-cinzel font-extrabold text-base text-white"><i className="fa-solid fa-forward text-yellow-400 mr-2"></i> Iniciar Nova Sessão (Capítulo {sessionNum + 1})</span>}
+                        <span className="text-xs text-red-300 font-normal ml-6 whitespace-normal">Preserva os Heróis (fichas, itens e XP) e cria um novo capítulo limpo arquivando o anterior.</span>
                     </button>
                 </div>
-                <button className="auth-back-link" onClick={() => setStep('tables')} style={{ background: "none", border: "none", color: "#94a3b8", cursor: "pointer" }}><i className="fa-solid fa-chevron-left"></i> Voltar para as Mesas</button>
+                <button className="auth-back-link bg-transparent border-none text-slate-400 cursor-pointer" onClick={() => setStep('tables')}><i className="fa-solid fa-chevron-left"></i> Voltar para as Mesas</button>
             </>
         );
     };
@@ -362,15 +362,15 @@ function AuthScreenComponent({ closeAuthScreen, initialOnLogin }) {
     if (step === 'tables' || step === 'session_choice') {
         titleHtml = (
             <>
-                <h2 className="auth-title" style={{ fontSize: "1.6rem", letterSpacing: "1px" }}>Saudações, {mName}</h2>
-                <p className="auth-subtitle" style={{ marginBottom: "25px" }}>Sessão de Hoje: <span style={{ fontSize: "0.9rem" }}>{new Date().toLocaleDateString('pt-BR')}</span></p>
+                <h2 className="auth-title text-[1.6rem] tracking-wide">Saudações, {mName}</h2>
+                <p className="auth-subtitle mb-6">Sessão de Hoje: <span className="text-[0.9rem]">{new Date().toLocaleDateString('pt-BR')}</span></p>
             </>
         );
     } else {
         titleHtml = (
             <>
                 <h2 className="auth-title">Mesa do Mestre</h2>
-                <p className="auth-subtitle">Acesso Restrito ao <span style={{color: "#ef4444", textShadow: "0 0 10px rgba(239, 68, 68, 0.4)", fontWeight: 800}}>Mestre</span></p>
+                <p className="auth-subtitle">Acesso Restrito ao <span className="text-red-500 drop-shadow-[0_0_10px_rgba(239,68,68,0.4)] font-extrabold">Mestre</span></p>
             </>
         );
     }
@@ -391,7 +391,7 @@ function AuthScreenComponent({ closeAuthScreen, initialOnLogin }) {
             <div className="auth-logo-container">
                 <img src="assets/logo.png" alt="Logo" className="auth-logo" />
                 <div className="auth-logo-balloon" onClick={(e) => copyToClipboard(copyValue, e)} title="Clique para copiar">
-                    {idLabel}: {displayId} <i className="fa-regular fa-copy" style={{ marginLeft: "6px", opacity: 0.8 }}></i>
+                    {idLabel}: {displayId} <i className="fa-regular fa-copy ml-1.5 opacity-80"></i>
                 </div>
             </div>
         );
@@ -400,7 +400,7 @@ function AuthScreenComponent({ closeAuthScreen, initialOnLogin }) {
             <div className="auth-logo-container">
                 <img src="assets/logo.png" alt="Logo" className="auth-logo" />
                 <div className="auth-logo-balloon">
-                    Sua aventura começa aqui! 🧙‍♂️✨<br /><span style={{ fontSize: "0.7rem", color: "#888" }}>By Programador</span>
+                    Sua aventura começa aqui! 🧙‍♂️✨<br /><span className="text-[0.7rem] text-[#888]">By Programador</span>
                 </div>
             </div>
         );
@@ -434,16 +434,7 @@ export class AuthScreen {
     mount() {
         this.container = document.createElement('div');
         this.container.id = 'auth-screen';
-        this.container.style.position = 'fixed';
-        this.container.style.inset = '0';
-        this.container.style.backgroundColor = '#050508';
-        this.container.style.backgroundImage = 'radial-gradient(circle at center, #23080d 0%, #050508 100%)';
-        this.container.style.display = 'flex';
-        this.container.style.flexDirection = 'column';
-        this.container.style.alignItems = 'center';
-        this.container.style.justifyContent = 'center';
-        this.container.style.zIndex = '999999';
-        this.container.style.fontFamily = "'Outfit', sans-serif";
+        this.container.className = 'fixed inset-0 bg-[#050508] bg-[radial-gradient(circle_at_center,_#23080d_0%,_#050508_100%)] flex flex-col items-center justify-center z-[999999] font-outfit';
         document.body.appendChild(this.container);
 
         injectStyles();

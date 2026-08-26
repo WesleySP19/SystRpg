@@ -15,44 +15,44 @@ export function RefConditions() {
     ];
 
     return (
-        <div className="animate-fade-in" style={{ animation: 'fadeIn 0.4s ease-out' }}>
-            <h3 style={{ fontFamily: "'Cinzel', serif", color: "var(--danger)", marginBottom: "15px", fontSize: "1.8rem", textShadow: "0 0 15px rgba(239,68,68,0.4)" }}>
-                <i className="fa-solid fa-skull-crossbones" style={{ marginRight: "10px" }}></i> Condições de Status
+        <div className="animate-fadeIn">
+            <h3 className="font-cinzel text-red-500 mb-4 text-[1.8rem] drop-shadow-[0_0_15px_rgba(239,68,68,0.4)]">
+                <i className="fa-solid fa-skull-crossbones mr-2.5"></i> Condições de Status
             </h3>
-            <p style={{ fontSize: "0.9rem", color: "var(--text-dim)", marginBottom: "30px", lineHeight: "1.6" }}>
+            <p className="text-[0.9rem] text-slate-400 mb-8 leading-relaxed">
                 Efeitos mágicos, armadilhas ou ferimentos de combate que alteram temporariamente as capacidades físicas ou mentais dos heróis e monstros.
             </p>
             
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "30px" }}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Left: List */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "15px", maxHeight: "60vh", overflowY: "auto", paddingRight: "15px", scrollbarWidth: "thin" }}>
+                <div className="flex flex-col gap-4 max-h-[60vh] overflow-y-auto pr-4 [scrollbar-width:thin]">
                     {conds.map((c, i) => (
-                        <div key={i} className="glass card-hover ref-card-red" style={{ padding: "18px", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.05)", borderLeft: "4px solid var(--danger)", background: "rgba(0,0,0,0.3)", position: "relative", overflow: "hidden" }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: "12px", fontWeight: "800", color: "#fff", fontSize: "1.1rem", fontFamily: "'Cinzel', serif", marginBottom: "8px" }}>
-                                <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "rgba(239,68,68,0.15)", color: "var(--danger)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                    <i className={`fa-solid ${c.icon}`} style={{ fontSize: "1rem" }}></i>
+                        <div key={i} className="glass card-hover ref-card-red p-4 rounded-xl border border-white/5 border-l-4 border-l-red-500 bg-black/30 relative overflow-hidden">
+                            <div className="flex items-center gap-3 font-extrabold text-white text-[1.1rem] font-cinzel mb-2">
+                                <div className="w-8 h-8 rounded-lg bg-red-500/15 text-red-500 flex items-center justify-center">
+                                    <i className={`fa-solid ${c.icon} text-base`}></i>
                                 </div>
                                 {c.name}
                             </div>
-                            <p style={{ fontSize: "0.8rem", lineHeight: "1.6", color: "var(--text-dim)", margin: "0" }}>{c.effect}</p>
+                            <p className="text-[0.8rem] leading-relaxed text-slate-400 m-0">{c.effect}</p>
                         </div>
                     ))}
                 </div>
                 
                 {/* Right: Exhaustion rules */}
-                <div style={{ position: "sticky", top: "0" }}>
-                    <div className="hp-container glass" style={{ background: "linear-gradient(145deg, rgba(239,68,68,0.05), rgba(0,0,0,0.6))", border: "1px solid rgba(239,68,68,0.2)", borderRadius: "16px", padding: "30px", display: "flex", flexDirection: "column", justifyContent: "flex-start", boxShadow: "0 10px 30px rgba(0,0,0,0.5)" }}>
-                        <span className="hp-label-float" style={{ background: "#08080a", color: "var(--danger)", borderColor: "var(--danger)", boxShadow: "0 0 10px rgba(239,68,68,0.2)" }}>⚠️ REGRAS ESPECIAIS</span>
-                        <h4 style={{ fontFamily: "'Cinzel', serif", color: "#fff", marginBottom: "15px", fontSize: "1.3rem", borderBottom: "1px solid rgba(239,68,68,0.2)", paddingBottom: "12px", textShadow: "0 0 10px rgba(239,68,68,0.3)" }}>Níveis de Exaustão</h4>
-                        <p style={{ fontSize: "0.85rem", color: "var(--text-dim)", lineHeight: "1.6", marginBottom: "20px" }}>Fadiga extrema, frio congelante ou rituais necromânticos causam exaustão acumulativa. Um descanso longo remove 1 nível.</p>
+                <div className="sticky top-0">
+                    <div className="hp-container glass bg-gradient-to-br from-red-500/5 to-black/60 border border-red-500/20 rounded-2xl p-8 flex flex-col justify-start shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
+                        <span className="hp-label-float bg-[#08080a] text-red-500 border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.2)]">⚠️ REGRAS ESPECIAIS</span>
+                        <h4 className="font-cinzel text-white mb-4 text-[1.3rem] border-b border-red-500/20 pb-3 drop-shadow-[0_0_10px_rgba(239,68,68,0.3)]">Níveis de Exaustão</h4>
+                        <p className="text-[0.85rem] text-slate-400 leading-relaxed mb-5">Fadiga extrema, frio congelante ou rituais necromânticos causam exaustão acumulativa. Um descanso longo remove 1 nível.</p>
                         
-                        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                            <div style={{ fontSize: "0.85rem", display: "flex", justifyContent: "space-between", borderBottom: "1px solid rgba(255,255,255,0.05)", paddingBottom: "6px" }}><strong>Nível 1:</strong> <span style={{ color: "var(--danger)" }}>Desvantagem em testes de atributos</span></div>
-                            <div style={{ fontSize: "0.85rem", display: "flex", justifyContent: "space-between", borderBottom: "1px solid rgba(255,255,255,0.05)", paddingBottom: "6px" }}><strong>Nível 2:</strong> <span style={{ color: "var(--danger)" }}>Deslocamento cortado pela metade</span></div>
-                            <div style={{ fontSize: "0.85rem", display: "flex", justifyContent: "space-between", borderBottom: "1px solid rgba(255,255,255,0.05)", paddingBottom: "6px" }}><strong>Nível 3:</strong> <span style={{ color: "var(--danger)" }}>Desvantagem em ataques e salvaguardas</span></div>
-                            <div style={{ fontSize: "0.85rem", display: "flex", justifyContent: "space-between", borderBottom: "1px solid rgba(255,255,255,0.05)", paddingBottom: "6px" }}><strong>Nível 4:</strong> <span style={{ color: "var(--danger)" }}>Máximo de PV reduzido pela metade</span></div>
-                            <div style={{ fontSize: "0.85rem", display: "flex", justifyContent: "space-between", borderBottom: "1px solid rgba(255,255,255,0.05)", paddingBottom: "6px" }}><strong>Nível 5:</strong> <span style={{ color: "var(--danger)" }}>Deslocamento reduzido para 0</span></div>
-                            <div style={{ fontSize: "0.95rem", display: "flex", justifyContent: "space-between", paddingTop: "4px", fontWeight: "900", background: "rgba(239,68,68,0.1)", padding: "8px", borderRadius: "6px", marginTop: "4px" }}><strong>Nível 6:</strong> <span style={{ color: "red", textShadow: "0 0 10px red" }}>Morte Instantânea 💀</span></div>
+                        <div className="flex flex-col gap-3">
+                            <div className="text-[0.85rem] flex justify-between border-b border-white/5 pb-1.5"><strong>Nível 1:</strong> <span className="text-red-500">Desvantagem em testes de atributos</span></div>
+                            <div className="text-[0.85rem] flex justify-between border-b border-white/5 pb-1.5"><strong>Nível 2:</strong> <span className="text-red-500">Deslocamento cortado pela metade</span></div>
+                            <div className="text-[0.85rem] flex justify-between border-b border-white/5 pb-1.5"><strong>Nível 3:</strong> <span className="text-red-500">Desvantagem em ataques e salvaguardas</span></div>
+                            <div className="text-[0.85rem] flex justify-between border-b border-white/5 pb-1.5"><strong>Nível 4:</strong> <span className="text-red-500">Máximo de PV reduzido pela metade</span></div>
+                            <div className="text-[0.85rem] flex justify-between border-b border-white/5 pb-1.5"><strong>Nível 5:</strong> <span className="text-red-500">Deslocamento reduzido para 0</span></div>
+                            <div className="text-[0.95rem] flex justify-between pt-1 font-black bg-red-500/10 p-2 rounded-md mt-1"><strong>Nível 6:</strong> <span className="text-red-500 drop-shadow-[0_0_10px_red]">Morte Instantânea 💀</span></div>
                         </div>
                     </div>
                 </div>

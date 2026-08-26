@@ -1,105 +1,26 @@
-import { ReactiveComponent } from '../core/ReactiveComponent.js';
-import { html } from 'htm/preact';
-import { TOME } from '../../core/Registry.js';
-import { Toast } from '../components/Toast.js';
-import { Modal } from './Modal.js';
-import { exportSessionSummaryPNG } from '../utils/imageExport.js';
-
-/**
- * SESSION JOURNAL v2.0 - Premium Edition
- * Live session logging, automated reports, and high-fidelity bard chronicle generator.
- */
-export class SessionJournal extends ReactiveComponent {
-    constructor(opts) {
-        super(opts);
-        this._loadingCronicle = false;
-        this._focusedElement = null;
-    }
-
-    get _aiCronicle() { return this.store.state._aiCronicle || ''; }
-    get _sessionNotes() { return this.store.state.sessionNotes || ''; }
-    get _sessionTitle() { return this.store.state.sessionTitle || ('Aventura de ' + new Date().toLocaleDateString()); }
-    get _sessionLoot() { return this.store.state.sessionLoot || ''; }
-
-    render() {
-        let activeId = null;
-        let selectionStart = null;
-        let selectionEnd = null;
-
-        // Store active focus and selection bounds to avoid input resets during rendering
-        if (this._mounted && document.activeElement) {
-            const el = document.activeElement;
-            if (el.id && (el.id === 'session-title-input' || el.id === 'session-notes-textarea' || el.id === 'session-loot-textarea')) {
-                activeId = el.id;
-                selectionStart = el.selectionStart;
-                selectionEnd = el.selectionEnd;
-            }
-        }
-
-        // Update inputs logic was removed from render() to prevent infinite cycles.
-        // The store is updated via event listeners attached in onMount() instead.
-
-        if (activeId) {
-            this._focusedElement = { id: activeId, start: selectionStart, end: selectionEnd };
-        }
-
-        super.render();
-    }
-
-    onMount() {
-        // Restore focus and text range selections after DOM updates
-        if (this._focusedElement) {
-            const { id, start, end } = this._focusedElement;
-            const el = this.$('#' + id);
-            if (el) {
-                el.focus();
-                if (start !== null && end !== null) {
-                    try {
-                        el.setSelectionRange(start, end);
-                    } catch (e) {}
-                }
-            }
-            this._focusedElement = null;
-        }
-
-        // Keep state in sync on blur / change events
-        const titleInput = this.$('#session-title-input');
-        const notesInput = this.$('#session-notes-textarea');
-        const lootInput = this.$('#session-loot-textarea');
-
-        if (titleInput) {
-            titleInput.addEventListener('change', (e) => {
-                TOME.store.update(s => s.sessionTitle = e.target.value);
-            });
-        }
-        if (notesInput) {
-            notesInput.addEventListener('change', (e) => {
-                TOME.store.update(s => s.sessionNotes = e.target.value);
-            });
-        }
-        if (lootInput) {
-            lootInput.addEventListener('change', (e) => {
-                TOME.store.update(s => s.sessionLoot = e.target.value);
-            });
-        }
-    }
-
-    onUnmount() {
-        // Safe check and final commit of DOM content to state before component unmounts
-        const title = this.$('#session-title-input')?.value;
-        const notes = this.$('#session-notes-textarea')?.value;
-        const loot = this.$('#session-loot-textarea')?.value;
-        TOME.store.update(s => {
-            if (title !== undefined) s.sessionTitle = title;
-            if (notes !== undefined) s.sessionNotes = notes;
-            if (loot !== undefined) s.sessionLoot = loot;
-        });
-    }
-
-    template() {
-        const { players, combatRound, sessionNumber } = this.store.state;
-
-        return html`
+import{m as r,_ as x}from"./main-BTQ5YZrv.js";import{R as u}from"./ReactiveComponent-BFfnBDY5.js";import{T as c}from"./BattleManager-Q-hDRRLg.js";import{Toast as f}from"./Toast-m0Ci56ke.js";import{C as h}from"./Boot-H8Erwwti.js";import{a as v}from"./imageExport-Ck9NIU6v.js";import"./jsxRuntime.module-C8ftNBXQ.js";import"./FXEngine-CQjS4-0J.js";import"https://cdn.socket.io/4.7.4/socket.io.esm.min.js";class g extends h{constructor(e={}){super(e),this._title=e.title||"Aviso",this._content=e.content||"",this._type=e.type||"info",this._onConfirm=e.onConfirm||null,this._onCancel=e.onCancel||null,this._resolve=null}static show(e){const o=document.createElement("div");o.id=`modal-${Date.now()}`,document.body.appendChild(o);const i=new g({...e,element:o});return i.mount(),i}static confirm(e,o,i="confirm"){return new Promise(t=>{g.show({title:e,content:o,type:i,onConfirm:()=>t(!0),onCancel:()=>t(!1)})})}static alert(e,o,i="info"){return new Promise(t=>{g.show({title:e,content:o,type:i,onConfirm:()=>t(!0)})})}template(){this._type;const e=this._type==="danger"?"fa-triangle-exclamation":this._type==="confirm"?"fa-circle-question":"fa-circle-info",o=this._type==="danger"?"border-red-500":"border-tomeGold",i=this._type==="danger"?"text-red-500":"text-tomeGold",t=this._type==="danger"?"bg-red-500 hover:bg-red-600":"bg-tomeGold hover:bg-tomeGold-bright";return`
+            <div class="modal-overlay fixed inset-0 bg-black/80 backdrop-blur-md z-[20000] flex items-center justify-center p-5 animate-in fade-in duration-300">
+                <div class="modal-card relative w-full max-w-[500px] border-t-4 ${o} bg-obsidian-900/95 shadow-[0_20px_50px_rgba(0,0,0,0.8)] rounded-xl overflow-hidden animate-in zoom-in-95 duration-300">
+                    <div class="modal-header px-6 py-5 border-b border-white/5 flex items-center gap-3">
+                        <i class="fa-solid ${e} ${i} text-xl"></i>
+                        <h2 class="m-0 font-cinzel text-lg font-bold tracking-wide text-slate-100">${this._title}</h2>
+                    </div>
+                    
+                    <div class="modal-body px-7 py-6 text-sm text-slate-300 leading-relaxed font-sans">
+                        ${this._content.replace(/\n/g,"<br>")}
+                    </div>
+                    
+                    <div class="modal-footer px-7 py-4 bg-black/40 flex justify-end gap-3">
+                        ${this._type==="confirm"||this._type==="danger"?`
+                            <button class="px-4 py-2 rounded-lg font-sans text-sm font-semibold text-slate-400 bg-white/5 hover:bg-white/10 hover:text-slate-200 transition-colors" data-action="cancel">CANCELAR</button>
+                        `:""}
+                        <button class="px-6 py-2 rounded-lg font-sans text-sm font-semibold text-white ${t} min-w-[100px] transition-colors shadow-lg" data-action="confirm">
+                            ${this._type==="confirm"||this._type==="danger"?"CONFIRMAR":"OK"}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `}confirm(){this._onConfirm&&this._onConfirm(),this.close()}cancel(){this._onCancel&&this._onCancel(),this.close()}close(){this.unmount(),this.element.remove()}}class N extends u{constructor(e){super(e),this._loadingCronicle=!1,this._focusedElement=null}get _aiCronicle(){return this.store.state._aiCronicle||""}get _sessionNotes(){return this.store.state.sessionNotes||""}get _sessionTitle(){return this.store.state.sessionTitle||"Aventura de "+new Date().toLocaleDateString()}get _sessionLoot(){return this.store.state.sessionLoot||""}render(){let e=null,o=null,i=null;if(this._mounted&&document.activeElement){const t=document.activeElement;t.id&&(t.id==="session-title-input"||t.id==="session-notes-textarea"||t.id==="session-loot-textarea")&&(e=t.id,o=t.selectionStart,i=t.selectionEnd)}e&&(this._focusedElement={id:e,start:o,end:i}),super.render()}onMount(){if(this._focusedElement){const{id:t,start:s,end:n}=this._focusedElement,a=this.$("#"+t);if(a&&(a.focus(),s!==null&&n!==null))try{a.setSelectionRange(s,n)}catch{}this._focusedElement=null}const e=this.$("#session-title-input"),o=this.$("#session-notes-textarea"),i=this.$("#session-loot-textarea");e&&e.addEventListener("change",t=>{c.store.update(s=>s.sessionTitle=t.target.value)}),o&&o.addEventListener("change",t=>{c.store.update(s=>s.sessionNotes=t.target.value)}),i&&i.addEventListener("change",t=>{c.store.update(s=>s.sessionLoot=t.target.value)})}onUnmount(){var t,s,n;const e=(t=this.$("#session-title-input"))==null?void 0:t.value,o=(s=this.$("#session-notes-textarea"))==null?void 0:s.value,i=(n=this.$("#session-loot-textarea"))==null?void 0:n.value;c.store.update(a=>{e!==void 0&&(a.sessionTitle=e),o!==void 0&&(a.sessionNotes=o),i!==void 0&&(a.sessionLoot=i)})}template(){const{players:e,combatRound:o,sessionNumber:i}=this.store.state;return r`
             <style>
                 @keyframes journalFadeIn {
                     from { opacity: 0; transform: scale(0.98) translateY(12px); }
@@ -531,16 +452,15 @@ export class SessionJournal extends ReactiveComponent {
                 }
             </style>
 
-            <div class="journal-page p-6 max-w-[1200px] mx-auto animate-fadeIn relative">
-                <div class="absolute top-0 right-0 w-64 h-64 bg-accent/10 rounded-full blur-[100px] pointer-events-none"></div>
-                <div class="journal-header flex flex-wrap justify-between items-end border-b border-white/10 pb-6 mb-8">
+            <div class="journal-page">
+                <div class="journal-header">
                     <div>
-                        <h2 class="journal-title-text font-cinzel text-3xl font-bold m-0 text-white flex items-center gap-3 drop-shadow-[0_0_8px_rgba(197,160,89,0.4)]"><i class="fa-solid fa-scroll text-accent"></i>Diário de Sessão</h2>
-                        <p class="journal-subtitle-text font-outfit text-sm text-slate-400 mt-2 uppercase tracking-widest">Registre as crônicas da sua campanha e gere relatos oficiais de aventura</p>
+                        <h2 class="journal-title-text"><i class="fa-solid fa-scroll" style="margin-right:12px; color: #c5a059;"></i>Diário de Sessão</h2>
+                        <p class="journal-subtitle-text">Registre as crônicas da sua campanha e gere relatos oficiais de aventura</p>
                     </div>
-                    <div style="display:flex; gap:12px;" class="mt-4 lg:mt-0">
-                        <button class="btn btn-magic" data-action="generateAICronicle" ${this._loadingCronicle ? 'disabled' : ''}>
-                            ${this._loadingCronicle ? html`<i class="fa-solid fa-spinner fa-spin"></i> Tecendo história...` : html`<i class="fa-solid fa-wand-magic-sparkles"></i> Gerar Crônica IA`}
+                    <div style="display:flex; gap:12px;">
+                        <button class="btn btn-magic" data-action="generateAICronicle" ${this._loadingCronicle?"disabled":""}>
+                            ${this._loadingCronicle?r`<i class="fa-solid fa-spinner fa-spin"></i> Tecendo história...`:r`<i class="fa-solid fa-wand-magic-sparkles"></i> Gerar Crônica IA`}
                         </button>
                         <button class="btn btn-premium" data-action="exportReport">
                             <i class="fa-solid fa-file-export"></i> Exportar Relatório
@@ -551,60 +471,60 @@ export class SessionJournal extends ReactiveComponent {
                     </div>
                 </div>
 
-                <div class="journal-layout grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="journal-layout">
                     <!-- LEFT SIDE: STATS & LOOT -->
-                    <div class="flex flex-col gap-6">
+                    <div style="display:flex; flex-direction:column; gap:24px;">
                         <!-- SESSION STATS -->
-                        <div class="journal-card bg-black/40 backdrop-blur-md rounded-2xl p-6 border border-white/5 shadow-xl hover:border-accent/30 transition-colors">
-                            <h3 class="font-cinzel text-accent text-lg font-bold flex items-center gap-2 mb-5 border-b border-white/10 pb-3">
+                        <div class="journal-card">
+                            <h3 style="font-family:'Cinzel'; color:#c5a059; font-size:1.05rem; margin: 0 0 20px 0; display:flex; align-items:center; gap:8px;">
                                 <i class="fa-solid fa-chart-simple"></i> Status da Aventura
                             </h3>
                             
-                            <div class="journal-input-group flex flex-col gap-2 mb-6">
-                                <label class="journal-label text-[0.65rem] uppercase tracking-widest text-slate-400 font-bold">Título da Sessão</label>
-                                <input type="text" id="session-title-input" class="journal-input bg-black/50 border border-white/10 p-3 rounded-lg text-white font-cinzel focus:border-accent outline-none w-full transition-colors" value="${this._sessionTitle}" placeholder="Ex: O Despertar do Dragão" />
+                            <div class="journal-input-group">
+                                <label class="journal-label">Título da Sessão</label>
+                                <input type="text" id="session-title-input" class="journal-input" value="${this._sessionTitle}" placeholder="Ex: O Despertar do Dragão" />
                             </div>
 
-                            <div class="flex flex-col gap-3">
-                                <div class="stat-pill bg-white/5 p-3 rounded-lg flex justify-between items-center text-sm border border-white/5">
-                                    <span class="text-slate-400 uppercase tracking-wider text-[0.7rem] font-bold">Heróis Ativos</span>
-                                    <strong class="text-blue-400"><i class="fa-solid fa-shield-halved mr-1.5"></i> ${players?.length || 0}</strong>
+                            <div style="display:flex; flex-direction:column; gap:10px;">
+                                <div class="stat-pill">
+                                    <span>Heróis Ativos</span>
+                                    <strong style="color:#60a5fa;"><i class="fa-solid fa-shield-halved" style="margin-right:4px;"></i> ${(e==null?void 0:e.length)||0}</strong>
                                 </div>
-                                <div class="stat-pill bg-white/5 p-3 rounded-lg flex justify-between items-center text-sm border border-white/5">
-                                    <span class="text-slate-400 uppercase tracking-wider text-[0.7rem] font-bold">Combates</span>
-                                    <strong class="text-red-400"><i class="fa-solid fa-swords mr-1.5"></i> ${combatRound || 0}</strong>
+                                <div class="stat-pill">
+                                    <span>Combates (Rodadas)</span>
+                                    <strong style="color:#f87171;"><i class="fa-solid fa-swords" style="margin-right:4px;"></i> ${o||0}</strong>
                                 </div>
-                                <div class="stat-pill bg-white/5 p-3 rounded-lg flex justify-between items-center text-sm border border-white/5">
-                                    <span class="text-slate-400 uppercase tracking-wider text-[0.7rem] font-bold">Sessão Atual</span>
-                                    <strong class="text-purple-400"><i class="fa-solid fa-hashtag mr-1.5"></i> ${sessionNumber || 1}</strong>
+                                <div class="stat-pill">
+                                    <span>Sessão Atual</span>
+                                    <strong style="color:#a78bfa;"><i class="fa-solid fa-hashtag" style="margin-right:4px;"></i> ${i||1}</strong>
                                 </div>
-                                <div class="stat-pill bg-white/5 p-3 rounded-lg flex justify-between items-center text-sm border border-white/5">
-                                    <span class="text-slate-400 uppercase tracking-wider text-[0.7rem] font-bold">Data</span>
-                                    <strong class="text-accent"><i class="fa-solid fa-calendar-days mr-1.5"></i> ${new Date().toLocaleDateString('pt-BR')}</strong>
+                                <div class="stat-pill">
+                                    <span>Data de Registro</span>
+                                    <strong style="color:#fbbf24;"><i class="fa-solid fa-calendar-days" style="margin-right:4px;"></i> ${new Date().toLocaleDateString("pt-BR")}</strong>
                                 </div>
                             </div>
                         </div>
 
                         <!-- CAPITULOS ANTERIORES -->
-                        ${this.store.state.sessionsHistory && this.store.state.sessionsHistory.length > 0 ? html`
+                        ${this.store.state.sessionsHistory&&this.store.state.sessionsHistory.length>0?r`
                         <div class="journal-card" style="margin-top: 10px;">
                             <h3 style="font-family:'Cinzel'; color:#c5a059; font-size:1.05rem; margin: 0 0 15px 0; display:flex; align-items:center; gap:8px;">
                                 <i class="fa-solid fa-clock-rotate-left"></i> Crônicas Passadas (${this.store.state.sessionsHistory.length})
                             </h3>
                             <div style="display:flex; flex-direction:column; gap:8px; max-height:220px; overflow-y:auto; padding-right:4px;">
-                                ${this.store.state.sessionsHistory.map(hist => html`
+                                ${this.store.state.sessionsHistory.map(t=>r`
                                     <div class="tome-hover-row" style="background:rgba(255,255,255,0.02); border:1px solid rgba(197,160,89,0.15); border-radius:8px; padding:10px; font-size:0.8rem; cursor:pointer;" 
-                                         data-action="viewPastSession" data-id="${hist.sessionNumber}">
+                                         data-action="viewPastSession" data-id="${t.sessionNumber}">
                                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; width:100%;">
-                                            <strong style="color:#fbbf24;">Sessão #${hist.sessionNumber}</strong>
-                                            <span style="font-size:0.7rem; color:#64748b; margin-left:auto;">${new Date(hist.timestamp).toLocaleDateString('pt-BR')}</span>
+                                            <strong style="color:#fbbf24;">Sessão #${t.sessionNumber}</strong>
+                                            <span style="font-size:0.7rem; color:#64748b; margin-left:auto;">${new Date(t.timestamp).toLocaleDateString("pt-BR")}</span>
                                         </div>
-                                        <div style="color:#e2e8f0; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${hist.sessionTitle}</div>
+                                        <div style="color:#e2e8f0; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.sessionTitle}</div>
                                     </div>
                                 `)}
                             </div>
                         </div>
-                        ` : ''}
+                        `:""}
 
                         <!-- LOOT & FEATS -->
                         <div class="journal-card">
@@ -627,7 +547,7 @@ export class SessionJournal extends ReactiveComponent {
                         </div>
 
                         <!-- AI CRONICLE BANNER -->
-                        ${this._aiCronicle ? html`
+                        ${this._aiCronicle?r`
                             <div class="chronicle-container animate-fadeIn">
                                 <h3 class="chronicle-title">
                                     <i class="fa-solid fa-wand-magic-sparkles"></i> A Crônica do Bardo Real
@@ -639,7 +559,7 @@ export class SessionJournal extends ReactiveComponent {
                                     </button>
                                 </div>
                             </div>
-                        ` : ''}
+                        `:""}
 
                         <!-- EVENT TIMELINE -->
                         <div class="journal-card">
@@ -655,34 +575,23 @@ export class SessionJournal extends ReactiveComponent {
                             <div class="timeline-track">
                                 <div class="timeline-line"></div>
                                 
-                                ${(this.store.state.journalEntries || []).slice().reverse().map(entry => {
-                                    const type = entry.type || 'info';
-                                    const icons = { combat: 'fa-swords', loot: 'fa-coins', social: 'fa-comments', info: 'fa-scroll', oracle: 'fa-wand-magic-sparkles' };
-                                    const colors = { combat: '#ef4444', loot: '#22c55e', social: '#3b82f6', info: '#c5a059', oracle: '#a855f7' };
-                                    const glows = { combat: 'rgba(239, 68, 68, 0.35)', loot: 'rgba(34, 197, 94, 0.35)', social: 'rgba(59, 130, 246, 0.35)', info: 'rgba(197, 160, 89, 0.35)', oracle: 'rgba(168, 85, 247, 0.35)' };
-                                    
-                                    const badgeColor = colors[type] || colors.info;
-                                    const badgeGlow = glows[type] || glows.info;
-                                    const iconClass = icons[type] || icons.info;
-                                    
-                                    return html`
-                                        <div class="timeline-item" style="--badge-color: ${badgeColor}; --badge-glow: ${badgeGlow};">
+                                ${(this.store.state.journalEntries||[]).slice().reverse().map(t=>{const s=t.type||"info",n={combat:"fa-swords",loot:"fa-coins",social:"fa-comments",info:"fa-scroll",oracle:"fa-wand-magic-sparkles"},a={combat:"#ef4444",loot:"#22c55e",social:"#3b82f6",info:"#c5a059",oracle:"#a855f7"},l={combat:"rgba(239, 68, 68, 0.35)",loot:"rgba(34, 197, 94, 0.35)",social:"rgba(59, 130, 246, 0.35)",info:"rgba(197, 160, 89, 0.35)",oracle:"rgba(168, 85, 247, 0.35)"},d=a[s]||a.info,p=l[s]||l.info,m=n[s]||n.info;return r`
+                                        <div class="timeline-item" style="--badge-color: ${d}; --badge-glow: ${p};">
                                             <div class="timeline-badge">
-                                                <i class="fa-solid ${iconClass}"></i>
+                                                <i class="fa-solid ${m}"></i>
                                             </div>
                                             <div class="timeline-content-card">
                                                 <div class="timeline-item-header">
                                                     <div>
-                                                        <span class="timeline-item-title">${entry.title || 'Evento'}</span>
-                                                        <span class="timeline-item-time" style="margin-left:10px;">${new Date(entry.timestamp || Date.now()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                                        <span class="timeline-item-title">${t.title||"Evento"}</span>
+                                                        <span class="timeline-item-time" style="margin-left:10px;">${new Date(t.timestamp||Date.now()).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}</span>
                                                     </div>
-                                                    <button class="btn btn-ghost btn-sm" data-action="deleteEvent" data-id="${entry.id}" style="color:var(--danger); padding:4px 8px; border-radius:6px;"><i class="fa-solid fa-trash-can"></i></button>
+                                                    <button class="btn btn-ghost btn-sm" data-action="deleteEvent" data-id="${t.id}" style="color:var(--danger); padding:4px 8px; border-radius:6px;"><i class="fa-solid fa-trash-can"></i></button>
                                                 </div>
-                                                <p class="timeline-item-body">${entry.content}</p>
+                                                <p class="timeline-item-body">${t.content}</p>
                                             </div>
                                         </div>
-                                    `;
-                                }).join('') || html`
+                                    `}).join("")||r`
                                     <div style="text-align:center; padding:40px 0; color:#64748b;">
                                         <i class="fa-solid fa-feather" style="font-size:2rem; opacity:0.3; margin-bottom:12px; display:block;"></i>
                                         <span style="font-size:0.85rem; font-style:italic;">Nenhum evento registrado nesta linha do tempo ainda...</span>
@@ -694,209 +603,55 @@ export class SessionJournal extends ReactiveComponent {
                 </div>
             </div>
             ${this._renderReportTemplate()}
-        `;
-    }
-
-    async generateAICronicle() {
-        const title = this.$('#session-title-input')?.value || '';
-        const notes = this.$('#session-notes-textarea')?.value || '';
-        const loot = this.$('#session-loot-textarea')?.value || '';
-
-        TOME.store.update(s => {
-            s.sessionTitle = title;
-            s.sessionNotes = notes;
-            s.sessionLoot = loot;
-        });
-
-        const entries = this.store.state.journalEntries || [];
-
-        if (entries.length === 0 && !notes) {
-            Toast.show('Escreva algumas notas ou comece o combate para ter fatos a narrar!', 'warning');
-            return;
-        }
-
-        this._loadingCronicle = true;
-        this.render();
-
-        try {
-            const logText = entries.map(e => `[${e.type.toUpperCase()}] ${e.title}: ${e.content}`).join('\n');
-            const prompt = `Como um bardo medieval lendário, teça uma crônica literária emocionante e poética (máximo 4 parágrafos) narrando os acontecimentos desta sessão de RPG.
+        `}async generateAICronicle(){var s,n,a;const e=((s=this.$("#session-title-input"))==null?void 0:s.value)||"",o=((n=this.$("#session-notes-textarea"))==null?void 0:n.value)||"",i=((a=this.$("#session-loot-textarea"))==null?void 0:a.value)||"";c.store.update(l=>{l.sessionTitle=e,l.sessionNotes=o,l.sessionLoot=i});const t=this.store.state.journalEntries||[];if(t.length===0&&!o){f.show("Escreva algumas notas ou comece o combate para ter fatos a narrar!","warning");return}this._loadingCronicle=!0,this.render();try{const d=`Como um bardo medieval lendário, teça uma crônica literária emocionante e poética (máximo 4 parágrafos) narrando os acontecimentos desta sessão de RPG.
             Escreva em português medieval literário e dramático.
             
             FATOS DA LINHA DO TEMPO:
-            ${logText}
+            ${t.map(m=>`[${m.type.toUpperCase()}] ${m.title}: ${m.content}`).join(`
+`)}
             
             TESOUROS ENCONTRADOS:
-            ${loot}
+            ${i}
             
             ANOTAÇÕES DO MESTRE:
-            ${notes}
+            ${o}
             
-            Foque nos heróis e no destino que os aguarda.`;
-
-            const response = await TOME.ai.ask(prompt);
-            TOME.store.update(s => {
-                s._aiCronicle = response;
-            });
-            Toast.show('A crônica foi tecida pelos deuses!', 'success');
-        } catch (err) {
-            Toast.show('O bardo está sem voz agora... Tente novamente.', 'danger');
-        } finally {
-            this._loadingCronicle = false;
-            this.render();
-        }
-    }
-
-    addManualEvent() {
-        const input = this.$('#manual-event-input');
-        if (!input || !input.value.trim()) return;
-
-        TOME.store.update(s => {
-            if (!s.journalEntries) s.journalEntries = [];
-            s.journalEntries.push({
-                id: Date.now(),
-                timestamp: Date.now(),
-                date: new Date().toLocaleDateString('pt-BR'),
-                type: 'info',
-                title: 'Anotação do Mestre',
-                content: input.value.trim()
-            });
-        });
-        
-        input.value = '';
-        import('./Toast.js').then(m => m.Toast.show('Evento adicionado à linha do tempo!', 'success'));
-        this.render();
-    }
-
-    deleteEvent(e, el) {
-        const id = el.dataset.id;
-        if (!id || !confirm("Remover este evento da linha do tempo?")) return;
-
-        TOME.store.update(s => {
-            if (s.journalEntries) {
-                s.journalEntries = s.journalEntries.filter(entry => String(entry.id) !== String(id));
-            }
-        });
-        
-        import('./Toast.js').then(m => m.Toast.show('Evento removido.', 'info'));
-        this.render();
-    }
-
-    viewPastSession(e, el) {
-        const id = parseInt(el.dataset.id);
-        const hist = (this.store.state.sessionsHistory || []).find(h => h.sessionNumber === id);
-        if (!hist) return;
-        
-        const dateStr = new Date(hist.timestamp).toLocaleDateString('pt-BR');
-        const notesHtml = hist.sessionNotes ? hist.sessionNotes : 'Nenhuma nota registrada.';
-        const lootHtml = hist.sessionLoot ? hist.sessionLoot : 'Nenhum tesouro registrado.';
-        const eventsHtml = (hist.journalEntries || []).map(e => html`
+            Foque nos heróis e no destino que os aguarda.`,p=await c.ai.ask(d);c.store.update(m=>{m._aiCronicle=p}),f.show("A crônica foi tecida pelos deuses!","success")}catch{f.show("O bardo está sem voz agora... Tente novamente.","danger")}finally{this._loadingCronicle=!1,this.render()}}addManualEvent(){const e=this.$("#manual-event-input");!e||!e.value.trim()||(c.store.update(o=>{o.journalEntries||(o.journalEntries=[]),o.journalEntries.push({id:Date.now(),timestamp:Date.now(),date:new Date().toLocaleDateString("pt-BR"),type:"info",title:"Anotação do Mestre",content:e.value.trim()})}),e.value="",x(()=>import("./Toast-m0Ci56ke.js"),[]).then(o=>o.Toast.show("Evento adicionado à linha do tempo!","success")),this.render())}deleteEvent(e,o){const i=o.dataset.id;!i||!confirm("Remover este evento da linha do tempo?")||(c.store.update(t=>{t.journalEntries&&(t.journalEntries=t.journalEntries.filter(s=>String(s.id)!==String(i)))}),x(()=>import("./Toast-m0Ci56ke.js"),[]).then(t=>t.Toast.show("Evento removido.","info")),this.render())}viewPastSession(e,o){const i=parseInt(o.dataset.id),t=(this.store.state.sessionsHistory||[]).find(d=>d.sessionNumber===i);if(!t)return;const s=new Date(t.timestamp).toLocaleDateString("pt-BR"),n=t.sessionNotes?t.sessionNotes:"Nenhuma nota registrada.",a=t.sessionLoot?t.sessionLoot:"Nenhum tesouro registrado.",l=(t.journalEntries||[]).map(d=>r`
             <div style="margin-bottom:8px; padding-bottom:8px; border-bottom:1px dashed rgba(255,255,255,0.05); font-size:0.8rem;">
-                <span style="color:#c5a059; font-weight:bold;">[${e.type.toUpperCase()}]</span> <strong>${e.title}:</strong> ${e.content}
+                <span style="color:#c5a059; font-weight:bold;">[${d.type.toUpperCase()}]</span> <strong>${d.title}:</strong> ${d.content}
             </div>
-        `).join('') || 'Sem eventos registrados.';
-
-        Modal.show({
-            title: `Sessão #${hist.sessionNumber}`,
-            content: html`
+        `).join("")||"Sem eventos registrados.";g.show({title:`Sessão #${t.sessionNumber}`,content:r`
                 <div style="max-height:60vh; overflow-y:auto; padding-right:8px; text-align:left; font-family:'Outfit', sans-serif;">
                     <div style="text-align:center; margin-bottom:15px; border-bottom:1px solid rgba(197,160,89,0.15); padding-bottom:10px;">
-                        <h3 style="font-family:'Cinzel', serif; color:#fbbf24; margin:0; font-size:1.3rem;">${hist.sessionTitle}</h3>
-                        <span style="font-size:0.75rem; color:#64748b;">Registrada em ${dateStr}</span>
+                        <h3 style="font-family:'Cinzel', serif; color:#fbbf24; margin:0; font-size:1.3rem;">${t.sessionTitle}</h3>
+                        <span style="font-size:0.75rem; color:#64748b;">Registrada em ${s}</span>
                     </div>
                     
                     <h4 style="font-family:'Cinzel', serif; color:#c5a059; margin:15px 0 8px 0; font-size:0.9rem; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px;">
                         <i class="fa-solid fa-book-open" style="margin-right:6px;"></i> Notas Narrativas
                     </h4>
-                    <p style="color:#cbd5e1; font-size:0.8rem; line-height:1.5; margin:0; background:rgba(0,0,0,0.25); padding:10px; border-radius:6px; white-space:pre-wrap;">${notesHtml}</p>
+                    <p style="color:#cbd5e1; font-size:0.8rem; line-height:1.5; margin:0; background:rgba(0,0,0,0.25); padding:10px; border-radius:6px; white-space:pre-wrap;">${n}</p>
                     
                     <h4 style="font-family:'Cinzel', serif; color:#c5a059; margin:15px 0 8px 0; font-size:0.9rem; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px;">
                         <i class="fa-solid fa-coins" style="margin-right:6px;"></i> Tesouros & Feitos
                     </h4>
-                    <p style="color:#cbd5e1; font-size:0.8rem; line-height:1.5; margin:0; background:rgba(0,0,0,0.25); padding:10px; border-radius:6px; white-space:pre-wrap;">${lootHtml}</p>
+                    <p style="color:#cbd5e1; font-size:0.8rem; line-height:1.5; margin:0; background:rgba(0,0,0,0.25); padding:10px; border-radius:6px; white-space:pre-wrap;">${a}</p>
                     
                     <h4 style="font-family:'Cinzel', serif; color:#c5a059; margin:15px 0 8px 0; font-size:0.9rem; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px;">
                         <i class="fa-solid fa-list-ul" style="margin-right:6px;"></i> Eventos da Sessão
                     </h4>
                     <div style="background:rgba(0,0,0,0.25); padding:10px; border-radius:6px; color:#cbd5e1;">
-                        ${eventsHtml}
+                        ${l}
                     </div>
                 </div>
-            `,
-            type: 'info'
-        });
-    }
-
-    copyCronicle() {
-        if (!this._aiCronicle) return;
-        navigator.clipboard.writeText(this._aiCronicle);
-        Toast.show('Crônica copiada com sucesso!', 'success');
-    }
-
-    exportReport() {
-        const title = this.$('#session-title-input')?.value || '';
-        const notes = this.$('#session-notes-textarea')?.value || '';
-        const loot = this.$('#session-loot-textarea')?.value || '';
-
-        TOME.store.update(s => {
-            s.sessionTitle = title;
-            s.sessionNotes = notes;
-            s.sessionLoot = loot;
-        });
-
-        Toast.show('Gerando relatório ilustrado para impressão...', 'info');
-        document.body.classList.add('print-report-mode');
-        window.print();
-        setTimeout(() => document.body.classList.remove('print-report-mode'), 500);
-    }
-
-    async exportSummaryPNG() {
-        const title = this.$('#session-title-input')?.value || this._sessionTitle;
-        const notes = this.$('#session-notes-textarea')?.value || this._sessionNotes;
-        const loot = this.$('#session-loot-textarea')?.value || this._sessionLoot;
-        const { players, sessionNumber, journalEntries } = this.store.state;
-
-        TOME.store.update(s => {
-            s.sessionTitle = title;
-            s.sessionNotes = notes;
-            s.sessionLoot = loot;
-        });
-
-        Toast.show('Renderizando cartão místico PNG da sessão...', 'info');
-
-        try {
-            const milestones = (journalEntries || []).map(e => `• [${e.title}] ${e.content}`).join('\n');
-            const chronicleText = this._aiCronicle || milestones || notes;
-
-            await exportSessionSummaryPNG({
-                title,
-                sessionNumber: sessionNumber || 1,
-                date: new Date().toLocaleDateString('pt-BR'),
-                players: players || [],
-                loot,
-                chronicle: chronicleText,
-                notes
-            });
-
-            Toast.show('Cartão PNG gerado e baixado com sucesso!', 'success');
-        } catch (err) {
-            console.error('[SessionJournal] Erro ao exportar PNG:', err);
-            Toast.show('Falha ao exportar cartão PNG. Tente novamente.', 'danger');
-        }
-    }
-
-    _renderReportTemplate() {
-        const { players, combatRound, journalEntries, sessionNumber } = this.store.state;
-        const loot = this._sessionLoot || 'Nenhum item especial registrado.';
-        const date = new Date().toLocaleDateString('pt-BR');
-
-        return html`
+            `,type:"info"})}copyCronicle(){this._aiCronicle&&(navigator.clipboard.writeText(this._aiCronicle),f.show("Crônica copiada com sucesso!","success"))}exportReport(){var t,s,n;const e=((t=this.$("#session-title-input"))==null?void 0:t.value)||"",o=((s=this.$("#session-notes-textarea"))==null?void 0:s.value)||"",i=((n=this.$("#session-loot-textarea"))==null?void 0:n.value)||"";c.store.update(a=>{a.sessionTitle=e,a.sessionNotes=o,a.sessionLoot=i}),f.show("Gerando relatório ilustrado para impressão...","info"),document.body.classList.add("print-report-mode"),window.print(),setTimeout(()=>document.body.classList.remove("print-report-mode"),500)}async exportSummaryPNG(){var a,l,d;const e=((a=this.$("#session-title-input"))==null?void 0:a.value)||this._sessionTitle,o=((l=this.$("#session-notes-textarea"))==null?void 0:l.value)||this._sessionNotes,i=((d=this.$("#session-loot-textarea"))==null?void 0:d.value)||this._sessionLoot,{players:t,sessionNumber:s,journalEntries:n}=this.store.state;c.store.update(p=>{p.sessionTitle=e,p.sessionNotes=o,p.sessionLoot=i}),f.show("Renderizando cartão místico PNG da sessão...","info");try{const p=(n||[]).map(b=>`• [${b.title}] ${b.content}`).join(`
+`),m=this._aiCronicle||p||o;await v({title:e,sessionNumber:s||1,date:new Date().toLocaleDateString("pt-BR"),players:t||[],loot:i,chronicle:m,notes:o}),f.show("Cartão PNG gerado e baixado com sucesso!","success")}catch(p){console.error("[SessionJournal] Erro ao exportar PNG:",p),f.show("Falha ao exportar cartão PNG. Tente novamente.","danger")}}_renderReportTemplate(){const{players:e,combatRound:o,journalEntries:i,sessionNumber:t}=this.store.state,s=this._sessionLoot||"Nenhum item especial registrado.",n=new Date().toLocaleDateString("pt-BR");return r`
             <div class="dnd-report-template" style="box-sizing:border-box; width:100%; max-width:800px; margin:0 auto; padding:40px; background:#ffffff; color:#000000; font-family:'Outfit', sans-serif;">
                 <!-- HEADER -->
                 <div style="text-align:center; border-bottom:3px double #000; padding-bottom:20px; margin-bottom:30px;">
                     <span style="font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:2px; font-family:'Cinzel';">Relatório Oficial de Aventura</span>
                     <h1 style="font-family:'Cinzel', serif; font-size:28px; font-weight:900; margin:10px 0 5px; text-transform:uppercase; color:#000;">${this._sessionTitle}</h1>
-                    <span style="font-size:11px; color:#555; font-weight:700;">Sessão Nº ${sessionNumber || 1} • Data: ${date} • Gerado pelo Grimório RPG</span>
+                    <span style="font-size:11px; color:#555; font-weight:700;">Sessão Nº ${t||1} • Data: ${n} • Gerado pelo Grimório RPG</span>
                 </div>
 
                 <!-- STATS & PARTY GRID -->
@@ -904,45 +659,45 @@ export class SessionJournal extends ReactiveComponent {
                     <div style="border:1.5px solid #000; padding:15px; border-radius:8px; background:#fafafa;">
                         <strong style="display:block; border-bottom:1.5px solid #000; padding-bottom:6px; margin-bottom:10px; font-family:'Cinzel'; font-size:12px; text-transform:uppercase;">👥 Heróis Ativos</strong>
                         <ul style="margin:0; padding-left:20px; font-size:11px; line-height:1.6; color:#222;">
-                            ${(players || []).map(p => html`<li><strong>${p.name}</strong> (${p.race} ${p.class} Nív ${p.level})</li>`).join('') || '<li>Nenhum herói ativo.</li>'}
+                            ${(e||[]).map(a=>r`<li><strong>${a.name}</strong> (${a.race} ${a.class} Nív ${a.level})</li>`).join("")||"<li>Nenhum herói ativo.</li>"}
                         </ul>
                     </div>
                     <div style="border:1.5px solid #000; padding:15px; border-radius:8px; background:#fafafa;">
                         <strong style="display:block; border-bottom:1.5px solid #000; padding-bottom:6px; margin-bottom:10px; font-family:'Cinzel'; font-size:12px; text-transform:uppercase;">⚔️ Resumo de Combate</strong>
                         <div style="font-size:11px; line-height:1.8; color:#222;">
-                            <div>Rodadas Totais de Combate: <strong>${combatRound || 0} rodadas</strong></div>
+                            <div>Rodadas Totais de Combate: <strong>${o||0} rodadas</strong></div>
                             <div style="margin-top:6px;">Tesouros Adquiridos:</div>
-                            <div style="font-style:italic; color:#333; padding-left:10px; white-space:pre-wrap;">${loot}</div>
+                            <div style="font-style:italic; color:#333; padding-left:10px; white-space:pre-wrap;">${s}</div>
                         </div>
                     </div>
                 </div>
 
                 <!-- CRONICA IA -->
-                ${this._aiCronicle ? html`
+                ${this._aiCronicle?r`
                     <div style="border:1.5px solid #000; padding:20px; border-radius:8px; background:#fffcf5; margin-bottom:35px; box-shadow:inset 0 0 10px rgba(0,0,0,0.02);">
                         <strong style="display:block; border-bottom:1.5px solid #000; padding-bottom:6px; margin-bottom:12px; font-family:'Cinzel'; font-size:13px; text-transform:uppercase; color:#8b1e0f;">📖 A Crônica do Bardo</strong>
                         <p style="font-size:11px; line-height:1.8; color:#111; font-style:italic; margin:0; white-space:pre-wrap;">${this._aiCronicle}</p>
                     </div>
-                ` : ''}
+                `:""}
 
                 <!-- NOTES -->
                 <div style="margin-bottom:35px;">
                     <strong style="display:block; border-bottom:1.5px solid #000; padding-bottom:6px; margin-bottom:12px; font-family:'Cinzel'; font-size:12px; text-transform:uppercase;">📝 Notas Narrativas do Mestre</strong>
-                    <p style="font-size:11px; line-height:1.6; color:#222; margin:0; white-space:pre-wrap;">${this._sessionNotes || 'Nenhuma nota narrativa registrada.'}</p>
+                    <p style="font-size:11px; line-height:1.6; color:#222; margin:0; white-space:pre-wrap;">${this._sessionNotes||"Nenhuma nota narrativa registrada."}</p>
                 </div>
 
                 <!-- TIMELINE -->
                 <div>
                     <strong style="display:block; border-bottom:1.5px solid #000; padding-bottom:6px; margin-bottom:15px; font-family:'Cinzel'; font-size:12px; text-transform:uppercase;">⏳ Linha do Tempo dos Acontecimentos</strong>
                     <div style="display:flex; flex-direction:column; gap:10px; padding-left:10px;">
-                        ${(journalEntries || []).map(e => html`
+                        ${(i||[]).map(a=>r`
                             <div style="border-left:2px solid #000; padding-left:12px; font-size:10.5px; line-height:1.5;">
                                 <div style="font-weight:800; color:#555; font-size:9.5px; text-transform:uppercase;">
-                                    ${new Date(e.timestamp || Date.now()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - ${e.title || 'Evento'}
+                                    ${new Date(a.timestamp||Date.now()).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})} - ${a.title||"Evento"}
                                 </div>
-                                <div style="color:#222; margin-top:2px;">${e.content}</div>
+                                <div style="color:#222; margin-top:2px;">${a.content}</div>
                             </div>
-                        `).join('') || html`<div style="font-size:11px; color:#555; font-style:italic;">Nenhum evento registrado nesta linha do tempo...</div>`}
+                        `).join("")||r`<div style="font-size:11px; color:#555; font-style:italic;">Nenhum evento registrado nesta linha do tempo...</div>`}
                     </div>
                 </div>
 
@@ -951,7 +706,4 @@ export class SessionJournal extends ReactiveComponent {
                     Documento de Campanha Oficial • Domínio RPG v10.0
                 </div>
             </div>
-        `;
-    }
-}
-
+        `}}export{N as SessionJournal};
