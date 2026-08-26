@@ -97,25 +97,27 @@ export function SpellBook({ store }) {
         const colorBorder = isCantrip ? 'border-green-500/20' : 'border-tomeGold/20';
 
         return (
-            <div key={spell.id} className={`card glass-accent spell-card p-4 rounded-xl border ${colorBorder} cursor-pointer transition-all duration-200 ease-out bg-tomeGold/[0.015] hover:bg-tomeGold/5 hover:-translate-y-1`}
+            <div key={spell.id} className={`card glass-accent spell-card p-5 rounded-2xl border ${colorBorder} cursor-pointer transition-all duration-300 ease-out bg-tomeGold/[0.02] hover:bg-tomeGold/10 hover:-translate-y-1.5 shadow-[0_8px_20px_rgba(0,0,0,0.4)] hover:shadow-[0_12px_30px_rgba(197,160,89,0.25)] relative overflow-hidden group flex flex-col`}
                  onClick={() => setSelectedSpell(spell)}>
-                <div className="flex justify-between items-start mb-1.5">
+                <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                <div className="absolute -right-10 -top-10 w-24 h-24 bg-tomeGold/20 rounded-full blur-2xl group-hover:bg-tomeGold/30 transition-colors pointer-events-none"></div>
+                <div className="flex justify-between items-start mb-2.5 relative z-10">
                     <div className="flex-1 min-w-0">
-                        <h4 className="m-0 text-sm font-extrabold text-white font-cinzel truncate">{icon} {spell.name}</h4>
+                        <h4 className="m-0 text-sm font-extrabold text-white font-cinzel truncate flex items-center gap-2">{icon} {spell.name}</h4>
                         <div className="text-[0.68rem] text-gray-400 mt-0.5 italic">{spell.englishName}</div>
                     </div>
-                    {spell.level > 0 && <div className="bg-tomeGold text-black px-1.5 py-0.5 rounded text-[0.65rem] font-extrabold ml-2">{spell.level}º</div>}
+                    {spell.level > 0 && <div className="bg-tomeGold/20 text-tomeGold border border-tomeGold/30 px-1.5 py-0.5 rounded text-[0.65rem] font-black ml-2 shadow-[0_0_8px_rgba(197,160,89,0.3)]">{spell.level}º</div>}
                 </div>
-                <div className="flex flex-wrap gap-1 mb-2">
-                    {(spell.classes || []).slice(0, 2).map(cls => <span key={cls} className="bg-tomeGold/10 text-tomeGold text-[0.6rem] px-1.5 py-0.5 rounded uppercase font-bold">{cls}</span>)}
-                    {spell.concentration && <span className="bg-red-500/10 text-red-400 text-[0.6rem] px-1.5 py-0.5 rounded uppercase font-bold">⚠️ Conc.</span>}
+                <div className="flex flex-wrap gap-1 mb-3 relative z-10">
+                    {(spell.classes || []).slice(0, 2).map(cls => <span key={cls} className="bg-tomeGold/10 text-tomeGold text-[0.6rem] px-2 py-0.5 rounded-sm uppercase font-bold border border-tomeGold/20">{cls}</span>)}
+                    {spell.concentration && <span className="bg-red-500/10 text-red-400 text-[0.6rem] px-2 py-0.5 rounded-sm uppercase font-bold border border-red-500/20">⚠️ Conc.</span>}
                 </div>
-                <p className="text-[0.78rem] text-gray-200 m-0 leading-snug min-h-[2.7em] line-clamp-2 opacity-90">
+                <p className="text-[0.78rem] text-gray-300 m-0 leading-relaxed min-h-[3em] line-clamp-2 opacity-90 flex-1 relative z-10">
                     {spell.challenge || spell.effect || ''}
                 </p>
-                <div className="mt-2.5 text-[0.68rem] text-gray-400 flex justify-between border-t border-white/5 pt-1.5">
-                    <span><i className="fa-regular fa-clock"></i> {spell.actionType === 'bonusAction' ? 'Ação Bônus' : (spell.actionType === 'reaction' ? 'Reação' : 'Ação')}</span>
-                    <span><i className="fa-solid fa-arrows-left-right"></i> {spell.range || '-'}</span>
+                <div className="mt-4 text-[0.68rem] text-gray-400 flex justify-between border-t border-white/10 pt-2.5 relative z-10">
+                    <span className="flex items-center gap-1.5"><i className="fa-regular fa-clock text-tomeGold/70"></i> {spell.actionType === 'bonusAction' ? 'Ação Bônus' : (spell.actionType === 'reaction' ? 'Reação' : 'Ação')}</span>
+                    <span className="flex items-center gap-1.5"><i className="fa-solid fa-arrows-left-right text-tomeGold/70"></i> {spell.range || '-'}</span>
                 </div>
             </div>
         );

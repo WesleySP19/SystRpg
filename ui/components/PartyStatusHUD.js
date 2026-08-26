@@ -11,23 +11,23 @@ export class PartyStatusHUD extends Component {
         if (!players || players.length === 0) return '';
 
         return `
-            <div class="party-hud glass" style="position:fixed; top:90px; right:20px; z-index:1000; padding:15px; display:flex; flex-direction:column; gap:14px; border-radius:14px; border:1.5px solid rgba(197, 160, 89, 0.25); box-shadow: 0 15px 40px rgba(0,0,0,0.7), inset 0 0 15px rgba(197,160,89,0.05); animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1); min-width:190px; max-height:calc(100vh - 140px); background:rgba(10,12,16,0.85); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); user-select:none;">
+            <div class="party-hud fixed top-[90px] right-[20px] z-[1000] p-[15px] flex flex-col gap-3.5 rounded-[14px] border-[1.5px] border-accent/25 shadow-[0_15px_40px_rgba(0,0,0,0.7),inset_0_0_15px_rgba(197,160,89,0.05)] animate-fadeIn min-w-[190px] max-h-[calc(100vh-140px)] bg-black/80 backdrop-blur-md transition-all duration-300 select-none">
                 
                 <!-- HEADER (DRAG HANDLE & MINIMIZE CONTROL) -->
-                <div class="hud-header" style="font-family:'Cinzel', serif; font-size:0.75rem; font-weight:800; color:var(--accent,#d4af37); text-transform:uppercase; letter-spacing:1.5px; border-bottom:2px solid rgba(197,160,89,0.3); padding-bottom:6px; margin-bottom:5px; display:flex; align-items:center; justify-content:space-between; cursor:move; text-shadow:0 0 5px rgba(197,160,89,0.25);">
-                    <div class="hud-title-text" style="display:flex; align-items:center; gap:8px;">
-                        <i class="fa-solid fa-shield-heart" style="color:var(--accent);"></i> VITAIS DO GRUPO
+                <div class="hud-header font-cinzel text-xs font-extrabold text-accent uppercase tracking-widest border-b-2 border-accent/30 pb-1.5 mb-1 flex items-center justify-between cursor-move drop-shadow-[0_0_5px_rgba(197,160,89,0.25)]">
+                    <div class="hud-title-text flex items-center gap-2">
+                        <i class="fa-solid fa-shield-heart text-accent"></i> VITAIS DO GRUPO
                     </div>
-                    <div class="hud-mini-badges" style="display:none; align-items:center; justify-content:center; width:100%; height:100%;">
-                        <i class="fa-solid fa-shield-heart" style="color:var(--accent); font-size:1.2rem; filter: drop-shadow(0 0 5px var(--accent));"></i>
+                    <div class="hud-mini-badges hidden items-center justify-center w-full h-full">
+                        <i class="fa-solid fa-shield-heart text-accent text-xl drop-shadow-[0_0_5px_rgba(197,160,89,1)]"></i>
                     </div>
-                    <button class="btn-minimize" style="background:none; border:none; color:var(--accent); cursor:pointer; padding:2px 6px; font-size:0.75rem; display:flex; align-items:center; justify-content:center; transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">
+                    <button class="btn-minimize bg-transparent border-none text-accent cursor-pointer px-1.5 py-0.5 text-xs flex items-center justify-center hover:scale-125 transition-transform duration-200">
                         <i class="fa-solid fa-minus"></i>
                     </button>
                 </div>
 
                 <!-- MAIN SCROLLABLE CONTENT -->
-                <div class="hud-content" style="display:flex; flex-direction:column; gap:12px; max-height:calc(100vh - 220px); overflow-y:auto; scrollbar-width:thin;">
+                <div class="hud-content flex flex-col gap-3 max-h-[calc(100vh-220px)] overflow-y-auto">
                     ${players.map(p => this._renderPlayerMini(p)).join('')}
                 </div>
             </div>
@@ -41,28 +41,26 @@ export class PartyStatusHUD extends Component {
         const hpColor = hpPct < 30 ? '#ef4444' : hpPct < 60 ? '#f59e0b' : '#10b981';
 
         return `
-            <div class="hud-item hover-scale" style="display:flex; flex-direction:column; gap:6px; padding:10px; border-radius:10px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.03); transition:all 0.2s ease;">
-                <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
-                    <span style="font-size:0.75rem; font-weight:800; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:115px; cursor:pointer; transition:color 0.2s;" 
+            <div class="hud-item hover-scale flex flex-col gap-1.5 p-2.5 rounded-[10px] bg-white/5 border border-white/5 hover:bg-white/10 transition-colors duration-200">
+                <div class="flex justify-between items-center gap-2.5">
+                    <span class="text-xs font-bold text-white whitespace-nowrap overflow-hidden text-ellipsis max-w-[115px] cursor-pointer hover:text-accent transition-colors duration-200" 
                           title="Clique para ver ficha de ${p.name}" 
-                          onmouseover="this.style.color='var(--accent)'" 
-                          onmouseout="this.style.color='#fff'"
                           data-action="viewSheet" 
                           data-id="${p.id}">${p.name}</span>
-                    <span style="font-size:0.6rem; color:var(--accent,#d4af37); font-weight:800; background:rgba(197, 160, 89, 0.1); border:1px solid rgba(197, 160, 89, 0.25); border-radius:4px; padding:2px 5px;">CA ${p.ac}</span>
+                    <span class="text-[0.6rem] text-accent font-bold bg-accent/10 border border-accent/25 rounded px-1.5 py-0.5">CA ${p.ac}</span>
                 </div>
                 
                 <!-- HP PROGRESS BAR -->
-                <div class="hp-bar" style="height:6px; background:rgba(0,0,0,0.4); border-radius:3px; overflow:hidden; border:1px solid rgba(255,255,255,0.03);">
-                    <div class="hp-bar-fill" style="width:${hpPct}%; height:100%; background:${hpColor}; box-shadow:0 0 8px ${hpColor}; transition:width 0.3s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+                <div class="h-1.5 bg-black/40 rounded-full overflow-hidden border border-white/5">
+                    <div class="h-full transition-all duration-300" style="width:${hpPct}%; background:${hpColor}; box-shadow:0 0 8px ${hpColor};"></div>
                 </div>
                 
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px;">
-                    <span style="font-size:0.6rem; color:var(--text-dim,#94a3b8); font-weight:600; display:flex; align-items:center; gap:4px;">
+                <div class="flex justify-between items-center flex-wrap gap-1 mt-0.5">
+                    <span class="text-[0.6rem] text-slate-400 font-bold flex items-center gap-1">
                         <i class="fa-solid fa-heart" style="color:${hpColor}; font-size:0.55rem;"></i> ${current}/${max}
                     </span>
-                    <span style="font-size:0.6rem; color:var(--info,#60a5fa); font-weight:800; background:rgba(96,165,250,0.1); border:1px solid rgba(96,165,250,0.25); border-radius:4px; padding:2px 5px; display:flex; align-items:center; gap:4px;">
-                        <i class="fa-solid fa-eye" style="font-size:0.55rem;"></i> ${this._getPassivePerception(p)}
+                    <span class="text-[0.6rem] text-blue-400 font-bold bg-blue-400/10 border border-blue-400/25 rounded px-1.5 py-0.5 flex items-center gap-1">
+                        <i class="fa-solid fa-eye text-[0.55rem]"></i> ${this._getPassivePerception(p)}
                     </span>
                 </div>
             </div>

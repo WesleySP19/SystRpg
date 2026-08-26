@@ -37,7 +37,21 @@ function printHeader() {
      
   ================================================================
   ` + colors.reset);
-  console.log(colors.fgCyan + "          Mesa Psigologos V22.0.0 PREMIUM VTT - The Atomic Engine\n" + colors.reset);
+  console.log(colors.fgCyan + "          Mesa Psigologos V23.0.0 (Obsidian) - The Atomic Engine\n" + colors.reset);
+}
+
+function runViteBuild() {
+  console.log(colors.fgCyan + "[INFO]" + colors.reset + " Compilando nova interface com Vite...");
+  try {
+    const viteBin = path.join(ROOT_DIR, 'node_modules', 'vite', 'bin', 'vite.js');
+    if (fs.existsSync(viteBin)) {
+      execSync(`"${process.execPath}" "${viteBin}" build`, { cwd: ROOT_DIR, stdio: 'inherit' });
+    } else {
+      execSync('npm run build', { cwd: ROOT_DIR, stdio: 'inherit' });
+    }
+  } catch (e) {
+    console.log(colors.fgRed + "[!] Aviso: Falha ao rodar o build do Vite." + colors.reset);
+  }
 }
 
 function checkDependencies() {
@@ -70,18 +84,8 @@ function checkDependencies() {
     }
   }
 
-  console.log(colors.fgCyan + "[INFO]" + colors.reset + " Compilando nova interface com Vite...");
-  try {
-    const viteBin = path.join(ROOT_DIR, 'node_modules', 'vite', 'bin', 'vite.js');
-    if (fs.existsSync(viteBin)) {
-      execSync(`"${process.execPath}" "${viteBin}" build`, { cwd: ROOT_DIR, stdio: 'inherit' });
-    } else {
-      execSync('npm run build', { cwd: ROOT_DIR, stdio: 'inherit' });
-    }
-  } catch (e) {
-    console.log(colors.fgRed + "[!] Aviso: Falha ao rodar o build do Vite. Se você modificou arquivos .jsx, eles podem não aparecer atualizados." + colors.reset);
-  }
-
+  // Removido o build automático daqui para acelerar a inicialização!
+  
   console.log(colors.fgGreen + "[OK] Dependências prontas!\n" + colors.reset);
 }
 
@@ -132,9 +136,10 @@ async function main() {
 
   console.log("Escolha seu Caminho de Iniciação:");
   console.log(colors.fgGold + "  1." + colors.reset + " Modo Completo (Servidor + Janelas do Mestre e Jogador)");
-  console.log(colors.fgCyan + "  2." + colors.reset + " Modo Headless (Apenas Servidor em Background)\n");
+  console.log(colors.fgCyan + "  2." + colors.reset + " Modo Headless (Apenas Servidor em Background)");
+  console.log(colors.fgGreen + "  3." + colors.reset + " Recompilar Interface (Rodar Build do Vite)\n");
 
-  rl.question('Opção [1-2]: ', (answer) => {
+  rl.question('Opção [1-3]: ', (answer) => {
     rl.close();
     switch(answer.trim()) {
       case '1':
@@ -142,6 +147,11 @@ async function main() {
         break;
       case '2':
         startServer('server');
+        break;
+      case '3':
+        runViteBuild();
+        console.log(colors.fgGreen + "\nBuild concluído! Reinicie o CLI para iniciar o servidor." + colors.reset);
+        process.exit(0);
         break;
       default:
         console.log(colors.fgRed + "Escolha inválida." + colors.reset);

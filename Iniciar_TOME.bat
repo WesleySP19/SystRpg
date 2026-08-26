@@ -1,5 +1,6 @@
 @echo off
-title Mesa Psigologos V22.0.0 - The Atomic Engine
+title Mesa Psigologos V23.0.0 - Obsidian Glassmorphism
+color 0E
 cls
 cd /d "%~dp0"
 
@@ -17,10 +18,12 @@ if exist "%~dp0node-v20.11.1-win-x64\node.exe" (
     )
 )
 
-echo [Mesa Psigologos V22.0.0] Iniciando The Atomic Engine com Alta Performance...
-echo [Mesa Psigologos V22.0.0] Habilitando Garbage Collection Manual e expandindo memoria para 4GB...
-echo [Mesa Psigologos V22.0.0] Compilando Nova Interface Modular React/JSX (Vite)...
-echo [Mesa Psigologos V22.0.0] Console de Relatorios ATIVO. Mantenha esta janela aberta para ver logs de API.
+echo ==============================================================================
+echo [Mesa Psigologos V23.0.0] Iniciando Engine Obsidian com Alta Performance...
+echo [Mesa Psigologos V23.0.0] Habilitando Garbage Collection Manual (4GB RAM)...
+echo [Mesa Psigologos V23.0.0] Verificando dependencias e UI Modular...
+echo [Mesa Psigologos V23.0.0] Console de Relatorios ATIVO.
+echo ==============================================================================
 "%NODE_EXE%" --expose-gc --max-old-space-size=4096 "%~dp0scripts\start-cli.js" %*
 
 if /i "%~1"=="--silent" exit /b 0

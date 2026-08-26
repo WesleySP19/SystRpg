@@ -21,67 +21,76 @@ export class TacticalEyeModal extends Component {
 
     template() {
         return `
-            <div class="tactical-eye-modal animate-fadeIn" style="position: fixed; inset: 0; background: #080a0d; z-index: 10000; overflow: hidden; display: flex;">
+            <div class="fixed inset-0 bg-black/90 z-[10000] overflow-hidden flex animate-fadeIn font-outfit text-slate-200">
                 
                 <!-- Drawer Lateral (Sidebar) -->
-                <div style="width: ${this.sidebarOpen ? '420px' : '0'}; background: rgba(15,20,28,0.95); border-right: ${this.sidebarOpen ? '1px solid rgba(197, 160, 89, 0.4)' : 'none'}; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; overflow: hidden; box-shadow: 2px 0 15px rgba(0,0,0,0.5); z-index: 20;">
-                    <div style="padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; min-width: 420px;">
-                        <h3 style="margin: 0; font-family: 'Cinzel', serif; font-size: 1.1rem; color: var(--accent);">Gaveta Tática</h3>
-                        <button class="btn btn-ghost" data-action="toggleSidebar" style="padding: 4px; color: #94a3b8;"><i class="fa-solid fa-times"></i></button>
+                <div class="flex flex-col bg-black/80 border-r border-accent/20 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] shadow-[2px_0_15px_rgba(0,0,0,0.5)] z-20 backdrop-blur-md"
+                     style="width: ${this.sidebarOpen ? '420px' : '0'}; border-right-width: ${this.sidebarOpen ? '1px' : '0'};">
+                    
+                    <!-- Header da Gaveta -->
+                    <div class="p-4 border-b border-white/5 flex justify-between items-center min-w-[420px]">
+                        <h3 class="m-0 font-cinzel text-lg text-accent drop-shadow-[0_0_8px_rgba(197,160,89,0.3)]">Gaveta Tática</h3>
+                        <button class="btn btn-ghost p-2 text-slate-400 hover:text-white" data-action="toggleSidebar">
+                            <i class="fa-solid fa-times"></i>
+                        </button>
                     </div>
                     
-                    <div style="display: flex; flex-direction: column; flex: 1; overflow: hidden; min-width: 420px;">
-                        <div style="padding: 10px 15px; border-bottom: 1px solid rgba(255,255,255,0.05); max-height: 150px; overflow-y: auto;" class="custom-scroll">
-                            <div style="font-size: 0.7rem; color: #94a3b8; margin-bottom: 5px; text-transform: uppercase; font-weight: bold;">Posicionamento (Colocar no Mapa)</div>
-                            <div id="drawer-tokens" style="display: flex; flex-direction: column; gap: 4px;">
+                    <div class="flex flex-col flex-1 overflow-hidden min-w-[420px]">
+                        <!-- Posicionamento Rápido -->
+                        <div class="px-4 py-3 border-b border-white/5 max-h-[150px] overflow-y-auto custom-scrollbar">
+                            <div class="text-[0.65rem] text-slate-400 mb-2 uppercase font-extrabold tracking-widest">Posicionamento (Colocar no Mapa)</div>
+                            <div id="drawer-tokens" class="flex flex-col gap-1.5">
                                 ${this._renderDrawerTokens()}
                             </div>
                         </div>
 
-                        <div id="tactical-initiative-container" style="flex: 1; overflow: hidden; position: relative; background: rgba(0,0,0,0.2);">
+                        <!-- Iniciativa Monitor -->
+                        <div id="tactical-initiative-container" class="flex-1 overflow-hidden relative bg-black/20">
                             <!-- Initiative Monitor mounts here -->
                         </div>
                     </div>
                 </div>
 
                 <!-- Main Area -->
-                <div style="flex: 1; position: relative;">
+                <div class="flex-1 relative">
                     <!-- Floating Top Toolbar -->
-                    <div style="position: absolute; top: 15px; left: 15px; right: 15px; z-index: 10; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none;">
+                    <div class="absolute top-4 left-4 right-4 z-10 flex justify-between items-start pointer-events-none">
                         
                         <!-- Left Group: Title & Map Settings -->
-                        <div style="display: flex; gap: 15px; align-items: flex-start;">
-                            <button class="btn btn-primary" data-action="toggleSidebar" style="pointer-events: auto; padding: 12px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
+                        <div class="flex gap-4 items-start">
+                            <button class="btn btn-primary pointer-events-auto p-3.5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.5)]" data-action="toggleSidebar">
                                 <i class="fa-solid fa-bars"></i>
                             </button>
 
-                            <div style="background: rgba(15,20,28,0.9); padding: 10px 20px; border-radius: 12px; border: 1px solid rgba(197, 160, 89, 0.3); pointer-events: auto; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); backdrop-filter: blur(10px);">
-                                <div style="display: flex; align-items: center; gap: 10px;">
-                                    <div style="width: 32px; height: 32px; background: rgba(16, 185, 129, 0.1); border: 1px solid #10b981; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: #10b981;">
+                            <div class="bg-black/80 p-3 px-5 rounded-xl border border-accent/30 pointer-events-auto flex flex-col gap-3 shadow-[0_4px_20px_rgba(0,0,0,0.5)] backdrop-blur-md">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 bg-emerald-500/10 border border-emerald-500 rounded-lg flex items-center justify-center text-emerald-500 text-lg shadow-[0_0_10px_rgba(16,185,129,0.2)]">
                                         <i class="fa-solid fa-map-location-dot"></i>
                                     </div>
-                                    <h2 style="margin: 0; font-family: 'Cinzel', serif; font-size: 1.1rem; color: var(--accent);">Olho do Mestre</h2>
+                                    <h2 class="m-0 font-cinzel text-lg text-accent tracking-widest">Olho do Mestre</h2>
                                 </div>
-                                <div style="display: flex; gap: 8px;">
-                                    <input type="text" id="map-url-input" class="form-input" style="width: 200px; padding: 6px 10px; font-size: 0.8rem; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; color: white;" placeholder="URL do Mapa..." value="${this.mapUrl}">
-                                    <button class="btn btn-ghost" data-action="applyMapUrl" style="padding: 6px 10px; border: 1px solid rgba(255,255,255,0.2);"><i class="fa-solid fa-check"></i></button>
+                                <div class="flex gap-2">
+                                    <input type="text" id="map-url-input" class="w-[200px] py-1.5 px-3 text-sm bg-black/50 border border-white/20 rounded-lg text-white outline-none focus:border-accent" placeholder="URL do Mapa..." value="${this.mapUrl}">
+                                    <button class="btn btn-ghost py-1.5 px-3 border border-white/20 text-slate-300 hover:text-white" data-action="applyMapUrl">
+                                        <i class="fa-solid fa-check"></i>
+                                    </button>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Right Group: Actions & Sync -->
-                        <div style="display: flex; gap: 10px; pointer-events: auto;">
-                            <button class="btn btn-secondary" data-action="syncToSpectator" style="padding: 10px 20px; background: linear-gradient(135deg, #10b981, #047857); color: white; border-radius: 12px; border: none; font-weight: bold; box-shadow: 0 4px 15px rgba(16,185,129,0.4);">
-                                <i class="fa-solid fa-satellite-dish" style="margin-right: 5px;"></i> Sincronizar Telão
+                        <div class="flex gap-3 pointer-events-auto">
+                            <button class="btn bg-gradient-to-br from-emerald-500 to-emerald-700 text-white font-bold px-5 py-2.5 rounded-xl border-none shadow-[0_4px_15px_rgba(16,185,129,0.4)] hover:shadow-[0_0_20px_rgba(16,185,129,0.6)]" data-action="syncToSpectator">
+                                <i class="fa-solid fa-satellite-dish mr-2"></i> Sincronizar Telão
                             </button>
-                            <button class="btn btn-danger" data-action="closeModal" style="padding: 10px 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.4);">
-                                <i class="fa-solid fa-times"></i> Fechar
+                            <button class="btn bg-red-900/80 text-white font-bold px-4 py-2.5 rounded-xl border border-red-500/50 shadow-[0_4px_15px_rgba(0,0,0,0.4)] hover:bg-red-800" data-action="closeModal">
+                                <i class="fa-solid fa-times mr-2"></i> Fechar
                             </button>
                         </div>
                     </div>
 
                     <!-- Floating Tool Palette (Bottom Center) -->
-                    <div style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 10; background: rgba(15,20,28,0.9); padding: 8px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); pointer-events: auto; display: flex; gap: 5px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); backdrop-filter: blur(10px);">
+                    <div class="absolute bottom-5 left-1/2 -translate-x-1/2 z-10 bg-black/80 p-2 rounded-2xl border border-white/10 pointer-events-auto flex gap-1.5 shadow-[0_10px_30px_rgba(0,0,0,0.6)] backdrop-blur-md">
                         <button class="tool-btn ${this.activeTool === 'pan' ? 'active' : ''}" data-action="setToolPan" title="Mover Câmera / Tokens (V)">
                             <i class="fa-solid fa-hand"></i>
                         </button>
@@ -91,7 +100,7 @@ export class TacticalEyeModal extends Component {
                         <button class="tool-btn ${this.activeTool === 'wall' ? 'active' : ''}" data-action="setToolWall" title="Desenhar Parede Oculta (W)">
                             <i class="fa-solid fa-layer-group"></i>
                         </button>
-                        <div style="width: 1px; background: rgba(255,255,255,0.1); margin: 0 5px;"></div>
+                        <div class="w-px bg-white/10 mx-1"></div>
                         <button class="tool-btn ${this.grid ? 'active-green' : ''}" data-action="toggleGrid" title="Grade (G)">
                             <i class="fa-solid fa-border-all"></i>
                         </button>
@@ -109,20 +118,20 @@ export class TacticalEyeModal extends Component {
                             width: 45px; height: 45px; border-radius: 12px; border: 1px solid transparent; background: transparent; color: #94a3b8; font-size: 1.1rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center;
                         }
                         .tool-btn:hover { background: rgba(255,255,255,0.05); color: white; }
-                        .tool-btn.active { background: rgba(197,160,89,0.2); border-color: rgba(197,160,89,0.5); color: var(--accent); }
-                        .tool-btn.active-green { background: rgba(16,185,129,0.2); border-color: rgba(16,185,129,0.5); color: #10b981; }
-                        .tool-btn.active-purple { background: rgba(168,85,247,0.2); border-color: rgba(168,85,247,0.5); color: #a855f7; }
-                        .tool-btn.active-yellow { background: rgba(234,179,8,0.2); border-color: rgba(234,179,8,0.5); color: #eab308; }
+                        .tool-btn.active { background: rgba(197,160,89,0.2); border-color: rgba(197,160,89,0.5); color: var(--accent); box-shadow: 0 0 10px rgba(197,160,89,0.2); }
+                        .tool-btn.active-green { background: rgba(16,185,129,0.2); border-color: rgba(16,185,129,0.5); color: #10b981; box-shadow: 0 0 10px rgba(16,185,129,0.2); }
+                        .tool-btn.active-purple { background: rgba(168,85,247,0.2); border-color: rgba(168,85,247,0.5); color: #a855f7; box-shadow: 0 0 10px rgba(168,85,247,0.2); }
+                        .tool-btn.active-yellow { background: rgba(234,179,8,0.2); border-color: rgba(234,179,8,0.5); color: #eab308; box-shadow: 0 0 10px rgba(234,179,8,0.2); }
                     </style>
 
                     <!-- Map Container -->
-                    <div id="dm-map-container" style="position: absolute; inset: 0;"></div>
+                    <div id="dm-map-container" class="absolute inset-0"></div>
                     
                     ${!this.mapUrl ? `
-                        <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: rgba(255,255,255,0.3); pointer-events: none; z-index: 5;">
-                            <i class="fa-solid fa-map" style="font-size: 4rem; margin-bottom: 20px;"></i>
-                            <h3 style="font-family: 'Cinzel', serif; margin: 0; font-size: 1.5rem;">Nenhum Mapa Carregado</h3>
-                            <p style="font-size: 0.9rem; max-width: 400px; text-align: center; margin-top: 10px;">Insira a URL na barra superior e pressione o <i class="fa-solid fa-check"></i>.</p>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center text-white/30 pointer-events-none z-[5]">
+                            <i class="fa-solid fa-map text-6xl mb-5 drop-shadow-lg"></i>
+                            <h3 class="font-cinzel m-0 text-2xl tracking-widest">Nenhum Mapa Carregado</h3>
+                            <p class="text-sm max-w-md text-center mt-3 bg-black/40 p-3 rounded-lg border border-white/5">Insira a URL na barra superior e pressione o <i class="fa-solid fa-check text-accent mx-1"></i>.</p>
                         </div>
                     ` : ''}
                 </div>
@@ -132,7 +141,7 @@ export class TacticalEyeModal extends Component {
 
     _renderDrawerTokens() {
         const order = this.store.state.initiativeOrder || [];
-        if (order.length === 0) return '<div style="color: #64748b; font-size: 0.8rem; text-align: center; padding: 20px 0;">Fila de iniciativa vazia.</div>';
+        if (order.length === 0) return '<div class="text-slate-500 text-xs text-center py-5 font-bold">Fila de iniciativa vazia.</div>';
         
         return order.map(c => {
             const isEnemy = c.type !== 'Player';
@@ -140,18 +149,19 @@ export class TacticalEyeModal extends Component {
             if (isEnemy && !avatar) { avatar = MonsterArt.getImage(c); }
             if (avatar && avatar.startsWith('db://')) avatar = null;
             
-            const color = isEnemy ? '#ef4444' : '#3b82f6';
+            const color = isEnemy ? 'border-red-500 bg-red-500/20' : 'border-blue-500 bg-blue-500/20';
+            const colorHex = isEnemy ? '#ef4444' : '#3b82f6';
             
             return `
-                <div class="drawer-token-item" style="display: flex; align-items: center; gap: 10px; padding: 8px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; cursor: pointer; transition: background 0.2s;" data-action="placeToken" data-id="${c.id}">
-                    <div style="width: 32px; height: 32px; border-radius: 50%; border: 2px solid ${color}; background-color: ${color}; background-image: url('${avatar || ''}'); background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.5);">
-                        ${!avatar ? `<span style="color: white; font-size: 0.8rem; font-weight: bold;">${c.name.substring(0,1).toUpperCase()}</span>` : ''}
+                <div class="flex items-center gap-2.5 p-2 bg-white/5 border border-white/5 rounded-lg cursor-pointer hover:bg-white/10 transition-colors group" data-action="placeToken" data-id="${c.id}">
+                    <div class="w-8 h-8 rounded-full border-2 ${color} bg-cover bg-center flex items-center justify-center overflow-hidden shadow-md" style="${avatar ? `background-image: url('${avatar}');` : ''}">
+                        ${!avatar ? `<span class="text-white text-xs font-bold font-cinzel" style="color: ${colorHex}">${c.name.substring(0,1).toUpperCase()}</span>` : ''}
                     </div>
-                    <div style="flex: 1; overflow: hidden;">
-                        <div style="font-size: 0.85rem; color: #e2e8f0; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">${c.name}</div>
-                        <div style="font-size: 0.7rem; color: #64748b;">${c.hp !== undefined ? `HP: ${c.hp}` : ''}</div>
+                    <div class="flex-1 overflow-hidden">
+                        <div class="text-sm text-slate-200 truncate font-bold font-cinzel">${c.name}</div>
+                        <div class="text-[0.65rem] text-slate-500 font-extrabold uppercase tracking-wider">${c.hp !== undefined ? `HP: ${c.hp}` : ''}</div>
                     </div>
-                    <button class="btn btn-ghost" style="padding: 4px; font-size: 0.8rem;" title="Colocar no Mapa"><i class="fa-solid fa-crosshairs"></i></button>
+                    <button class="btn btn-ghost p-1.5 text-xs text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" title="Colocar no Mapa"><i class="fa-solid fa-crosshairs"></i></button>
                 </div>
             `;
         }).join('');

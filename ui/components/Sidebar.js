@@ -11,21 +11,36 @@ export function Sidebar() {
     const xpDistributed = useStore('xpDistributed');
     const players = useStore('players');
 
-    const items = [
-        { id: 'dmtable',       label: 'Mesa do Mestre',        icon: 'fa-table-cells-large' },
-        { id: 'dashboard',     label: 'Painel de Controle',    icon: 'fa-shield-halved' },
-        { id: 'dmshield',      label: 'Escudo do Mestre',      icon: 'fa-scroll' },
-        { id: 'combat',        label: 'Combate Tatico',        icon: 'fa-crosshairs' },
-        { id: 'initiative',    label: 'Monitor de Iniciativa', icon: 'fa-swords' },
-        { id: 'quest',         label: 'Gerenciador de Quests', icon: 'fa-hat-wizard' },
-        { id: 'journal',       label: 'Diario de Sessao',      icon: 'fa-book-open-reader' },
-        { id: 'npc',           label: 'Gerador de NPCs',       icon: 'fa-user-secret' },
-        { id: 'herohub',       label: 'Monitor de Herois',     icon: 'fa-users' },
-        { id: 'tomesinal',     label: 'Elo Arcano',            icon: 'fa-satellite-dish' },
-        { id: 'cardgenerator', label: 'Gerador de Cartas',     icon: 'fa-address-card' },
-        { id: 'bestiary',      label: 'Bestiario',             icon: 'fa-dragon' },
-        { id: 'loot',          label: 'Gerador de Loot',       icon: 'fa-coins' },
-        { id: 'settings',      label: 'Glossario de Regras',   icon: 'fa-book' }
+    const sections = [
+        {
+            title: "Mesa de Jogo",
+            items: [
+                { id: 'dmtable',       label: 'Mesa do Mestre',        icon: 'fa-table-cells-large' },
+                { id: 'dashboard',     label: 'Painel de Controle',    icon: 'fa-shield-halved' },
+                { id: 'dmshield',      label: 'Escudo do Mestre',      icon: 'fa-scroll' },
+                { id: 'combat',        label: 'Combate Tatico',        icon: 'fa-crosshairs' },
+                { id: 'initiative',    label: 'Monitor de Iniciativa', icon: 'fa-swords' },
+                { id: 'journal',       label: 'Diario de Sessao',      icon: 'fa-book-open-reader' }
+            ]
+        },
+        {
+            title: "Banco de Dados",
+            items: [
+                { id: 'quest',         label: 'Gerenciador de Quests', icon: 'fa-hat-wizard' },
+                { id: 'npc',           label: 'Gerador de NPCs',       icon: 'fa-user-secret' },
+                { id: 'herohub',       label: 'Monitor de Herois',     icon: 'fa-users' },
+                { id: 'bestiary',      label: 'Bestiario',             icon: 'fa-dragon' },
+                { id: 'loot',          label: 'Loot e Tesouros',       icon: 'fa-coins' },
+                { id: 'settings',      label: 'Glossario de Regras',   icon: 'fa-book' }
+            ]
+        },
+        {
+            title: "Sincronização & Rede",
+            items: [
+                { id: 'tomesinal',     label: 'Elo Arcano (Sync)',     icon: 'fa-satellite-dish' },
+                { id: 'cardgenerator', label: 'Gerador de Cartas',     icon: 'fa-address-card' }
+            ]
+        }
     ];
 
     const navigate = (tab) => {
@@ -245,14 +260,19 @@ export function Sidebar() {
                     <span>Gestão de Campanha</span>
                 </button>
 
-                <div class="h-px bg-gradient-to-r from-transparent via-accent/15 to-transparent my-2 mx-1"></div>
+                ${sections.map(section => html`
+                    <div class="mt-4 mb-1 px-3">
+                        <span class="text-[0.6rem] text-accent font-extrabold uppercase tracking-widest opacity-80">${section.title}</span>
+                        <div class="h-px bg-gradient-to-r from-transparent via-accent/15 to-transparent mt-1 mb-1"></div>
+                    </div>
 
-                ${items.map(i => html`
-                    <button class="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-transparent bg-transparent text-slate-400 font-outfit text-[0.81rem] font-medium text-left w-full transition-all hover:bg-white/5 hover:text-slate-50 hover:border-white/10 hover:translate-x-0.5 ${activeTab === i.id ? 'bg-gradient-to-r from-accent/10 to-accent/5 text-[#f3e5ab] border-accent/20 font-semibold shadow-[inset_3px_0_0_#d4af37]' : ''}"
-                            onClick=${() => navigate(i.id)}>
-                        <i class="fa-solid ${i.icon} w-4 text-center shrink-0 opacity-70 transition-all ${activeTab === i.id ? 'opacity-100 text-accent drop-shadow-[0_0_4px_rgba(212,175,55,0.4)]' : ''}"></i>
-                        <span>${i.label}</span>
-                    </button>
+                    ${section.items.map(i => html`
+                        <button class="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-transparent bg-transparent text-slate-400 font-outfit text-[0.81rem] font-medium text-left w-full transition-all hover:bg-white/5 hover:text-slate-50 hover:border-white/10 hover:translate-x-0.5 ${activeTab === i.id ? 'bg-gradient-to-r from-accent/10 to-accent/5 text-[#f3e5ab] border-accent/20 font-semibold shadow-[inset_3px_0_0_#d4af37]' : ''}"
+                                onClick=${() => navigate(i.id)}>
+                            <i class="fa-solid ${i.icon} w-4 text-center shrink-0 opacity-70 transition-all ${activeTab === i.id ? 'opacity-100 text-accent drop-shadow-[0_0_4px_rgba(212,175,55,0.4)]' : ''}"></i>
+                            <span>${i.label}</span>
+                        </button>
+                    `)}
                 `)}
             </nav>
 

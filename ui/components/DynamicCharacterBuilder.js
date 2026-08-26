@@ -44,51 +44,54 @@ export class DynamicCharacterBuilder extends Component {
         const hero = this.state.currentHero || {};
 
         return `
-            <div class="card glass-accent" style="padding:30px; max-width:800px; margin:auto; color: #fff; border-radius: 12px;">
-                <h2 style="font-family:'Cinzel'; color:var(--accent); text-align:center; text-transform: uppercase;">✨ Construtor de Personagem Dinâmico</h2>
-                <p style="text-align:center; color:var(--text-dim); margin-bottom: 20px; font-size: 0.8rem;">Sistema Ativo: ${s.version}</p>
+            <div class="card glass-accent p-8 max-w-[800px] mx-auto text-white rounded-2xl relative overflow-hidden">
+                <div class="absolute -right-20 -top-20 w-64 h-64 bg-accent/10 rounded-full blur-[100px] pointer-events-none"></div>
+                <h2 class="font-cinzel text-accent text-center uppercase m-0 text-2xl flex items-center justify-center gap-3 drop-shadow-[0_0_8px_rgba(197,160,89,0.4)]">
+                    <i class="fa-solid fa-hat-wizard"></i> Construtor de Personagem
+                </h2>
+                <p class="text-center text-slate-400 mb-6 text-sm mt-2 uppercase tracking-widest">Sistema Ativo: ${s.version}</p>
                 
-                <form id="dynamic-char-form">
-                    <div style="margin-bottom:25px;">
-                        <label style="color: var(--accent); font-weight: 700; margin-bottom: 8px; display: block;">NOME DO HERÓI</label>
-                        <input type="text" name="_name" class="form-control" style="background: rgba(0,0,0,0.5); color: #fff; border: 1px solid rgba(197,160,89,0.3); border-radius: 6px; padding: 10px; width: 100%;" value="${hero.name || ''}" required />
+                <form id="dynamic-char-form" class="relative z-10">
+                    <div class="mb-8">
+                        <label class="text-accent font-bold mb-2 block text-sm tracking-widest uppercase">NOME DA LENDA</label>
+                        <input type="text" name="_name" class="legacy-input bg-black/50 text-white border border-accent/30 rounded-lg p-3 w-full text-lg outline-none focus:border-accent shadow-inner transition-colors" value="${hero.name || ''}" placeholder="Ex: Gandalf, O Cinzento..." required />
                     </div>
 
-                    <div style="display: flex; gap: 40px; flex-wrap: wrap; margin-bottom: 30px;">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                         <!-- Atributos -->
-                        <div style="flex: 1; min-width: 250px;">
-                            <h3 style="color:var(--accent); border-bottom: 1px solid rgba(197,160,89,0.3); padding-bottom:8px; font-family: 'Cinzel';">Atributos Base</h3>
-                            <div style="display: grid; gap: 12px; margin-top: 15px;">
+                        <div class="flex flex-col">
+                            <h3 class="text-accent border-b border-accent/30 pb-2 font-cinzel text-lg flex items-center gap-2"><i class="fa-solid fa-dna"></i> Atributos Base</h3>
+                            <div class="grid gap-3 mt-4">
                                 ${Object.entries(s.attributes || {}).map(([key, attr]) => `
-                                    <div style="display:flex; justify-content:space-between; align-items:center; background: rgba(255,255,255,0.02); padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);">
-                                        <label class="rollable-attr" data-attr="${key}" style="font-weight: 600; font-size: 0.9rem; cursor: pointer; color: var(--accent); border-bottom: 1px dashed var(--accent);" title="Rolar teste de ${attr.label}"><i class="fa-solid fa-dice-d20"></i> ${attr.label}</label>
-                                        <input type="${attr.type}" name="attr_${key}" value="${hero.attributes?.[key] || attr.default}" style="width: 70px; text-align:center; background: rgba(0,0,0,0.6); color: #fff; border: 1px solid var(--accent); border-radius: 4px; padding: 4px;" />
+                                    <div class="flex justify-between items-center bg-white/5 p-2.5 rounded-lg border border-white/5 hover:bg-white/10 transition-colors">
+                                        <label class="rollable-attr font-bold text-sm cursor-pointer text-accent border-b border-dashed border-accent hover:text-white" data-attr="${key}" title="Rolar teste de ${attr.label}"><i class="fa-solid fa-dice-d20"></i> ${attr.label}</label>
+                                        <input type="${attr.type}" name="attr_${key}" value="${hero.attributes?.[key] || attr.default}" class="w-16 text-center bg-black/60 text-white border border-accent/50 rounded-md p-1 outline-none focus:border-accent" />
                                     </div>
                                 `).join('')}
                             </div>
                         </div>
 
                         <!-- Recursos -->
-                        <div style="flex: 1; min-width: 250px;">
-                            <h3 style="color:var(--accent); border-bottom: 1px solid rgba(197,160,89,0.3); padding-bottom:8px; font-family: 'Cinzel';">Recursos (Vitalidade, Magia)</h3>
-                            <div style="display: grid; gap: 12px; margin-top: 15px;">
+                        <div class="flex flex-col">
+                            <h3 class="text-accent border-b border-accent/30 pb-2 font-cinzel text-lg flex items-center gap-2"><i class="fa-solid fa-heart-pulse"></i> Recursos Vitais</h3>
+                            <div class="grid gap-3 mt-4">
                                 ${Object.entries(s.resources || {}).map(([key, res]) => `
-                                    <div style="display:flex; justify-content:space-between; align-items:center; background: rgba(255,255,255,0.02); padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);">
-                                        <label style="text-transform: capitalize; font-weight: 600; font-size: 0.9rem;">${key.replace('_', ' ')}</label>
-                                        <input type="${res.type}" name="res_${key}" value="${hero.resources?.[key] || res.default}" style="width: 70px; text-align:center; background: rgba(0,0,0,0.6); color: #fff; border: 1px solid var(--danger); border-radius: 4px; padding: 4px;" />
+                                    <div class="flex justify-between items-center bg-white/5 p-2.5 rounded-lg border border-white/5 hover:bg-white/10 transition-colors">
+                                        <label class="capitalize font-bold text-sm text-slate-200">${key.replace('_', ' ')}</label>
+                                        <input type="${res.type}" name="res_${key}" value="${hero.resources?.[key] || res.default}" class="w-16 text-center bg-black/60 text-white border border-red-500/50 rounded-md p-1 outline-none focus:border-red-500" />
                                     </div>
                                 `).join('')}
                             </div>
                         </div>
                     </div>
 
-                    <div style="background: rgba(197, 160, 89, 0.05); padding: 15px; border-radius: 8px; border: 1px dashed rgba(197,160,89,0.3); text-align: center; margin-bottom: 25px;">
-                        <span style="display: block; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 10px;">Atalhos Multissistema</span>
-                        <button type="button" id="btn-template-tank" class="btn btn-ghost" style="border: 1px solid var(--accent); color: var(--accent);">Criar: Guerreiro Tank</button>
+                    <div class="bg-accent/5 p-4 rounded-xl border border-dashed border-accent/30 text-center mb-8">
+                        <span class="block text-sm text-slate-400 mb-3 font-bold uppercase tracking-widest">Atalhos Multissistema</span>
+                        <button type="button" id="btn-template-tank" class="btn btn-ghost border border-accent text-accent hover:bg-accent hover:text-black font-bold py-1.5 px-4 text-sm rounded-lg transition-colors">Criar: Guerreiro Tank</button>
                     </div>
 
-                    <button type="submit" class="btn btn-primary btn-block" style="padding: 15px; font-size: 1.1rem; font-family: 'Cinzel'; letter-spacing: 2px;">
-                        <i class="fa-solid fa-save"></i> SALVAR PERSONAGEM
+                    <button type="submit" class="btn btn-primary w-full p-4 text-lg font-cinzel tracking-[2px] shadow-[0_0_15px_rgba(197,160,89,0.4)]">
+                        <i class="fa-solid fa-save mr-2"></i> SALVAR PERSONAGEM NO LIVRO
                     </button>
                 </form>
             </div>
