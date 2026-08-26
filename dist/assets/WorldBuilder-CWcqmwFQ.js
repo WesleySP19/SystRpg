@@ -1,4 +1,4 @@
-import{R as r}from"./ReactiveComponent-DxMwUypL.js";import{m as n}from"./main-Bk3T2ZrR.js";import{T as a}from"./BattleManager-CjydHzBy.js";import{Toast as t}from"./Toast-m0Ci56ke.js";import"./Boot-CGoZOUiq.js";import"./jsxRuntime.module-B_1yG4TV.js";import"./FXEngine-CD41bvJc.js";import"https://cdn.socket.io/4.7.4/socket.io.esm.min.js";class f extends r{constructor(e){super(e),this._lastDescription="",this._tone="mysterious"}template(){return n`
+import{R as r}from"./ReactiveComponent-et3s7fk-.js";import{m as n}from"./main-BrOk6ySq.js";import{T as a}from"./BattleManager-CjydHzBy.js";import{Toast as t}from"./Toast-m0Ci56ke.js";import"./Boot-DMC3Yg8D.js";import"./jsxRuntime.module-OTOYocg5.js";import"./FXEngine-CD41bvJc.js";import"https://cdn.socket.io/4.7.4/socket.io.esm.min.js";class f extends r{constructor(e){super(e),this._lastDescription="",this._tone="mysterious"}template(){return n`
             <div class="page" style="max-width:900px; margin:0 auto;">
                 <div class="section-header">
                     <div>

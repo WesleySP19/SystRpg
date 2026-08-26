@@ -1,4 +1,4 @@
-import{C as s}from"./Boot-CGoZOUiq.js";import{T as r}from"./BattleManager-CjydHzBy.js";import{Toast as o}from"./Toast-m0Ci56ke.js";import"./main-Bk3T2ZrR.js";import"./jsxRuntime.module-B_1yG4TV.js";import"./FXEngine-CD41bvJc.js";import"https://cdn.socket.io/4.7.4/socket.io.esm.min.js";class m extends s{template(){const{players:e}=this.store.state;return`
+import{C as s}from"./Boot-DMC3Yg8D.js";import{T as r}from"./BattleManager-CjydHzBy.js";import{Toast as o}from"./Toast-m0Ci56ke.js";import"./main-BrOk6ySq.js";import"./jsxRuntime.module-OTOYocg5.js";import"./FXEngine-CD41bvJc.js";import"https://cdn.socket.io/4.7.4/socket.io.esm.min.js";class m extends s{template(){const{players:e}=this.store.state;return`
             <div class="page max-w-[1400px] animate-fadeIn">
                 <div class="flex justify-between items-center bg-black/30 border border-white/5 rounded-2xl p-6 mb-8 shadow-xl">
                     <div>

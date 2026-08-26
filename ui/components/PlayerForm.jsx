@@ -38,7 +38,7 @@ export function PlayerForm({ store }) {
                     <input className="legacy-input inv-weight text-[0.7rem] p-1 text-center" type="number" value={item.weight || 0} step="0.1" placeholder="Peso" />
                     <button type="button" className="btn btn-danger btn-sm p-0 flex items-center justify-center" data-action="removeInventoryRow" data-index={i}>✕</button>
                 </div>
-            )).join('');
+            ));
         };
     const _renderAttackRows = () => {
             return attackRows.map((atk, i) => (
@@ -48,7 +48,7 @@ export function PlayerForm({ store }) {
                     <input className="legacy-input atk-damage" type="text" value={atk.damage || ''} placeholder="1d8" />
                     <button type="button" className="btn btn-danger btn-sm flex items-center justify-center" data-action="removeAttackRow" data-index={i}>✕</button>
                 </div>
-            )).join('');
+            ));
         };
     const _renderPlayerList = () => {
             const { players } = TOME.store.state;
@@ -56,15 +56,15 @@ export function PlayerForm({ store }) {
             return players.map(p => (
                 <div className="card flex justify-between items-center border-l-4 border-l-accent bg-white/5">
                     <div>
-                        <h4 class="m-0">{p.name}</h4>
-                        <p class="text-[0.7rem] m-0 mt-1 uppercase text-slate-400">{p.class || 'Sem Classe'} • NÍVEL {p.level || 1}</p>
+                        <h4 className="m-0">{p.name}</h4>
+                        <p className="text-[0.7rem] m-0 mt-1 uppercase text-slate-400">{p.class || 'Sem Classe'} • NÍVEL {p.level || 1}</p>
                     </div>
                     <div className="flex gap-2.5">
                         <button type="button" className="btn btn-ghost btn-sm bg-white/5 text-white hover:bg-white/10" data-action="editHero" data-id={p.id}>EDITAR</button>
                         <button type="button" className="btn btn-danger btn-sm" data-action="removePlayer" data-id={p.id}>✕</button>
                     </div>
                 </div>
-            )).join('');
+            ));
         };
     const _syncToStore = () => {
             const f = actions.$('#hero-form');
@@ -694,12 +694,12 @@ export function PlayerForm({ store }) {
             <div className="page legacy-sheet-container max-w-[1400px] mx-auto animate-fadeIn" ref={containerRef}>
                 <form id="hero-form" onSubmit={e => e.preventDefault()}>
                 
-                {isEditing ? html`
+                {isEditing ? (
                     <div className="edit-mode-banner bg-gradient-to-r from-accent to-[#f39c12] text-black p-2.5 text-center font-extrabold mb-5 rounded-lg border-2 border-black flex justify-between items-center">
-                        <span><i className="fa-solid fa-pen-fancy"></i> MODO EDIÇÃO: ${p.name || 'Herói'}</span>
+                        <span><i className="fa-solid fa-pen-fancy"></i> MODO EDIÇÃO: {p.name || 'Herói'}</span>
                         <button className="btn btn-ghost btn-sm text-black border border-black hover:bg-black/10" data-action="resetForm">CANCELAR / NOVO</button>
                     </div>
-                ` : ''}
+                ) : null}
                 
                 {/* ════ HEADER SECTION (D&D 5E OFFICIAL LAYOUT) ════ */}
                 <div className="mb-5">

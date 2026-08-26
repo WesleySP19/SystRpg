@@ -1,4 +1,4 @@
-import{C as u}from"./Boot-CGoZOUiq.js";import{T as f}from"./BattleManager-CjydHzBy.js";import"./main-Bk3T2ZrR.js";import"./jsxRuntime.module-B_1yG4TV.js";import"./FXEngine-CD41bvJc.js";import"https://cdn.socket.io/4.7.4/socket.io.esm.min.js";class w extends u{template(){const{players:e}=this.store.state;return!e||e.length===0?"":`
+import{C as u}from"./Boot-DMC3Yg8D.js";import{T as f}from"./BattleManager-CjydHzBy.js";import"./main-BrOk6ySq.js";import"./jsxRuntime.module-OTOYocg5.js";import"./FXEngine-CD41bvJc.js";import"https://cdn.socket.io/4.7.4/socket.io.esm.min.js";class w extends u{template(){const{players:e}=this.store.state;return!e||e.length===0?"":`
             <div class="party-hud fixed top-[90px] right-[20px] z-[1000] p-[15px] flex flex-col gap-3.5 rounded-[14px] border-[1.5px] border-accent/25 shadow-[0_15px_40px_rgba(0,0,0,0.7),inset_0_0_15px_rgba(197,160,89,0.05)] animate-fadeIn min-w-[190px] max-h-[calc(100vh-140px)] bg-black/80 backdrop-blur-md transition-all duration-300 select-none">
                 
                 <!-- HEADER (DRAG HANDLE & MINIMIZE CONTROL) -->

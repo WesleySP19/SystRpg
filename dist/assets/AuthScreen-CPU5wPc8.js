@@ -1,4 +1,4 @@
-import{u as e,P as f}from"./jsxRuntime.module-B_1yG4TV.js";import{R as z,d as c,h as L,S as g}from"./BattleManager-CjydHzBy.js";import"./main-Bk3T2ZrR.js";function Z(){if(document.getElementById("auth-screen-styles"))return;const i=document.createElement("style");i.id="auth-screen-styles",i.textContent=`
+import{u as e,P as f}from"./jsxRuntime.module-OTOYocg5.js";import{R as z,d as c,h as L,S as g}from"./BattleManager-CjydHzBy.js";import"./main-BrOk6ySq.js";function Z(){if(document.getElementById("auth-screen-styles"))return;const i=document.createElement("style");i.id="auth-screen-styles",i.textContent=`
             @keyframes authFadeIn {
                 from { opacity: 0; transform: scale(0.96) translateY(12px); }
                 to { opacity: 1; transform: scale(1) translateY(0); }
