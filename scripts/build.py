@@ -38,7 +38,7 @@ def main():
     
     # 2. Copiar estrutura básica
     dirs_to_copy = ['ui', 'core', 'services', 'utils', 'engine', 'packages', 'public', 'assets', 'api']
-    files_to_copy = ['index.html', 'transmissao.html', 'jogador.html', 'player-view.html', 'style.css']
+    files_to_copy = ['index.html', 'transmissao.html', 'jogador.html', 'player-view.html', 'style.css', 'main.js', 'manifest.json', 'service-worker.js']
     
     print(f"📁 Copiando arquivos base para {dist_dir}")
     os.makedirs(dist_dir, exist_ok=True)

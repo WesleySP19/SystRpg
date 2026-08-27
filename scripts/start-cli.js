@@ -41,16 +41,16 @@ function printHeader() {
 }
 
 function runViteBuild() {
-  console.log(colors.fgCyan + "[INFO]" + colors.reset + " Compilando nova interface com Vite...");
+  console.log(colors.fgCyan + "[INFO]" + colors.reset + " Minificando e Otimizando a Interface (Python Build)...");
   try {
-    const viteBin = path.join(ROOT_DIR, 'node_modules', 'vite', 'bin', 'vite.js');
-    if (fs.existsSync(viteBin)) {
-      execSync(`"${process.execPath}" "${viteBin}" build`, { cwd: ROOT_DIR, stdio: 'inherit' });
+    const pythonScript = path.join(ROOT_DIR, 'scripts', 'build.py');
+    if (fs.existsSync(pythonScript)) {
+      execSync(`python -X utf8 "${pythonScript}"`, { cwd: ROOT_DIR, stdio: 'inherit' });
     } else {
-      execSync('npm run build', { cwd: ROOT_DIR, stdio: 'inherit' });
+      console.log(colors.fgRed + "[!] Aviso: Script build.py não encontrado." + colors.reset);
     }
   } catch (e) {
-    console.log(colors.fgRed + "[!] Aviso: Falha ao rodar o build do Vite." + colors.reset);
+    console.log(colors.fgRed + "[!] Aviso: Falha ao rodar o build Otimizado do Python." + colors.reset);
   }
 }
 
@@ -137,7 +137,7 @@ async function main() {
   console.log("Escolha seu Caminho de Iniciação:");
   console.log(colors.fgGold + "  1." + colors.reset + " Modo Completo (Servidor + Janelas do Mestre e Jogador)");
   console.log(colors.fgCyan + "  2." + colors.reset + " Modo Headless (Apenas Servidor em Background)");
-  console.log(colors.fgGreen + "  3." + colors.reset + " Recompilar Interface (Rodar Build do Vite)\n");
+  console.log(colors.fgGreen + "  3." + colors.reset + " Otimizar Produção (Rodar Build em Python)\n");
 
   rl.question('Opção [1-3]: ', (answer) => {
     rl.close();

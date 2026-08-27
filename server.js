@@ -557,6 +557,7 @@ if (fs.existsSync(distPath)) {
     app.use('/', express.static(distPath, cacheOptions));
     // Serve os assets originais caso o Vite tenha alterado o nome com hash mas o código JS chame o path antigo
     app.use('/assets', express.static(path.join(PSScriptRoot, 'assets'), cacheOptions));
+    app.use('/node_modules', express.static(path.join(PSScriptRoot, 'node_modules'), cacheOptions));
 } else {
     console.log('[NodeServer] Servindo arquivos estáticos a partir do modo desenvolvedor.');
     app.use('/', express.static(PSScriptRoot, cacheOptions));
