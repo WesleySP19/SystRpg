@@ -1,266 +1,144 @@
-import { Component } from '../core/Component.js';
+import { useState, useEffect, useRef } from 'preact/hooks';
+import { useStore } from '../core/hooks.js';
 import { CRDTManager } from '../core/CRDTManager.js';
 
-export class TomeSinalPanel extends Component {
-    constructor(opts) {
-        super(opts);
-        this.masterId = 'DM_ACTIVE_MASTER';
-        this.messages = {}; // charId -> array of messages
-        this.eventSource = null;
-        this.activeTable = localStorage.getItem('DM_ACTIVE_TABLE') || 'Mesa-01';
-        this.sessionActive = false;
-        this.characterTokens = []; // { characterId, sessionToken, nome, connected }
-        this.selectedCharId = null;
-    }
+export function TomeSinalPanel() {
+    const storeState = useStore();
+    const players = storeState?.players || [];
+    
+    const [activeTable, setActiveTable] = useState(() => localStorage.getItem('DM_ACTIVE_TABLE') || 'Mesa-01');
+    const [sessionActive, setSessionActive] = useState(false);
+    const [characterTokens, setCharacterTokens] = useState([]);
+    const [selectedCharId, setSelectedCharId] = useState(null);
+    const [messages, setMessages] = useState({});
+    
+    const messagesRef = useRef({});
+    const chatHistoryRef = useRef(null);
 
-    template() {
-        const players = this.store.state.players || [];
-        
-        return `
-            <div class="tome-sinal-pane animate-fadeIn" style="display:flex; flex-direction:column; height: 100vh; background:var(--bg-main); overflow:hidden;">
-                <header style="background:var(--primary-dark); padding:20px; display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid var(--primary);">
-                    <div style="display:flex; align-items:center; gap: 15px;">
-                        <div style="width: 45px; height: 45px; background: var(--primary); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #fff; box-shadow: 0 0 15px var(--primary);">
-                            <i class="fa-solid fa-satellite-dish"></i>
-                        </div>
-                        <div>
-                            <h2 style="margin:0; font-family:'Cinzel',serif; color:#fff; font-size:1.5rem;">TOME.Sinal v2 — Sincronização por QR</h2>
-                            <span style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px;">Módulo V14.2 — Central de Comunicações</span>
-                        </div>
-                    </div>
-                    <div>
-                        ${this.sessionActive 
-                            ? `<button class="btn btn-danger" onclick="this.closest('.tome-sinal-pane').__component.encerrarSessao()"><i class="fa-solid fa-stop"></i> Encerrar Sessão Atual</button>`
-                            : `<button class="btn btn-primary" onclick="this.closest('.tome-sinal-pane').__component.iniciarSessao()"><i class="fa-solid fa-play"></i> Iniciar Sessão de Hoje</button>`
-                        }
-                    </div>
-                </header>
+    // Sync presence ref to access latest state inside intervals
+    const presenceRef = useRef({ sessionActive, characterTokens });
+    useEffect(() => {
+        presenceRef.current = { sessionActive, characterTokens };
+    }, [sessionActive, characterTokens]);
 
-                <div style="display:flex; flex:1; overflow:hidden;">
-                    <!-- Lista Lateral de Personagens -->
-                    <div style="width: 280px; background: rgba(0,0,0,0.4); border-right: 1px solid rgba(197, 160, 89, 0.2); display: flex; flex-direction: column; overflow-y: auto;">
-                        <div style="padding: 15px; font-family: 'Cinzel'; font-size: 1.1rem; color: var(--accent); border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center;">
-                            PERSONAGENS
-                        </div>
-                        <div id="character-list" style="display:flex; flex-direction:column;">
-                            ${this.sessionActive ? this.renderCharacterList() : '<div style="padding: 20px; text-align: center; color: var(--text-dim); font-size: 0.85rem;">Sessão inativa. Inicie a sessão para gerar QR Codes.</div>'}
-                        </div>
-                    </div>
-
-                    <!-- Fio de Chat Privado -->
-                    <div style="flex:1; display:flex; flex-direction:column; background: var(--bg-surface);">
-                        ${this.selectedCharId ? this.renderChatArea() : '<div style="flex:1; display:flex; align-items:center; justify-content:center; color:var(--text-dim); font-family:Cinzel,serif; font-size:1.2rem;">Selecione um personagem ao lado para abrir o chat privado.</div>'}
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    renderCharacterList() {
-        return this.characterTokens.map(char => {
-            const isSelected = this.selectedCharId === char.characterId;
-            const statusColor = char.connected ? 'var(--success)' : 'var(--danger)';
-            return `
-                <div onclick="this.closest('.tome-sinal-pane').__component.selectCharacter('${char.characterId}')" 
-                     style="padding: 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; transition: background 0.2s; background: ${isSelected ? 'rgba(197, 160, 89, 0.15)' : 'transparent'}; border-left: ${isSelected ? '3px solid var(--accent)' : '3px solid transparent'};">
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <span style="width: 10px; height: 10px; border-radius: 50%; background: ${statusColor}; box-shadow: 0 0 5px ${statusColor};"></span>
-                        <strong style="color: #fff; font-size: 0.95rem;">${char.nome}</strong>
-                    </div>
-                </div>
-            `;
-        }).join('');
-    }
-
-    renderChatArea() {
-        const char = this.characterTokens.find(c => c.characterId === this.selectedCharId);
-        if (!char) return '';
-
-        return `
-            <!-- Chat Header -->
-            <div style="padding: 15px 20px; background: rgba(0,0,0,0.5); border-bottom: 1px solid rgba(197, 160, 89, 0.2); display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <h3 style="margin: 0; color: var(--accent); font-family: 'Cinzel';"><i class="fa-solid fa-shield-halved"></i> Chat: ${char.nome}</h3>
-                </div>
-                ${!char.connected ? `<button class="btn btn-ghost btn-sm" onclick="this.closest('.tome-sinal-pane').__component.showQRModal('${char.characterId}')"><i class="fa-solid fa-qrcode"></i> Ver QR desta Sessão</button>` : `<span style="font-size: 0.8rem; color: var(--success);"><i class="fa-solid fa-check-circle"></i> Jogador Online</span>`}
-            </div>
-
-            <!-- Messages Container -->
-            <div id="chat-history-${char.characterId}" style="flex:1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;">
-                ${this.renderMessages(char.characterId)}
-            </div>
-
-            <!-- Input Area -->
-            <div style="padding: 15px; background: rgba(0,0,0,0.4); border-top: 1px solid rgba(255,255,255,0.05);">
-                <div style="display:flex; gap: 10px; margin-bottom: 10px;">
-                    <select id="msg-type-${char.characterId}" class="input" style="width: 180px;">
-                        <option value="sussurro">Sussurro (Privado)</option>
-                        <option value="voz_divina">Voz Divina</option>
-                        <option value="alerta">Alerta (Vibração)</option>
-                    </select>
-                </div>
-                <div style="display:flex; gap:10px;">
-                    <input type="text" id="msg-input-${char.characterId}" class="input" style="flex:1; font-size: 1rem; padding: 12px;" placeholder="Mensagem para ${char.nome}..." onkeypress="if(event.key==='Enter') this.closest('.tome-sinal-pane').__component.sendMessage('${char.characterId}')">
-                    <button class="btn btn-primary" onclick="this.closest('.tome-sinal-pane').__component.sendMessage('${char.characterId}')" style="padding: 0 25px;"><i class="fa-solid fa-paper-plane"></i> Enviar</button>
-                </div>
-            </div>
-        `;
-    }
-
-    renderMessages(charId) {
-        const msgs = this.messages[charId] || [];
-        if (msgs.length === 0) {
-            return `<div style="text-align:center; opacity:0.5; font-size:0.9rem; margin-top:20px;">Nenhuma mensagem neste fio de conversa.</div>`;
-        }
-
-        return msgs.map(m => {
-            const isMe = m.de === 'mestre';
-            const isAlert = m.tipo === 'alerta';
-            const isDivine = m.tipo === 'voz_divina';
-            
-            const align = isMe ? 'flex-end' : 'flex-start';
-            let bg = isMe ? 'rgba(102,252,241,0.1)' : 'rgba(255,255,255,0.1)';
-            if (isAlert) bg = 'rgba(239, 68, 68, 0.2)';
-            if (isDivine) bg = 'rgba(255, 215, 0, 0.15)';
-            
-            let border = isMe ? 'border-right: 3px solid var(--primary)' : 'border-left: 3px solid var(--secondary)';
-            if (isDivine) border = 'border-right: 3px solid gold';
-
-            let typeLabel = isMe ? 'Mestre' : 'Jogador';
-            if (isDivine) typeLabel = 'Voz Divina';
-            
-            return `
-                <div style="align-self: ${align}; background: ${bg}; ${border}; padding: 10px 15px; border-radius: 8px; max-width: 80%; animation: fadeIn 0.3s ease;">
-                    <div style="font-size:0.75rem; opacity:0.7; margin-bottom:5px;">
-                        ${isMe ? typeLabel : '<i class="fa-solid fa-user"></i> ' + (m.nome || m.de)}
-                    </div>
-                    <div style="${isAlert ? 'color:#ef4444; font-weight:bold;' : ''} ${isDivine ? 'color:gold; font-style:italic;' : ''}">${m.conteudo}</div>
-                </div>
-            `;
-        }).join('');
-    }
-
-    async onMount() {
+    useEffect(() => {
         if (!window.QRious) {
             const script = document.createElement('script');
             script.src = './ui/utils/vendor/qr-encoder.js';
             document.head.appendChild(script);
         }
 
-        try {
-            const res = await fetch(`/api/sessao/${this.activeTable}/tokens`);
-            const data = await res.json();
-            if (data.status === 'active' && data.tokens && data.tokens.length > 0) {
-                this.sessionActive = true;
-                this.characterTokens = data.tokens;
-                this.selectedCharId = this.characterTokens[0]?.characterId;
-                this.render();
+        const initSession = async () => {
+            try {
+                const res = await fetch(`/api/sessao/${activeTable}/tokens`);
+                const data = await res.json();
+                if (data.status === 'active' && data.tokens && data.tokens.length > 0) {
+                    setSessionActive(true);
+                    setCharacterTokens(data.tokens);
+                    setSelectedCharId(data.tokens[0]?.characterId);
+                }
+            } catch(e) {
+                console.error('Failed to fetch active tokens:', e);
             }
-        } catch(e) {
-            console.error('Failed to fetch active tokens:', e);
-        }
+        };
 
-        this.connectCRDT();
-    }
+        initSession();
 
-    connectCRDT() {
-        CRDTManager.connect(this.activeTable, 'Mestre');
+        // Connect CRDT
+        CRDTManager.connect(activeTable, 'Mestre');
         
-        // Listen to chat changes
-        CRDTManager.chatHistory.observe(event => {
-            // Rebuild messages dictionary from CRDT array
-            this.messages = {};
+        const handleChatChange = () => {
+            const newMessages = {};
             const arr = CRDTManager.chatHistory.toArray();
             arr.forEach(msg => {
                 const charId = msg.de === 'mestre' ? msg.para : msg.de;
                 if (charId) {
-                    if (!this.messages[charId]) this.messages[charId] = [];
-                    this.messages[charId].push(msg);
+                    if (!newMessages[charId]) newMessages[charId] = [];
+                    newMessages[charId].push(msg);
                 }
             });
-            // Re-render chat if open
-            if (this.selectedCharId) {
-                const historyContainer = this.element.querySelector(`#chat-history-${this.selectedCharId}`);
-                if (historyContainer) {
-                    historyContainer.innerHTML = this.renderMessages(this.selectedCharId);
-                    this.scrollToBottom(this.selectedCharId);
+            setMessages(newMessages);
+            messagesRef.current = newMessages;
+            
+            setTimeout(() => {
+                if (chatHistoryRef.current) {
+                    chatHistoryRef.current.scrollTop = chatHistoryRef.current.scrollHeight;
                 }
-            }
-        });
+            }, 50);
+        };
 
-        // Listen to online presence using Yjs Awareness
-        if (CRDTManager.provider && CRDTManager.provider.awareness) {
-            CRDTManager.provider.awareness.on('change', () => {
-                this.syncPresence();
+        CRDTManager.chatHistory.observe(handleChatChange);
+        // Initial load
+        handleChatChange();
+
+        const syncPresence = () => {
+            const { sessionActive, characterTokens } = presenceRef.current;
+            if (!sessionActive) return;
+            
+            let onlineIds = [];
+            const now = Date.now();
+            
+            if (CRDTManager.provider && CRDTManager.provider.awareness) {
+                const states = Array.from(CRDTManager.provider.awareness.getStates().values());
+                onlineIds = states.map(s => s.user?.charId).filter(Boolean);
+            }
+            
+            characterTokens.forEach(char => {
+                if (char.lastSocketPing && (now - char.lastSocketPing < 15000)) {
+                    if (!onlineIds.includes(char.characterId)) {
+                        onlineIds.push(char.characterId);
+                    }
+                }
             });
+            
+            setCharacterTokens(prev => {
+                let changed = false;
+                const next = prev.map(char => {
+                    const isConnected = onlineIds.includes(char.characterId);
+                    if (char.connected !== isConnected) {
+                        changed = true;
+                        return { ...char, connected: isConnected };
+                    }
+                    return char;
+                });
+                return changed ? next : prev;
+            });
+        };
+
+        if (CRDTManager.provider && CRDTManager.provider.awareness) {
+            CRDTManager.provider.awareness.on('change', syncPresence);
         }
         
-        // Listen to Socket.IO fallback presence (ping heartbeat)
+        const socketPresenceHandler = (data) => {
+            if (!data || !data.charId) return;
+            setCharacterTokens(prev => {
+                const next = prev.map(char => {
+                    if (char.characterId === data.charId) {
+                        return { ...char, lastSocketPing: Date.now() };
+                    }
+                    return char;
+                });
+                return next;
+            });
+            syncPresence();
+        };
+
         if (window.TOME && window.TOME.socket) {
-            window.TOME.socket.on('player_presence', (data) => {
-                if (!data || !data.charId) return;
-                const char = this.characterTokens.find(c => c.characterId === data.charId);
-                if (char) {
-                    char.lastSocketPing = Date.now();
-                    this.syncPresence();
-                }
-            });
+            window.TOME.socket.on('player_presence', socketPresenceHandler);
         }
-        
-        // Periodic check for stale Socket.IO pings (15s timeout)
-        this.presenceInterval = setInterval(() => {
-            this.syncPresence();
-        }, 5000);
-    }
 
-    syncPresence() {
-        if (!this.sessionActive) return;
-        
-        let onlineIds = [];
-        const now = Date.now();
-        
-        // 1. Gather from Yjs Awareness
-        if (CRDTManager.provider && CRDTManager.provider.awareness) {
-            const states = Array.from(CRDTManager.provider.awareness.getStates().values());
-            onlineIds = states.map(s => s.user?.charId).filter(Boolean);
-        }
-        
-        // 2. Gather from Socket.IO recent pings
-        this.characterTokens.forEach(char => {
-            if (char.lastSocketPing && (now - char.lastSocketPing < 15000)) {
-                if (!onlineIds.includes(char.characterId)) {
-                    onlineIds.push(char.characterId);
-                }
+        const presenceInterval = setInterval(syncPresence, 5000);
+
+        return () => {
+            clearInterval(presenceInterval);
+            CRDTManager.disconnect();
+            if (window.TOME && window.TOME.socket) {
+                window.TOME.socket.off('player_presence', socketPresenceHandler);
             }
-        });
-        
-        this.updateOnlineStatus(onlineIds.map(id => ({ id })));
-    }
+        };
+    }, [activeTable]);
 
-    updateOnlineStatus(onlinePlayers) {
-        if (!this.sessionActive) return;
-        
-        let changed = false;
-        const onlineIds = onlinePlayers.map(p => p.id);
-        
-        this.characterTokens.forEach(char => {
-            const isConnected = onlineIds.includes(char.characterId);
-            if (char.connected !== isConnected) {
-                char.connected = isConnected;
-                changed = true;
-            }
-        });
-
-        if (changed) {
-            const listEl = this.element.querySelector('#character-list');
-            if (listEl) {
-                listEl.innerHTML = this.sessionActive ? this.renderCharacterList() : '<div style="padding: 20px; text-align: center; color: var(--text-dim); font-size: 0.85rem;">Sessão inativa. Inicie a sessão para gerar QR Codes.</div>';
-            }
-        }
-    }
-
-    async iniciarSessao() {
-        const players = this.store.state.players || [];
+    const iniciarSessao = async () => {
         if (players.length === 0) {
             alert("Nenhum personagem registrado na mesa.");
             return;
@@ -271,66 +149,48 @@ export class TomeSinalPanel extends Component {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    tableId: this.activeTable,
+                    tableId: activeTable,
                     personagens: players
                 })
             });
             const data = await response.json();
             
             if (data.status === 'success') {
-                this.characterTokens = data.tokens.map(t => ({
+                const tokens = data.tokens.map(t => ({
                     characterId: t.characterId,
                     sessionToken: t.sessionToken,
                     nome: t.nome,
                     connected: false
                 }));
-                this.sessionActive = true;
-                this.selectedCharId = this.characterTokens[0]?.characterId;
-                this.render();
+                setCharacterTokens(tokens);
+                setSessionActive(true);
+                setSelectedCharId(tokens[0]?.characterId);
             }
         } catch (e) {
             console.error("Erro ao iniciar sessão", e);
         }
-    }
+    };
 
-    async encerrarSessao() {
+    const encerrarSessao = async () => {
         if (!confirm("Tem certeza que deseja encerrar a sessão? Os links dos jogadores serão desativados.")) return;
         
         try {
             await fetch('/api/sessao/encerrar', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ tableId: this.activeTable })
+                body: JSON.stringify({ tableId: activeTable })
             });
             
-            this.sessionActive = false;
-            this.characterTokens = [];
-            this.selectedCharId = null;
-            this.render();
+            setSessionActive(false);
+            setCharacterTokens([]);
+            setSelectedCharId(null);
         } catch (e) {
             console.error("Erro ao encerrar sessão", e);
         }
-    }
+    };
 
-    selectCharacter(charId) {
-        this.selectedCharId = charId;
-        // Targeted re-render for the right pane and character list selection state
-        const rightPane = this.element.querySelector('.tome-sinal-pane > div > div:nth-child(2)');
-        if (rightPane) rightPane.innerHTML = this.renderChatArea();
-        
-        const listEl = this.element.querySelector('#character-list');
-        if (listEl) listEl.innerHTML = this.renderCharacterList();
-        
-        setTimeout(() => this.scrollToBottom(charId), 50);
-    }
-
-    scrollToBottom(charId) {
-        const container = this.element.querySelector(`#chat-history-${charId}`);
-        if (container) container.scrollTop = container.scrollHeight;
-    }
-
-    async showQRModal(charId) {
-        const char = this.characterTokens.find(c => c.characterId === charId);
+    const showQRModal = async (charId) => {
+        const char = characterTokens.find(c => c.characterId === charId);
         if (!char) return;
 
         let lanIp = window.location.hostname;
@@ -384,34 +244,150 @@ export class TomeSinalPanel extends Component {
                 console.error("QRious não carregou a tempo.");
             }
         }, 100);
-    }
+    };
 
-    async sendMessage(charId) {
-        const input = this.element.querySelector(`#msg-input-${charId}`);
-        const typeSelect = this.element.querySelector(`#msg-type-${charId}`);
-        
-        const content = input.value.trim();
-        if (!content) return;
+    const sendMessage = (charId, content, type) => {
+        if (!content || !content.trim()) return;
 
-        const type = typeSelect.value;
         const msgObj = {
             id: Date.now() + Math.random().toString(36).substr(2, 5),
             tipo: type,
             de: 'mestre',
             para: charId,
-            conteudo: content,
+            conteudo: content.trim(),
             timestamp: Date.now()
         };
 
-        // Envia direto pro CRDT de forma offline-first
         CRDTManager.chatHistory.push([msgObj]);
-        
-        input.value = '';
-    }
+    };
 
-    unmount() {
-        if (this.presenceInterval) clearInterval(this.presenceInterval);
-        CRDTManager.disconnect();
-        super.unmount();
-    }
+    const handleInputKeyPress = (e, charId, type) => {
+        if (e.key === 'Enter') {
+            sendMessage(charId, e.target.value, type);
+            e.target.value = '';
+        }
+    };
+
+    const handleSendClick = (charId) => {
+        const input = document.getElementById(`msg-input-${charId}`);
+        const typeSelect = document.getElementById(`msg-type-${charId}`);
+        if (input && typeSelect) {
+            sendMessage(charId, input.value, typeSelect.value);
+            input.value = '';
+        }
+    };
+
+    const selectedChar = characterTokens.find(c => c.characterId === selectedCharId);
+    const selectedMsgs = selectedCharId ? (messages[selectedCharId] || []) : [];
+
+    return (
+        <div class="tome-sinal-pane animate-fadeIn" style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--bg-main)', overflow: 'hidden' }}>
+            <header style={{ background: 'var(--primary-dark)', padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid var(--primary)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                    <div style={{ width: '45px', height: '45px', background: 'var(--primary)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', color: '#fff', boxShadow: '0 0 15px var(--primary)' }}>
+                        <i class="fa-solid fa-satellite-dish"></i>
+                    </div>
+                    <div>
+                        <h2 style={{ margin: 0, fontFamily: "'Cinzel',serif", color: '#fff', fontSize: '1.5rem' }}>TOME.Sinal v2 — Sincronização por QR</h2>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '1px' }}>Módulo V14.2 — Central de Comunicações</span>
+                    </div>
+                </div>
+                <div>
+                    {sessionActive 
+                        ? <button class="btn btn-danger" onClick={encerrarSessao}><i class="fa-solid fa-stop"></i> Encerrar Sessão Atual</button>
+                        : <button class="btn btn-primary" onClick={iniciarSessao}><i class="fa-solid fa-play"></i> Iniciar Sessão de Hoje</button>
+                    }
+                </div>
+            </header>
+
+            <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+                {/* Lista Lateral de Personagens */}
+                <div style={{ width: '280px', background: 'rgba(0,0,0,0.4)', borderRight: '1px solid rgba(197, 160, 89, 0.2)', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+                    <div style={{ padding: '15px', fontFamily: "'Cinzel'", fontSize: '1.1rem', color: 'var(--accent)', borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
+                        PERSONAGENS
+                    </div>
+                    <div id="character-list" style={{ display: 'flex', flexDirection: 'column' }}>
+                        {sessionActive ? characterTokens.map(char => {
+                            const isSelected = selectedCharId === char.characterId;
+                            const statusColor = char.connected ? 'var(--success)' : 'var(--danger)';
+                            return (
+                                <div key={char.characterId} onClick={() => setSelectedCharId(char.characterId)} style={{ padding: '15px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer', transition: 'background 0.2s', background: isSelected ? 'rgba(197, 160, 89, 0.15)' : 'transparent', borderLeft: isSelected ? '3px solid var(--accent)' : '3px solid transparent' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: statusColor, boxShadow: `0 0 5px ${statusColor}` }}></span>
+                                        <strong style={{ color: '#fff', fontSize: '0.95rem' }}>{char.nome}</strong>
+                                    </div>
+                                </div>
+                            );
+                        }) : <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-dim)', fontSize: '0.85rem' }}>Sessão inativa. Inicie a sessão para gerar QR Codes.</div>}
+                    </div>
+                </div>
+
+                {/* Fio de Chat Privado */}
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'var(--bg-surface)' }}>
+                    {selectedCharId && selectedChar ? (
+                        <>
+                            {/* Chat Header */}
+                            <div style={{ padding: '15px 20px', background: 'rgba(0,0,0,0.5)', borderBottom: '1px solid rgba(197, 160, 89, 0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div>
+                                    <h3 style={{ margin: 0, color: 'var(--accent)', fontFamily: "'Cinzel'" }}><i class="fa-solid fa-shield-halved"></i> Chat: {selectedChar.nome}</h3>
+                                </div>
+                                {!selectedChar.connected 
+                                    ? <button class="btn btn-ghost btn-sm" onClick={() => showQRModal(selectedChar.characterId)}><i class="fa-solid fa-qrcode"></i> Ver QR desta Sessão</button> 
+                                    : <span style={{ fontSize: '0.8rem', color: 'var(--success)' }}><i class="fa-solid fa-check-circle"></i> Jogador Online</span>
+                                }
+                            </div>
+
+                            {/* Messages Container */}
+                            <div id={`chat-history-${selectedChar.characterId}`} ref={chatHistoryRef} style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                {selectedMsgs.length === 0 ? (
+                                    <div style={{ textAlign: 'center', opacity: 0.5, fontSize: '0.9rem', marginTop: '20px' }}>Nenhuma mensagem neste fio de conversa.</div>
+                                ) : selectedMsgs.map(m => {
+                                    const isMe = m.de === 'mestre';
+                                    const isAlert = m.tipo === 'alerta';
+                                    const isDivine = m.tipo === 'voz_divina';
+                                    
+                                    const align = isMe ? 'flex-end' : 'flex-start';
+                                    let bg = isMe ? 'rgba(102,252,241,0.1)' : 'rgba(255,255,255,0.1)';
+                                    if (isAlert) bg = 'rgba(239, 68, 68, 0.2)';
+                                    if (isDivine) bg = 'rgba(255, 215, 0, 0.15)';
+                                    
+                                    let border = isMe ? 'borderRight: 3px solid var(--primary)' : 'borderLeft: 3px solid var(--secondary)';
+                                    if (isDivine) border = 'borderRight: 3px solid gold';
+
+                                    let typeLabel = isMe ? 'Mestre' : 'Jogador';
+                                    if (isDivine) typeLabel = 'Voz Divina';
+                                    
+                                    return (
+                                        <div key={m.id || m.timestamp} style={{ alignSelf: align, background: bg, ...(isMe || isDivine ? { borderRight: isDivine ? '3px solid gold' : '3px solid var(--primary)' } : { borderLeft: '3px solid var(--secondary)' }), padding: '10px 15px', borderRadius: '8px', maxWidth: '80%', animation: 'fadeIn 0.3s ease' }}>
+                                            <div style={{ fontSize: '0.75rem', opacity: 0.7, marginBottom: '5px' }}>
+                                                {isMe ? typeLabel : <><i class="fa-solid fa-user"></i> {m.nome || m.de}</>}
+                                            </div>
+                                            <div style={{ ...(isAlert ? { color: '#ef4444', fontWeight: 'bold' } : {}), ...(isDivine ? { color: 'gold', fontStyle: 'italic' } : {}) }}>{m.conteudo}</div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Input Area */}
+                            <div style={{ padding: '15px', background: 'rgba(0,0,0,0.4)', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                                <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+                                    <select id={`msg-type-${selectedChar.characterId}`} class="input" style={{ width: '180px' }}>
+                                        <option value="sussurro">Sussurro (Privado)</option>
+                                        <option value="voz_divina">Voz Divina</option>
+                                        <option value="alerta">Alerta (Vibração)</option>
+                                    </select>
+                                </div>
+                                <div style={{ display: 'flex', gap: '10px' }}>
+                                    <input type="text" id={`msg-input-${selectedChar.characterId}`} class="input" style={{ flex: 1, fontSize: '1rem', padding: '12px' }} placeholder={`Mensagem para ${selectedChar.nome}...`} onKeyPress={(e) => handleInputKeyPress(e, selectedChar.characterId, document.getElementById(`msg-type-${selectedChar.characterId}`).value)} />
+                                    <button class="btn btn-primary" onClick={() => handleSendClick(selectedChar.characterId)} style={{ padding: '0 25px' }}><i class="fa-solid fa-paper-plane"></i> Enviar</button>
+                                </div>
+                            </div>
+                        </>
+                    ) : (
+                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dim)', fontFamily: "'Cinzel',serif", fontSize: '1.2rem' }}>Selecione um personagem ao lado para abrir o chat privado.</div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
 }
