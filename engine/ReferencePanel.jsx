@@ -4,27 +4,75 @@
  * Players see the current image in their view.
  * Uses BroadcastChannel to sync with player-view.html.
  */
-import { Component } from '../ui/core/Component.js';
+import { useState, useEffect, useRef } from "preact/hooks";
+import { useStore } from "../ui/core/hooks.js";
+import { html } from "htm/preact";
 import { TOME } from '../core/Registry.js';
 import { Toast } from '../ui/components/Toast.js';
 import { PersistenceService } from '../services/PersistenceService.js';
 
-export class ReferencePanel extends Component {
-    constructor(opts) {
-        super(opts);
-        this._images = this.store.state.referenceImages || [];
-        this._activeIdx = this.store.state.referenceActiveIdx ?? 0;
-        this._lightboxOpen = false;
-        this._channel = null;
+export function ReferencePanel(opts) {
+    const storeState = useStore();
+    const [images, setImages] = useState(storeState.referenceImages || []);
+    const [activeIdx, setActiveIdx] = useState(storeState.referenceActiveIdx ?? 0);
+    const [lightboxOpen, setLightboxOpen] = useState(false);
+    const [channel, setChannel] = useState(null);
+    const containerRef = useRef(null);
 
-        // BroadcastChannel for player sync
+    const legacyCtx = {
+        store: window.TOME?.store || { state: storeState },
+        _images: images,
+        _activeIdx: activeIdx,
+        _lightboxOpen: lightboxOpen,
+        _channel: channel,
+        render: () => {},
+        $: (sel) => containerRef.current ? containerRef.current.querySelector(sel) : null,
+        $$: (sel) => containerRef.current ? containerRef.current.querySelectorAll(sel) : []
+    };
+
+    const self = new Proxy(legacyCtx, {
+        get: (target, prop) => {
+            if (prop in target) return target[prop];
+            return eval(prop);
+        },
+        set: (target, prop, value) => {
+            if (prop === "_images") setImages(value);
+            else if (prop === "_activeIdx") setActiveIdx(value);
+            else if (prop === "_lightboxOpen") setLightboxOpen(value);
+            else if (prop === "_channel") setChannel(value);
+            target[prop] = value;
+            return true;
+        }
+    });
+
+    function template() {
+
+    const handleGlobalClick = (e) => {
+        const btn = e.target.closest("[data-action]");
+        if (btn) {
+            const action = btn.dataset.action;
+            if (action === "openSpectatorTV") self.openSpectatorTV(e, btn);
+            if (action === "uploadImage") self.uploadImage(e, btn);
+            if (action === "clearAll") self.clearAll(e, btn);
+            if (action === "toggleLightbox") self.toggleLightbox(e, btn);
+            if (action === "broadcastActive") self.broadcastActive(e, btn);
+            if (action === "deleteActive") self.deleteActive(e, btn);
+            if (action === "selectImage") self.selectImage(e, btn);
+            if (action === "deleteImage") self.deleteImage(e, btn);
+        }
+    };
+    
+    useEffect(() => {
         try {
-            this._channel = new BroadcastChannel('tome_reference');
+            self._channel = new BroadcastChannel('tome_reference');
         } catch (e) { /* Safari private */ }
-    }
+        
+        if (self.onMount) self.onMount();
+        return () => { if (self.onUnmount) self.onUnmount(); };
+    }, []);
 
-    template() {
-        const active = this._images[this._activeIdx];
+    return (function() {
+        const active = _images[_activeIdx];
         return `
             <div class="ref-panel">
                 <!-- Header -->
@@ -48,7 +96,7 @@ export class ReferencePanel extends Component {
                 <input type="file" id="ref-upload" accept="image/*" style="display:none;" multiple>
 
                 <!-- Active Image -->
-                <div class="ref-display ${this._lightboxOpen ? 'ref-lightbox' : ''}">
+                <div class="ref-display ${_lightboxOpen ? 'ref-lightbox' : ''}">
                     ${active ? `
                         <img src="${active.data}" alt="${active.name}"
                              class="ref-img" data-action="toggleLightbox"
@@ -74,10 +122,10 @@ export class ReferencePanel extends Component {
                 </div>
 
                 <!-- Thumbnail Strip -->
-                ${this._images.length > 1 ? `
+                ${_images.length > 1 ? `
                     <div class="ref-thumb-strip">
-                        ${this._images.map((img, i) => `
-                            <div class="ref-thumb ${i === this._activeIdx ? 'active' : ''}"
+                        ${_images.map((img, i) => `
+                            <div class="ref-thumb ${i === _activeIdx ? 'active' : ''}"
                                  data-action="selectImage" data-idx="${i}"
                                  title="${img.name}">
                                 <img src="${img.data}" alt="${img.name}" />
@@ -88,7 +136,7 @@ export class ReferencePanel extends Component {
                 ` : ''}
 
                 <!-- Broadcast status -->
-                ${this.store.state.referenceBroadcast ? `
+                ${store.state.referenceBroadcast ? `
                     <div style="font-size:0.6rem;color:var(--success);text-align:center;padding:4px;display:flex;align-items:center;gap:4px;justify-content:center;">
                         <span style="width:6px;height:6px;background:var(--success);border-radius:50%;display:inline-block;animation:pulse 1.5s infinite;"></span>
                         Transmitindo para Jogadores e Telão TV
@@ -100,35 +148,35 @@ export class ReferencePanel extends Component {
 
     /* ── Actions ────────────────────────────────────────────────── */
 
-    openSpectatorTV() {
+    function openSpectatorTV() {
         window.open('/transmissao.html', '_blank', 'noopener,noreferrer,width=1280,height=720');
         Toast.show('📺 Telão do Espectador acionado para TV / Segunda Tela!', 'info');
     }
 
-    uploadImage() {
-        this.$('#ref-upload').click();
+    function uploadImage() {
+        $('#ref-upload').click();
     }
 
-    selectImage(e, el) {
+    function selectImage(e, el) {
         const idx = parseInt(el.dataset.idx);
         if (!isNaN(idx)) {
-            this._activeIdx = idx;
-            this._sync();
-            if (this.store.state.referenceBroadcast) {
-                this.broadcastActive();
+            _activeIdx = idx;
+            _sync();
+            if (store.state.referenceBroadcast) {
+                broadcastActive();
             } else {
-                this.render();
+                render();
             }
         }
     }
 
-    toggleLightbox() {
-        this._lightboxOpen = !this._lightboxOpen;
-        this.render();
+    function toggleLightbox() {
+        _lightboxOpen = !_lightboxOpen;
+        render();
     }
 
-    broadcastActive() {
-        const img = this._images[this._activeIdx];
+    function broadcastActive() {
+        const img = _images[_activeIdx];
         if (!img) return;
 
         // Sync via store (for localStorage broadcast)
@@ -139,8 +187,8 @@ export class ReferencePanel extends Component {
         });
 
         // BroadcastChannel for instant sync
-        if (this._channel) {
-            this._channel.postMessage({
+        if (_channel) {
+            _channel.postMessage({
                 type: 'REFERENCE_IMAGE',
                 data: img.data,
                 name: img.name
@@ -160,93 +208,93 @@ export class ReferencePanel extends Component {
         } catch(e) { console.warn("Falha de envio socket ao telão TV"); }
 
         Toast.show(`📡 "${img.name}" enviado para Telão e Celulares dos Jogadores!`, 'success');
-        this.render();
+        render();
     }
 
-    deleteActive() {
-        this._images.splice(this._activeIdx, 1);
-        this._activeIdx = Math.max(0, this._activeIdx - 1);
-        this._sync();
-        if (this.store.state.referenceBroadcast) {
-            if (this._images.length > 0) {
-                this.broadcastActive();
+    function deleteActive() {
+        _images.splice(_activeIdx, 1);
+        _activeIdx = Math.max(0, _activeIdx - 1);
+        _sync();
+        if (store.state.referenceBroadcast) {
+            if (_images.length > 0) {
+                broadcastActive();
             } else {
                 TOME.store.update(s => {
                     s.referenceBroadcast = false;
                     s.referenceCurrentImg = null;
                 });
-                if (this._channel) {
-                    this._channel.postMessage({
+                if (_channel) {
+                    _channel.postMessage({
                         type: 'REFERENCE_IMAGE',
                         data: null,
                         name: ''
                     });
                 }
-                this.render();
+                render();
             }
         } else {
-            this.render();
+            render();
         }
     }
 
-    deleteImage(e, el) {
+    function deleteImage(e, el) {
         e.stopPropagation();
         const idx = parseInt(el.dataset.idx);
         if (!isNaN(idx)) {
-            this._images.splice(idx, 1);
-            if (this._activeIdx >= this._images.length) this._activeIdx = Math.max(0, this._images.length - 1);
-            this._sync();
-            if (this.store.state.referenceBroadcast) {
-                if (this._images.length > 0) {
-                    this.broadcastActive();
+            _images.splice(idx, 1);
+            if (_activeIdx >= _images.length) _activeIdx = Math.max(0, _images.length - 1);
+            _sync();
+            if (store.state.referenceBroadcast) {
+                if (_images.length > 0) {
+                    broadcastActive();
                 } else {
                     TOME.store.update(s => {
                         s.referenceBroadcast = false;
                         s.referenceCurrentImg = null;
                     });
-                    if (this._channel) {
-                        this._channel.postMessage({
+                    if (_channel) {
+                        _channel.postMessage({
                             type: 'REFERENCE_IMAGE',
                             data: null,
                             name: ''
                         });
                     }
-                    this.render();
+                    render();
                 }
             } else {
-                this.render();
+                render();
             }
         }
     }
 
-    clearAll() {
-        if (!this._images.length) return;
+    function clearAll() {
+        if (!_images.length) return;
         if (!confirm('Remover todas as imagens de referência?')) return;
-        this._images = [];
-        this._activeIdx = 0;
+        _images = [];
+        _activeIdx = 0;
         TOME.store.update(s => {
             s.referenceBroadcast = false;
             s.referenceCurrentImg = null;
         });
-        if (this._channel) {
-            this._channel.postMessage({
+        if (_channel) {
+            _channel.postMessage({
                 type: 'REFERENCE_IMAGE',
                 data: null,
                 name: ''
             });
         }
-        this._sync();
-        this.render();
+        _sync();
+        render();
     }
 
-    _sync() {
+    function _sync() {
         TOME.store.update(s => {
-            s.referenceImages = this._images;
-            s.referenceActiveIdx = this._activeIdx;
+            s.referenceImages = _images;
+            s.referenceActiveIdx = _activeIdx;
         });
     }
 
-    _compressImage(base64Str, maxWidth = 1000, maxHeight = 1000, quality = 0.8) {
+    function _compressImage(base64Str, maxWidth = 1000, maxHeight = 1000, quality = 0.8) {
         return new Promise((resolve) => {
             const img = new Image();
             img.onload = () => {
@@ -279,8 +327,8 @@ export class ReferencePanel extends Component {
         });
     }
 
-    onMount() {
-        const upload = this.$('#ref-upload');
+    function onMount() {
+        const upload = $('#ref-upload');
         if (upload) {
             upload.onchange = (e) => {
                 const files = [...e.target.files];
@@ -288,24 +336,24 @@ export class ReferencePanel extends Component {
                     const reader = new FileReader();
                     reader.onload = async (re) => {
                         const raw = re.target.result;
-                        const compressed = await this._compressImage(raw);
+                        const compressed = await _compressImage(raw);
                         const cleanName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
                         const fileName = `ref_${Date.now()}_${cleanName}`;
                         const finalUrl = await PersistenceService.uploadImage(fileName, compressed);
                         
-                        this._images.push({ name: file.name.replace(/\.[^.]+$/, ''), data: finalUrl });
-                        this._activeIdx = this._images.length - 1;
-                        this._sync();
-                        if (this.store.state.referenceBroadcast) {
-                            this.broadcastActive();
+                        _images.push({ name: file.name.replace(/\.[^.]+$/, ''), data: finalUrl });
+                        _activeIdx = _images.length - 1;
+                        _sync();
+                        if (store.state.referenceBroadcast) {
+                            broadcastActive();
                         } else {
-                            this.render();
+                            render();
                         }
-                        this.onMount(); // Re-bind file input
+                        onMount(); // Re-bind file input
                     };
                     reader.readAsDataURL(file);
                 });
             };
         }
-    }
+    return html`<div ref=${containerRef} onClick=${handleGlobalClick} dangerouslySetInnerHTML=${{__html: self.template()}}></div>`;
 }

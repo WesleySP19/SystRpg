@@ -1,4 +1,5 @@
-import { ReactiveComponent } from '../core/ReactiveComponent.js';
+import { useState, useRef } from 'preact/hooks';
+import { useStore } from '../core/hooks.js';
 import { html } from 'htm/preact';
 import { TOME } from '../../core/Registry.js';
 import { RulesEngine } from '../../core/RulesEngine.js';
@@ -7,12 +8,16 @@ import { RulesEngine } from '../../core/RulesEngine.js';
  * HERO INSPECTOR MODAL V22.0.0
  * Allows DM to inspect a player's inventory, spells, and cards.
  */
-export class HeroInspectorModal extends ReactiveComponent {
+export function HeroInspectorModal({ playerId, store }) {
+    const storeState = useStore();
+    const [activeTab, setActiveTab] = useState('inventory');
+    const containerRef = useRef(null);
+    const player = storeState.players.find(p => p.id === playerId);
     constructor(opts) {
         super(opts);
-        this.playerId = opts.playerId;
-        this.player = null;
-        this._activeTab = 'inventory'; // 'inventory' | 'spells' | 'cards'
+        playerId = opts.playerId;
+        player = null;
+        activeTab = 'inventory'; // 'inventory' | 'spells' | 'cards'
     }
 
     close = () => {
@@ -25,12 +30,12 @@ export class HeroInspectorModal extends ReactiveComponent {
     }
 
     setTab = (tab) => {
-        this._activeTab = tab;
+        activeTab = tab;
         this.render();
     }
 
-    _renderInventory() {
-        const inv = this.player.inventory || [];
+    const renderInventory = () => {
+        const inv = player.inventory || [];
         return html`
             <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap:15px; margin-top:15px;">
                 ${inv.length === 0 ? html`<div style="opacity:0.5; text-align:center; padding:20px; grid-column:1/-1;">Inventário vazio.</div>` : ''}
@@ -49,8 +54,8 @@ export class HeroInspectorModal extends ReactiveComponent {
         `;
     }
 
-    _renderSpells() {
-        const p = this.player;
+    const renderSpells = () => {
+        const p = player;
         const levels = [0,1,2,3,4,5,6,7,8,9];
         return html`
             <div style="display:flex; flex-direction:column; gap:15px; margin-top:15px; max-height:450px; overflow-y:auto; padding-right:10px;" class="custom-scroll">
@@ -89,30 +94,32 @@ export class HeroInspectorModal extends ReactiveComponent {
         `;
     }
 
-    template() {
-        this.player = this.store.state.players.find(p => p.id === this.playerId);
-        if (!this.player) return html`<div>Heroi não encontrado.</div>`;
+    // Render
+    if (!player) return html`<div>Heroi não encontrado.</div>`;
+    const hp = RulesEngine.getHP(player);
+        player = storeState.players.find(p => p.id === playerId);
+        if (!player) return html`<div>Heroi não encontrado.</div>`;
         
-        const hp = RulesEngine.getHP(this.player);
+        const hp = RulesEngine.getHP(player);
 
         return html`
-            <div class="modal-overlay animate-fadeIn" style="position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:99999; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(8px);">
+            <div ref=${containerRef} class="modal-overlay animate-fadeIn" style="position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:99999; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(8px);">
                 <div class="card glass-accent animate-scaleIn" style="max-width:800px; width:100%; padding:0; border:2px solid var(--accent); max-height:90vh; overflow:hidden; background:rgba(15,12,16,0.95); position:relative; display:flex; flex-direction:column;">
                     
                     <!-- Header -->
                     <div style="padding:25px; border-bottom:1px solid rgba(197,160,89,0.3); background:linear-gradient(to bottom, rgba(197,160,89,0.1), transparent); display:flex; align-items:center; gap:20px;">
-                        <button class="btn btn-ghost" onClick=${this.close} style="position:absolute; top:20px; right:20px; border-radius:50%; width:36px; height:36px; padding:0;">
+                        <button class="btn btn-ghost" onClick=${close} style="position:absolute; top:20px; right:20px; border-radius:50%; width:36px; height:36px; padding:0;">
                             <i class="fa-solid fa-times"></i>
                         </button>
                         
                         <div style="width:70px; height:70px; border-radius:50%; border:2px solid var(--accent); background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; font-size:1.5rem; font-family:'Cinzel'; color:var(--accent); overflow:hidden;">
-                            ${this.player.img ? html`<img src="${this.player.img}" style="width:100%; height:100%; object-fit:cover;" />` : this.player.name.substring(0,1)}
+                            ${player.img ? html`<img src="${player.img}" style="width:100%; height:100%; object-fit:cover;" />` : player.name.substring(0,1)}
                         </div>
                         
                         <div style="flex:1;">
-                            <h2 style="margin:0; font-family:'Cinzel'; color:var(--accent); font-size:1.8rem; text-shadow:0 0 10px rgba(197,160,89,0.5);">${this.player.name}</h2>
+                            <h2 style="margin:0; font-family:'Cinzel'; color:var(--accent); font-size:1.8rem; text-shadow:0 0 10px rgba(197,160,89,0.5);">${player.name}</h2>
                             <div style="font-size:0.9rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px;">
-                                ${this.player.race} ${this.player.class} • Nível ${this.player.level || 1}
+                                ${player.race} ${player.class} • Nível ${player.level || 1}
                             </div>
                         </div>
                         
@@ -126,17 +133,17 @@ export class HeroInspectorModal extends ReactiveComponent {
 
                     <!-- Tabs -->
                     <div style="display:flex; border-bottom:1px solid rgba(255,255,255,0.05); background:rgba(0,0,0,0.4);">
-                        <button class="btn ${this._activeTab === 'inventory' ? 'btn-primary' : 'btn-ghost'}" style="flex:1; border-radius:0; padding:15px; font-weight:bold;" onClick=${() => this.setTab('inventory')}>
+                        <button class="btn ${activeTab === 'inventory' ? 'btn-primary' : 'btn-ghost'}" style="flex:1; border-radius:0; padding:15px; font-weight:bold;" onClick=${() => setTab('inventory')}>
                             <i class="fa-solid fa-backpack" style="margin-right:8px;"></i> Equipamento
                         </button>
-                        <button class="btn ${this._activeTab === 'spells' ? 'btn-primary' : 'btn-ghost'}" style="flex:1; border-radius:0; padding:15px; font-weight:bold;" onClick=${() => this.setTab('spells')}>
+                        <button class="btn ${activeTab === 'spells' ? 'btn-primary' : 'btn-ghost'}" style="flex:1; border-radius:0; padding:15px; font-weight:bold;" onClick=${() => setTab('spells')}>
                             <i class="fa-solid fa-book-journal-whills" style="margin-right:8px;"></i> Grimório / Magias
                         </button>
                     </div>
 
                     <!-- Content -->
                     <div style="padding:25px; flex:1; overflow-y:auto;">
-                        ${this._activeTab === 'inventory' ? this._renderInventory() : this._renderSpells()}
+                        ${activeTab === 'inventory' ? renderInventory() : renderSpells()}
                     </div>
                 </div>
             </div>

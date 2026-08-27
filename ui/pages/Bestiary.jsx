@@ -1,4 +1,6 @@
-import { Component } from '../core/Component.js';
+import { useState, useEffect, useRef } from "preact/hooks";
+import { useStore } from "../../../core/hooks.js";
+import { html } from "htm/preact";
 import { TOME } from '../../core/Registry.js';
 import { MonsterData } from '../../data/MonsterData.js';
 import { Toast } from '../components/Toast.js';
@@ -11,58 +13,91 @@ import { MonsterArt } from '../../services/MonsterArt.js';
  * Complete creature library with custom forged/imported monsters,
  * level filters, detail stats sheets, and mass JSON importing.
  */
-export class Bestiary extends Component {
-    constructor(opts) {
-        super(opts);
-        this._selectedId = null;
-        this._selectedLevel = 'Nível 1';
-        this._searchQuery = '';
-        this._viewMode = 'grid'; // 'grid' | 'detail'
-        this._selectedCreature = null;
-        this._showForgeModal = false;
-        
-        // Visual Dice Roller State
-        this._activeRoll = null;
-        this._rollMod = 'normal';
-        this._narrativeQuotes = {
-            hit: [
-                "A lâmina corta o ar com precisão!",
-                "Um golpe certeiro nas defesas do inimigo!",
-                "O impacto ressoa por toda a biblioteca!",
-                "Sangue e faíscas voam com o acerto!",
-                "O ataque encontra uma brecha na armadura!"
-            ],
-            miss: [
-                "O golpe passa raspando!",
-                "A defesa se mantém impenetrável.",
-                "O monstro vacila por um momento...",
-                "O ataque atinge apenas o vácuo.",
-                "Um desvio ágil no último segundo!"
-            ],
-            crit: [
-                "UM GOLPE LENDÁRIO! A criatura cambaleia!",
-                "PERFEIÇÃO TÁTICA! O dano é devastador!",
-                "A força do destino guia esta arma!"
-            ]
-        };
-    }
+export function Bestiary(opts) {
+    const storeState = useStore();
+    const [selectedId, setSelectedId] = useState(null);
+    const [selectedLevel, setSelectedLevel] = useState("Nível 1");
+    const [searchQuery, setSearchQuery] = useState("");
+    const [viewMode, setViewMode] = useState("grid");
+    const [selectedCreature, setSelectedCreature] = useState(null);
+    const [showForgeModal, setShowForgeModal] = useState(false);
+    const [activeRoll, setActiveRoll] = useState(null);
+    const [rollMod, setRollMod] = useState("normal");
+    const containerRef = useRef(null);
 
-    _getCombinedCreatures() {
-        const staticCreatures = MonsterData[this._selectedLevel] || [];
-        const customCreatures = (this.store.state.customMonsters || [])
-            .filter(m => m.level === this._selectedLevel || m.cr === this._selectedLevel || (!m.level && this._selectedLevel === 'Nível 1'));
+    const narrativeQuotes = {
+        hit: [
+            "A lâmina corta o ar com precisão!",
+            "Um golpe certeiro nas defesas do inimigo!",
+            "O impacto ressoa por toda a biblioteca!",
+            "Sangue e faíscas voam com o acerto!",
+            "O ataque encontra uma brecha na armadura!"
+        ],
+        miss: [
+            "O golpe passa raspando!",
+            "A defesa se mantém impenetrável.",
+            "O monstro vacila por um momento...",
+            "O ataque atinge apenas o vácuo.",
+            "Um desvio ágil no último segundo!"
+        ],
+        crit: [
+            "UM GOLPE LENDÁRIO! A criatura cambaleia!",
+            "PERFEIÇÃO TÁTICA! O dano é devastador!",
+            "A força do destino guia esta arma!"
+        ]
+    };
+
+    const legacyCtx = {
+        store: window.TOME?.store || { state: storeState },
+        _selectedId: selectedId,
+        _selectedLevel: selectedLevel,
+        _searchQuery: searchQuery,
+        _viewMode: viewMode,
+        _selectedCreature: selectedCreature,
+        _showForgeModal: showForgeModal,
+        _activeRoll: activeRoll,
+        _rollMod: rollMod,
+        _narrativeQuotes: narrativeQuotes,
+        render: () => {},
+        $: (sel) => containerRef.current ? containerRef.current.querySelector(sel) : null,
+        $$: (sel) => containerRef.current ? containerRef.current.querySelectorAll(sel) : []
+    };
+
+    const self = new Proxy(legacyCtx, {
+        get: (target, prop) => {
+            if (prop in target) return target[prop];
+            return eval(prop);
+        },
+        set: (target, prop, value) => {
+            if (prop === "_selectedId") setSelectedId(value);
+            else if (prop === "_selectedLevel") setSelectedLevel(value);
+            else if (prop === "_searchQuery") setSearchQuery(value);
+            else if (prop === "_viewMode") setViewMode(value);
+            else if (prop === "_selectedCreature") setSelectedCreature(value);
+            else if (prop === "_showForgeModal") setShowForgeModal(value);
+            else if (prop === "_activeRoll") setActiveRoll(value);
+            else if (prop === "_rollMod") setRollMod(value);
+            target[prop] = value;
+            return true;
+        }
+    });
+
+    function _getCombinedCreatures() {
+        const staticCreatures = MonsterData[_selectedLevel] || [];
+        const customCreatures = (store.state.customMonsters || [])
+            .filter(m => m.level === _selectedLevel || m.cr === _selectedLevel || (!m.level && _selectedLevel === 'Nível 1'));
         return [...customCreatures, ...staticCreatures];
     }
 
-    _getNarrative(type, targetName, damage = 0) {
-        const base = this._narrativeQuotes[type][Math.floor(Math.random() * this._narrativeQuotes[type].length)];
+    function _getNarrative(type, targetName, damage = 0) {
+        const base = _narrativeQuotes[type][Math.floor(Math.random() * _narrativeQuotes[type].length)];
         if (type === 'hit' || type === 'crit') {
             return `${base} <br> ⚔️ <strong>${targetName}</strong> sofre <strong>${damage}</strong> de dano!`;
         }
         return `${base} <br> 🛡️ <strong>${targetName}</strong> escapa ileso!`;
     }
 
-    _getCreatureActions(m) {
+    function _getCreatureActions(m) {
         if (m.actions && m.actions.length > 0) {
             return m.actions;
         }
@@ -126,13 +161,39 @@ export class Bestiary extends Component {
         ];
     }
 
-    template() {
+    function template() {
+
+    const handleGlobalClick = (e) => {
+        const btn = e.target.closest("[data-action]");
+        if (btn) {
+            const action = btn.dataset.action;
+            if (action === "triggerImportJSON") self.triggerImportJSON(e, btn);
+            if (action === "addCustomMonster") self.addCustomMonster(e, btn);
+            if (action === "selectLevel") self.selectLevel(e, btn);
+            if (action === "viewCreature") self.viewCreature(e, btn);
+            if (action === "spawnCreature") self.spawnCreature(e, btn);
+            if (action === "deleteCustomMonster") self.deleteCustomMonster(e, btn);
+            if (action === "backToGrid") self.backToGrid(e, btn);
+            if (action === "spawnFromDetail") self.spawnFromDetail(e, btn);
+            if (action === "rollBestiaryAttack") self.rollBestiaryAttack(e, btn);
+            if (action === "proceedToDamage") self.proceedToDamage(e, btn);
+            if (action === "applyVisualRollResult") self.applyVisualRollResult(e, btn);
+            if (action === "closeVisualRoll") self.closeVisualRoll(e, btn);
+        }
+    };
+    
+    useEffect(() => {
+        if (self.onMount) self.onMount();
+        return () => { if (self.onUnmount) self.onUnmount(); };
+    }, []);
+
+    return (function() {
         const levels = Object.keys(MonsterData);
-        const allCreatures = this._getCombinedCreatures();
+        const allCreatures = _getCombinedCreatures();
         const filtered = allCreatures.filter(m =>
-            m.name.toLowerCase().includes(this._searchQuery.toLowerCase())
+            m.name.toLowerCase().includes(_searchQuery.toLowerCase())
         );
-        const isBoss = this._selectedLevel === 'BOSS';
+        const isBoss = _selectedLevel === 'BOSS';
 
         const customStyle = `
             <style>
@@ -190,9 +251,9 @@ export class Bestiary extends Component {
                     <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
                         <div style="position:relative; margin-right: 10px;">
                             <i class="fa-solid fa-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--accent); opacity:0.7;"></i>
-                            <input type="text" class="legacy-input" placeholder="Buscar criatura..." value="${this._searchQuery}"
+                            <input type="text" class="legacy-input" placeholder="Buscar criatura..." value="${_searchQuery}"
                                    style="min-width:250px; padding-left:35px !important; border-radius:20px !important; background:rgba(0,0,0,0.5) !important;"
-                                   oninput="this.closest('.bestiary').__component._doSearch(this.value)">
+                                   oninput="closest('.bestiary').__component._doSearch(value)">
                         </div>
                         
                         <button class="btn btn-ghost" data-action="triggerImportJSON" style="border-radius:20px; border:1px solid rgba(255,255,255,0.15); padding:8px 20px; display:flex; align-items:center; gap:8px;">
@@ -209,7 +270,7 @@ export class Bestiary extends Component {
                 <!-- LEVEL FILTER BAR -->
                 <div style="display:flex; overflow-x:auto; gap:10px; padding-bottom:15px; margin-bottom:20px; scrollbar-width:thin;">
                     ${levels.map(lvl => {
-                        const isActive = this._selectedLevel === lvl;
+                        const isActive = _selectedLevel === lvl;
                         const isBossTab = lvl === 'BOSS';
                         return `
                             <button class="btn ${isActive ? (isBossTab ? 'btn-danger' : 'btn-primary') : 'btn-ghost'}"
@@ -223,19 +284,19 @@ export class Bestiary extends Component {
                 </div>
 
                 <!-- MAIN CONTENT -->
-                ${this._selectedCreature ? this._renderDetailView(this._selectedCreature, isBoss) : this._renderGridView(filtered, isBoss)}
+                ${_selectedCreature ? _renderDetailView(_selectedCreature, isBoss) : _renderGridView(filtered, isBoss)}
                 
                 <!-- FORGE MODAL -->
-                ${this._showForgeModal ? this._renderForgeModal() : ''}
+                ${_showForgeModal ? _renderForgeModal() : ''}
 
                 <!-- VISUAL DYNAMIC DICE ROLLER OVERLAY -->
-                ${this._activeRoll ? this._renderVisualDiceRoller() : ''}
+                ${_activeRoll ? _renderVisualDiceRoller() : ''}
             </div>
         `;
     }
 
     /* ── Grid View ─────────────────────────────────────────────── */
-    _renderGridView(creatures, isBoss) {
+    function _renderGridView(creatures, isBoss) {
         if (creatures.length === 0) {
             return `
                 <div class="card empty-state" style="height:40vh; border-color:var(--danger); background:rgba(255,0,0,0.02);">
@@ -248,17 +309,17 @@ export class Bestiary extends Component {
 
         return `
             <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap:20px;">
-                ${creatures.map((m, i) => this._renderCreatureCard(m, i, isBoss)).join('')}
+                ${creatures.map((m, i) => _renderCreatureCard(m, i, isBoss)).join('')}
             </div>
         `;
     }
 
-    _renderCreatureCard(m, index, isBoss) {
+    function _renderCreatureCard(m, index, isBoss) {
         const img = MonsterArt.getImage(m);
         const delay = index * 0.04;
         const isCustom = m.id && String(m.id).startsWith('custom_');
         const portraitImg = img
-            ? `<img src="${img}" alt="${m.name}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">`
+            ? `<img src="${img}" alt="${m.name}" loading="lazy" onerror="style.display='none';nextElementSibling.style.display='flex';">`
             : '';
 
         const levelStr = String(m.level || m.cr || 1);
@@ -290,7 +351,7 @@ export class Bestiary extends Component {
                     <div class="bc-bottom-banner creature-action-btn">
                         <div class="bc-type">${m.type || 'Monstro'}</div>
                         <div class="bc-actions-bar">
-                            <button class="btn btn-sm" style="border: 2px solid #1a1a1a; font-weight: 900; color: #1a1a1a; background: #fff; box-shadow: 2px 2px 0 #1a1a1a; font-family: 'Outfit', sans-serif;" onclick="event.stopPropagation(); this.closest('.bestiary-card-premium').click();">
+                            <button class="btn btn-sm" style="border: 2px solid #1a1a1a; font-weight: 900; color: #1a1a1a; background: #fff; box-shadow: 2px 2px 0 #1a1a1a; font-family: 'Outfit', sans-serif;" onclick="event.stopPropagation(); closest('.bestiary-card-premium').click();">
                                 VER FICHA
                             </button>
                             <div style="display:flex; gap:6px;">
@@ -315,9 +376,9 @@ export class Bestiary extends Component {
     }
 
     /* ── Detail View (Monster Sheet) ────────────────────────── */
-    _renderDetailView(m, isBoss) {
+    function _renderDetailView(m, isBoss) {
         const stats = m.stats || { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 };
-        const actions = this._getCreatureActions(m);
+        const actions = _getCreatureActions(m);
         const statNames = { str: 'FOR', dex: 'DES', con: 'CON', int: 'INT', wis: 'SAB', cha: 'CAR' };
         const getMod = (v) => Math.floor((v - 10) / 2);
         const dmgType = (a) => {
@@ -364,20 +425,20 @@ export class Bestiary extends Component {
 
         return `
             <div class="animate-fadeIn" style="max-width:960px; margin:0 auto; padding-bottom:40px;">
-                <button class="btn" style="background:#fff; border:3px solid #1a1a1a; box-shadow:4px 4px 0 #1a1a1a; color:#1a1a1a; font-weight:900; font-family:'Outfit',sans-serif; text-transform:uppercase; margin-bottom:20px; transition:transform 0.1s, box-shadow 0.1s;" onmousedown="this.style.transform='translate(2px,2px)';this.style.boxShadow='0 0 0 #1a1a1a'" onmouseup="this.style.transform='';this.style.boxShadow='4px 4px 0 #1a1a1a'" data-action="backToGrid">
+                <button class="btn" style="background:#fff; border:3px solid #1a1a1a; box-shadow:4px 4px 0 #1a1a1a; color:#1a1a1a; font-weight:900; font-family:'Outfit',sans-serif; text-transform:uppercase; margin-bottom:20px; transition:transform 0.1s, box-shadow 0.1s;" onmousedown="style.transform='translate(2px,2px)';style.boxShadow='0 0 0 #1a1a1a'" onmouseup="style.transform='';style.boxShadow='4px 4px 0 #1a1a1a'" data-action="backToGrid">
                     <i class="fa-solid fa-arrow-left"></i> Voltar ao Bestiário
                 </button>
 
                 <div class="bestiary-statblock ${isBoss ? 'is-boss' : ''}">
                     <header class="sb-header">
                         <h1 class="sb-name">${m.name}</h1>
-                        <p class="sb-subtitle">${MonsterArt.getSubtitle(m, this._selectedLevel)}</p>
+                        <p class="sb-subtitle">${MonsterArt.getSubtitle(m, _selectedLevel)}</p>
                     </header>
                     ${descriptionBlock}
 
                     <div class="sb-class-bar">
                         <span>${MonsterArt.getClassification(m)}</span>
-                        <span class="sb-cr">${MonsterArt.getCrDisplay(this._selectedLevel)}</span>
+                        <span class="sb-cr">${MonsterArt.getCrDisplay(_selectedLevel)}</span>
                     </div>
 
                     <div class="sb-hero">
@@ -398,7 +459,7 @@ export class Bestiary extends Component {
                     <div class="sb-abilities">${abilityBoxes}</div>
 
                     <div class="sb-traits">
-                        <p><strong>ND</strong> ${this._selectedLevel.replace('Nível ', '')} · <strong>Tipo</strong> ${m.type || 'Monstro'}</p>
+                        <p><strong>ND</strong> ${_selectedLevel.replace('Nível ', '')} · <strong>Tipo</strong> ${m.type || 'Monstro'}</p>
                         ${traitsBlock}
                     </div>
 
@@ -409,7 +470,7 @@ export class Bestiary extends Component {
                             <span>CA de teste:</span>
                             <input type="number" id="bestiary-test-ac" value="13" min="1" max="30">
                         </div>
-                        <button class="btn" style="background:${isBoss ? '#cc1111' : '#eb5e28'}; color:#fff; border:3px solid #1a1a1a; box-shadow:4px 4px 0 #1a1a1a; font-weight:900; font-family:'Outfit',sans-serif; text-transform:uppercase; transition:transform 0.1s, box-shadow 0.1s;" onmousedown="this.style.transform='translate(2px,2px)';this.style.boxShadow='0 0 0 #1a1a1a'" onmouseup="this.style.transform='';this.style.boxShadow='4px 4px 0 #1a1a1a'" data-action="spawnFromDetail">
+                        <button class="btn" style="background:${isBoss ? '#cc1111' : '#eb5e28'}; color:#fff; border:3px solid #1a1a1a; box-shadow:4px 4px 0 #1a1a1a; font-weight:900; font-family:'Outfit',sans-serif; text-transform:uppercase; transition:transform 0.1s, box-shadow 0.1s;" onmousedown="style.transform='translate(2px,2px)';style.boxShadow='0 0 0 #1a1a1a'" onmouseup="style.transform='';style.boxShadow='4px 4px 0 #1a1a1a'" data-action="spawnFromDetail">
                             <i class="fa-solid fa-swords"></i> Invocação Direta
                         </button>
                     </footer>
@@ -418,14 +479,14 @@ export class Bestiary extends Component {
         `;
     }
 
-    _renderForgeModal() {
+    function _renderForgeModal() {
         const levels = Object.keys(MonsterData);
         return `
             <div class="modal-overlay animate-fadeIn" style="position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:2000; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(5px);">
                 <div class="card glass-accent animate-scaleIn" style="max-width:650px; width:100%; padding:30px; border:2px solid var(--accent); max-height: 90vh; overflow-y: auto;">
                     <h2 style="font-family:'Cinzel'; color:var(--accent); margin-top:0; border-bottom:1px solid rgba(197,160,89,0.3); padding-bottom:10px;"><i class="fa-solid fa-hammer"></i> Forjar Nova Criatura</h2>
                     
-                    <form id="forge-monster-form" onsubmit="event.preventDefault(); this.closest('.bestiary').__component.saveForgedMonster(this);">
+                    <form id="forge-monster-form" onsubmit="event.preventDefault(); closest('.bestiary').__component.saveForgedMonster(this);">
                         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:15px;">
                             <div>
                                 <small style="display:block; color:var(--text-dim); margin-bottom:4px;">Nome da Ameaça</small>
@@ -483,7 +544,7 @@ export class Bestiary extends Component {
                         </div>
 
                         <div style="display:flex; gap:15px; justify-content:flex-end; border-top:1px solid rgba(197,160,89,0.3); padding-top:20px;">
-                            <button type="button" class="btn btn-ghost" onclick="this.closest('.bestiary').__component.closeForgeModal()">CANCELAR</button>
+                            <button type="button" class="btn btn-ghost" onclick="closest('.bestiary').__component.closeForgeModal()">CANCELAR</button>
                             <button type="submit" class="btn btn-primary">FORJAR CRIATURA</button>
                         </div>
                     </form>
@@ -492,7 +553,7 @@ export class Bestiary extends Component {
         `;
     }
 
-    saveForgedMonster(form) {
+    function saveForgedMonster(form) {
         const fd = new FormData(form);
         const name = fd.get('name');
         if (!name) return;
@@ -533,44 +594,44 @@ export class Bestiary extends Component {
         });
 
         Toast.show(`🔥 ${name} foi forjado no fogo eterno do Bestiário!`, 'success');
-        this._showForgeModal = false;
-        this.render();
+        _showForgeModal = false;
+        render();
     }
 
-    closeForgeModal() {
-        this._showForgeModal = false;
-        this.render();
+    function closeForgeModal() {
+        _showForgeModal = false;
+        render();
     }
 
     /* ── Actions ───────────────────────────────────────────────── */
-    selectLevel(e, el) {
-        this._selectedLevel = el.dataset.level;
-        this._selectedCreature = null;
-        this._searchQuery = '';
-        this.render();
+    function selectLevel(e, el) {
+        _selectedLevel = el.dataset.level;
+        _selectedCreature = null;
+        _searchQuery = '';
+        render();
     }
 
-    rollBestiaryAttack(e, el) {
+    function rollBestiaryAttack(e, el) {
         const idx = parseInt(el.dataset.index);
-        const m = this._selectedCreature;
+        const m = _selectedCreature;
         if (!m) return;
         
-        const actions = this._getCreatureActions(m);
+        const actions = _getCreatureActions(m);
         const action = actions[idx];
         if (!action) return;
         
         // Get test AC from input
-        const acInput = this.$('#bestiary-test-ac');
+        const acInput = $('#bestiary-test-ac');
         const testAC = acInput ? (parseInt(acInput.value) || 13) : 13;
         
         const attacker = { name: m.name, emoji: m.emoji || '🐾' };
         const target = { name: `Alvo de Treino`, ac: testAC };
         
-        this.startVisualRoll(attacker, target, action);
+        startVisualRoll(attacker, target, action);
     }
 
-    startVisualRoll(attacker, target, action) {
-        this._activeRoll = {
+    function startVisualRoll(attacker, target, action) {
+        _activeRoll = {
             stage: 'd20',
             rolling: true,
             attacker,
@@ -585,67 +646,67 @@ export class Bestiary extends Component {
             damageTotal: null,
             narrativeText: ''
         };
-        this.render();
+        render();
 
         TOME.audio.playSFX('https://assets.mixkit.co/active_storage/sfx/2771/2771-preview.mp3');
 
         setTimeout(() => {
-            const hitRes = RulesEngine.checkHit(action.bonus || 0, target.ac || 10, this._rollMod);
+            const hitRes = RulesEngine.checkHit(action.bonus || 0, target.ac || 10, _rollMod);
             
-            this._activeRoll.rolling = false;
-            this._activeRoll.d20Roll = hitRes.roll;
-            this._activeRoll.d20Total = hitRes.total;
-            this._activeRoll.isCrit = hitRes.isCrit;
-            this._activeRoll.isHit = hitRes.success;
+            _activeRoll.rolling = false;
+            _activeRoll.d20Roll = hitRes.roll;
+            _activeRoll.d20Total = hitRes.total;
+            _activeRoll.isCrit = hitRes.isCrit;
+            _activeRoll.isHit = hitRes.success;
 
             if (hitRes.success) {
                 TOME.audio.playSFX('https://assets.mixkit.co/active_storage/sfx/2770/2770-preview.mp3');
             } else {
                 TOME.audio.playSFX('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
-                const text = this._getNarrative('miss', target.name);
-                this._activeRoll.narrativeText = text;
+                const text = _getNarrative('miss', target.name);
+                _activeRoll.narrativeText = text;
             }
 
-            this.render();
+            render();
         }, 1100);
     }
 
-    proceedToDamage() {
-        this._activeRoll.stage = 'damage';
-        this.render();
+    function proceedToDamage() {
+        _activeRoll.stage = 'damage';
+        render();
 
         TOME.audio.playSFX('https://assets.mixkit.co/active_storage/sfx/2770/2770-preview.mp3');
 
         setTimeout(() => {
-            const dmgNotation = this._activeRoll.action.damage || '1d6';
+            const dmgNotation = _activeRoll.action.damage || '1d6';
             const dmgRoll = Dice.roll(dmgNotation);
             
-            let totalDmg = this._activeRoll.isCrit ? (dmgRoll.total * 2) : dmgRoll.total;
+            let totalDmg = _activeRoll.isCrit ? (dmgRoll.total * 2) : dmgRoll.total;
             if (isNaN(totalDmg)) totalDmg = 4;
 
-            this._activeRoll.stage = 'complete';
-            this._activeRoll.damageRolls = dmgRoll.rolls || [totalDmg];
-            this._activeRoll.damageTotal = totalDmg;
+            _activeRoll.stage = 'complete';
+            _activeRoll.damageRolls = dmgRoll.rolls || [totalDmg];
+            _activeRoll.damageTotal = totalDmg;
 
-            const text = this._getNarrative(this._activeRoll.isCrit ? 'crit' : 'hit', this._activeRoll.target.name, totalDmg);
-            this._activeRoll.narrativeText = text;
+            const text = _getNarrative(_activeRoll.isCrit ? 'crit' : 'hit', _activeRoll.target.name, totalDmg);
+            _activeRoll.narrativeText = text;
 
-            this.render();
+            render();
         }, 1100);
     }
 
-    applyVisualRollResult() {
-        this._activeRoll = null;
-        this.render();
+    function applyVisualRollResult() {
+        _activeRoll = null;
+        render();
     }
 
-    closeVisualRoll() {
-        this._activeRoll = null;
-        this.render();
+    function closeVisualRoll() {
+        _activeRoll = null;
+        render();
     }
 
-    _renderVisualDiceRoller() {
-        const roll = this._activeRoll;
+    function _renderVisualDiceRoller() {
+        const roll = _activeRoll;
         const isD20Stage = roll.stage === 'd20';
         const isDamageStage = roll.stage === 'damage';
         const isComplete = roll.stage === 'complete';
@@ -751,37 +812,37 @@ export class Bestiary extends Component {
         `;
     }
 
-    viewCreature(e, el) {
+    function viewCreature(e, el) {
         if (el.closest('.creature-action-btn')) return;
         const name = el.dataset.name;
-        const all = this._getCombinedCreatures();
+        const all = _getCombinedCreatures();
         const m = all.find(c => c.name === name);
         if (m) {
-            this._selectedCreature = m;
-            this.render();
+            _selectedCreature = m;
+            render();
         }
     }
 
-    backToGrid() {
-        this._selectedCreature = null;
-        this.render();
+    function backToGrid() {
+        _selectedCreature = null;
+        render();
     }
 
-    spawnCreature(e, el) {
+    function spawnCreature(e, el) {
         e.stopPropagation();
         const name = el.dataset.name;
-        const all = this._getCombinedCreatures();
+        const all = _getCombinedCreatures();
         const m = all.find(c => c.name === name);
-        if (m) this._addToStore(m);
+        if (m) _addToStore(m);
     }
 
-    spawnFromDetail() {
-        if (this._selectedCreature) {
-            this._addToStore(this._selectedCreature);
+    function spawnFromDetail() {
+        if (_selectedCreature) {
+            _addToStore(_selectedCreature);
         }
     }
 
-    deleteCustomMonster(e, el) {
+    function deleteCustomMonster(e, el) {
         e.stopPropagation();
         if (confirm('Tem certeza que deseja banir esta criatura da sua biblioteca para sempre?')) {
             const id = el.dataset.id;
@@ -789,15 +850,15 @@ export class Bestiary extends Component {
                 s.customMonsters = (s.customMonsters || []).filter(m => m.id !== id);
             });
             Toast.show('Criatura deletada da biblioteca.');
-            this.render();
+            render();
         }
     }
 
-    _addToStore(m) {
+    function _addToStore(m) {
         let entity = {
             id: 'm-' + Date.now(),
             name: m.name,
-            cr: this._selectedLevel.replace('Nível ', ''),
+            cr: _selectedLevel.replace('Nível ', ''),
             hp_max: m.hp,
             hp: m.hp, // hp atual
             ac: m.ac || 10,
@@ -806,7 +867,7 @@ export class Bestiary extends Component {
             size: m.size || 'medium',
             speed: m.speed || '30 ft.',
             type: m.type || 'monster',
-            originalData: { ...m, cr: this._selectedLevel }
+            originalData: { ...m, cr: _selectedLevel }
         };
 
         if (window.TOME && window.TOME.events) {
@@ -814,37 +875,37 @@ export class Bestiary extends Component {
         }
     }
 
-    addCustomMonster() {
-        this._showForgeModal = true;
-        this.render();
+    function addCustomMonster() {
+        _showForgeModal = true;
+        render();
     }
 
-    triggerImportJSON() {
-        this.$('#bestiary-json-input').click();
+    function triggerImportJSON() {
+        $('#bestiary-json-input').click();
     }
 
-    _doSearch(val) {
-        this._searchQuery = val;
-        this.render();
+    function _doSearch(val) {
+        _searchQuery = val;
+        render();
     }
 
-    search(val) {
-        this._searchQuery = val;
-        this.render();
+    function search(val) {
+        _searchQuery = val;
+        render();
     }
 
-    select(id) {
-        this._selectedId = id;
-        this.render();
+    function select(id) {
+        _selectedId = id;
+        render();
     }
 
-    onMount() {
+    function onMount() {
         // Set __component reference for inline event handlers
-        const el = this.element?.querySelector('.bestiary');
+        const el = element?.querySelector('.bestiary');
         if (el) el.__component = this;
 
         // Mass JSON Import logic
-        const input = this.$('#bestiary-json-input');
+        const input = $('#bestiary-json-input');
         if (input) {
             input.onchange = async (e) => {
                 const files = Array.from(e.target.files);
@@ -893,11 +954,11 @@ export class Bestiary extends Component {
                 
                 if (importedCount > 0) {
                     Toast.show(`✅ Sucesso! ${importedCount} monstros importados para o Bestiário!`, 'success');
-                    this.render();
+                    render();
                 } else {
                     Toast.show('❌ Nenhum monstro válido encontrado nos arquivos.', 'danger');
                 }
             };
         }
-    }
+    return html`<div ref=${containerRef} onClick=${handleGlobalClick} dangerouslySetInnerHTML=${{__html: self.template()}}></div>`;
 }

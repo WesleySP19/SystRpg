@@ -1,4 +1,4 @@
-import { ReactiveComponent } from '../../core/ReactiveComponent.js';
+import { useStore } from '../../core/hooks.js';
 import { TOME } from '../../../core/Registry.js';
 import { html } from 'htm/preact';
 
@@ -19,7 +19,7 @@ export class HeroSheetV22 extends ReactiveComponent {
         super(opts);
     }
 
-    handleRoll = (label, bonus) => {
+    const handleRoll = (label, bonus) => {
         const roll = Dice.roll('1d20').total;
         const total = roll + bonus;
         
@@ -71,7 +71,7 @@ export class HeroSheetV22 extends ReactiveComponent {
                                     <${HeroVitals} hero=${p} />
                                 </div>
                                 <div style="background: rgba(10,12,16,0.6); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);">
-                                    <${HeroStats} hero=${p} onRoll=${this.handleRoll} />
+                                    <${HeroStats} hero=${p} onRoll=${handleRoll} />
                                 </div>
                             </div>
                             
@@ -82,7 +82,7 @@ export class HeroSheetV22 extends ReactiveComponent {
                                 </div>
                                 <div style="background: rgba(10,12,16,0.6); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);">
                                     <${HeroInventory} hero=${p} onUpdateCoin=${(coin, val) => {
-                                        this.store.update(s => {
+                                        window.TOME.store.update(s => {
                                             const t = s.players.find(x => x.id === p.id);
                                             if (t) {
                                                 if (!t.coins) t.coins = { cp:0, sp:0, ep:0, gp:10, pp:0 };

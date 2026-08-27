@@ -1,4 +1,5 @@
-import { ReactiveComponent } from '../core/ReactiveComponent.js';
+import { useState, useRef, useEffect, useMemo } from 'preact/hooks';
+import { useStore } from '../core/hooks.js';
 import { html } from 'htm/preact';
 import spellsData from '../../data/spells-5e.js';
 
@@ -6,30 +7,72 @@ import spellsData from '../../data/spells-5e.js';
  * QUICK REFERENCE v7.0 — "Dungeon Master's Grimoire"
  * Expansão massiva das regras oficiais de D&D 5e com design glassmorphic premium e interativo.
  */
-export class QuickReference extends ReactiveComponent {
-    constructor(opts) {
-        super(opts);
-        this._activeSection = 'quickref';
-        this._glossarySearch = '';
-        this._glossaryFilter = 'all';
+export function QuickReference(opts) {
+    const storeState = useStore();
+    const [activeSection, setActiveSection] = useState('quickref');
+    const [glossarySearch, setGlossarySearch] = useState('');
+    const [glossaryFilter, setGlossaryFilter] = useState('all');
+    const [magicSearch, setMagicSearch] = useState('');
+    const [magicFilterLevel, setMagicFilterLevel] = useState('all');
+    const [magicFilterClass, setMagicFilterClass] = useState('all');
+    const [activeMagicTab, setActiveMagicTab] = useState('spells');
+    const hoverTimerRef = useRef(null);
+    const [activePopupSpell, setActivePopupSpell] = useState(null);
+    const [popupMode, setPopupMode] = useState(null);
+    const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
+    const containerRef = useRef(null);
 
-        // Estados do Glossário Mágico
-        this._magicSearch = '';
-        this._magicFilterLevel = 'all';
-        this._magicFilterClass = 'all';
-        this._activeMagicTab = 'spells'; // 'spells' ou 'cantrips'
+    const legacyCtx = {
+        store: window.TOME?.store || { state: storeState },
+        _activeSection: activeSection,
+        _glossarySearch: glossarySearch,
+        _glossaryFilter: glossaryFilter,
+        _magicSearch: magicSearch,
+        _magicFilterLevel: magicFilterLevel,
+        _magicFilterClass: magicFilterClass,
+        _activeMagicTab: activeMagicTab,
+        _hoverTimer: hoverTimerRef.current,
+        _activePopupSpell: activePopupSpell,
+        _popupMode: popupMode,
+        _popupPosition: popupPosition,
+        render: () => {},
+        listen: (el, evt, cb) => {
+            if (!el) return;
+            el.addEventListener(evt, cb);
+            return () => el.removeEventListener(evt, cb);
+        },
+        $: (sel) => containerRef.current ? containerRef.current.querySelector(sel) : null,
+        $$: (sel) => containerRef.current ? containerRef.current.querySelectorAll(sel) : []
+    };
 
-        // Grimório Interativo - Estados de Pop-up
-        this._hoverTimer = null;
-        this._activePopupSpell = null;
-        this._popupMode = null; // 'hover' ou 'click'
-        this._popupPosition = { x: 0, y: 0 };
-    }
+    const self = new Proxy(legacyCtx, {
+        get: (target, prop) => {
+            if (prop in target) return target[prop];
+            // If it's a method defined later in the function, it will be found in the closure!
+            return eval(prop);
+        },
+        set: (target, prop, value) => {
+            if (prop === '_activeSection') setActiveSection(value);
+            else if (prop === '_glossarySearch') setGlossarySearch(value);
+            else if (prop === '_glossaryFilter') setGlossaryFilter(value);
+            else if (prop === '_magicSearch') setMagicSearch(value);
+            else if (prop === '_magicFilterLevel') setMagicFilterLevel(value);
+            else if (prop === '_magicFilterClass') setMagicFilterClass(value);
+            else if (prop === '_activeMagicTab') setActiveMagicTab(value);
+            else if (prop === '_activePopupSpell') setActivePopupSpell(value);
+            else if (prop === '_popupMode') setPopupMode(value);
+            else if (prop === '_popupPosition') setPopupPosition(value);
+            else if (prop === '_hoverTimer') hoverTimerRef.current = value;
+            target[prop] = value;
+            return true;
+        }
+    });
 
-    template() {
+
+    function template() {
         let popupHTML = '';
-        if (this._activePopupSpell) {
-            const spell = this._activePopupSpell;
+        if (self._activePopupSpell) {
+            const spell = self._activePopupSpell;
             const isCantrip = spell.level === 0;
             const isAttack = spell.type === 'dano' || spell.baseDamage;
             
@@ -37,12 +80,12 @@ export class QuickReference extends ReactiveComponent {
             if (isCantrip) glowClass = 'cantrip-glow';
             else if (isAttack) glowClass = 'attack-glow';
 
-            const pinnedClass = this._popupMode === 'click' ? 'pinned' : '';
+            const pinnedClass = self._popupMode === 'click' ? 'pinned' : '';
             
             popupHTML = html`
                 <div class="magic-popup ${glowClass} ${pinnedClass}" 
-                     style="left: ${this._popupPosition.x}px; top: ${this._popupPosition.y}px; pointer-events: ${this._popupMode === 'click' ? 'auto' : 'none'};">
-                    ${this._getSpellPopupHTML(spell)}
+                     style="left: ${self._popupPosition.x}px; top: ${self._popupPosition.y}px; pointer-events: ${self._popupMode === 'click' ? 'auto' : 'none'};">
+                    ${self._getSpellPopupHTML(spell)}
                 </div>
             `;
         }
@@ -81,23 +124,23 @@ export class QuickReference extends ReactiveComponent {
                             <div style="height:1px; flex:1; background:linear-gradient(to left, transparent, rgba(197,160,89,0.3));"></div>
                         </div>
                         
-                        ${this._renderNavButton('quickref', 'fa-compass', 'Guia Rápido D&D 5e', '255, 170, 0')}
-                        ${this._renderNavButton('glossary2024', 'fa-book-sparkles', 'Glossário D&D 2024', '197, 160, 89')}
-                        ${this._renderNavButton('magicglossary', 'fa-wand-magic-sparkles', 'Glossário Mágico', '168, 85, 247')}
-                        ${this._renderNavButton('conditions', 'fa-skull-crossbones', 'Condições de Status', '239, 68, 68')}
-                        ${this._renderNavButton('actions', 'fa-swords', 'Ações de Turno', '59, 130, 246')}
-                        ${this._renderNavButton('environment', 'fa-mountain-sun', 'Ambiente & Movimento', '34, 197, 94')}
-                        ${this._renderNavButton('spellcasting', 'fa-hat-wizard', 'Regras de Magia', '245, 158, 11')}
-                        ${this._renderNavButton('resting', 'fa-campground', 'Descansos & Cura', '255, 215, 0')}
-                        ${this._renderNavButton('dc', 'fa-bullseye', 'Dificuldades (CD)', '197, 160, 89')}
-                        ${this._renderNavButton('abbreviations', 'fa-language', 'Dicionário do Mestre', '255, 255, 255')}
+                        ${self._renderNavButton('quickref', 'fa-compass', 'Guia Rápido D&D 5e', '255, 170, 0')}
+                        ${self._renderNavButton('glossary2024', 'fa-book-sparkles', 'Glossário D&D 2024', '197, 160, 89')}
+                        ${self._renderNavButton('magicglossary', 'fa-wand-magic-sparkles', 'Glossário Mágico', '168, 85, 247')}
+                        ${self._renderNavButton('conditions', 'fa-skull-crossbones', 'Condições de Status', '239, 68, 68')}
+                        ${self._renderNavButton('actions', 'fa-swords', 'Ações de Turno', '59, 130, 246')}
+                        ${self._renderNavButton('environment', 'fa-mountain-sun', 'Ambiente & Movimento', '34, 197, 94')}
+                        ${self._renderNavButton('spellcasting', 'fa-hat-wizard', 'Regras de Magia', '245, 158, 11')}
+                        ${self._renderNavButton('resting', 'fa-campground', 'Descansos & Cura', '255, 215, 0')}
+                        ${self._renderNavButton('dc', 'fa-bullseye', 'Dificuldades (CD)', '197, 160, 89')}
+                        ${self._renderNavButton('abbreviations', 'fa-language', 'Dicionário do Mestre', '255, 255, 255')}
                     </div>
 
                     <!-- CONTENT AREA PREMIUM -->
                     <div class="card glass-accent animate-fadeIn" style="min-height:75vh; padding:40px; border-radius:16px; background: rgba(12, 14, 20, 0.9); border: 1px solid rgba(197,160,89,0.15); border-top: 3px solid var(--accent); box-shadow: 0 25px 50px rgba(0,0,0,0.8), inset 0 0 50px rgba(197,160,89,0.05); position: relative; overflow: hidden;">
                         <div style="position: absolute; top: -100px; right: -100px; width: 300px; height: 300px; background: radial-gradient(circle, rgba(197,160,89,0.08) 0%, transparent 70%); border-radius: 50%; pointer-events: none;"></div>
                         <div style="position: relative; z-index: 1;">
-                            ${this._renderActiveContent()}
+                            ${self._renderActiveContent()}
                         </div>
                     </div>
                 </div>
@@ -106,8 +149,8 @@ export class QuickReference extends ReactiveComponent {
         `;
     }
 
-    _renderNavButton(sectionId, iconClass, text, rgbColor) {
-        const isActive = this._activeSection === sectionId;
+    function _renderNavButton(sectionId, iconClass, text, rgbColor) {
+        const isActive = self._activeSection === sectionId;
         const bg = isActive ? `rgba(${rgbColor}, 0.2)` : 'transparent';
         const border = isActive ? `1px solid rgba(${rgbColor}, 0.5)` : '1px solid transparent';
         const textColor = isActive ? '#fff' : 'var(--text-dim)';
@@ -124,23 +167,23 @@ export class QuickReference extends ReactiveComponent {
         `;
     }
 
-    _renderActiveContent() {
-        switch(this._activeSection) {
-            case 'quickref': return this._renderQuickRef();
-            case 'glossary2024': return this._renderGlossary2024();
-            case 'magicglossary': return this._renderMagicGlossary();
-            case 'conditions': return this._renderConditions();
-            case 'actions': return this._renderActions();
-            case 'environment': return this._renderEnvironment();
-            case 'spellcasting': return this._renderSpellcasting();
-            case 'resting': return this._renderResting();
-            case 'dc': return this._renderDC();
-            case 'abbreviations': return this._renderAbbreviations();
+    function _renderActiveContent() {
+        switch(self._activeSection) {
+            case 'quickref': return self._renderQuickRef();
+            case 'glossary2024': return self._renderGlossary2024();
+            case 'magicglossary': return self._renderMagicGlossary();
+            case 'conditions': return self._renderConditions();
+            case 'actions': return self._renderActions();
+            case 'environment': return self._renderEnvironment();
+            case 'spellcasting': return self._renderSpellcasting();
+            case 'resting': return self._renderResting();
+            case 'dc': return self._renderDC();
+            case 'abbreviations': return self._renderAbbreviations();
             default: return '';
         }
     }
 
-    _renderConditions() {
+    function _renderConditions() {
         const conds = [
             { name: 'Caído (Prone)', icon: 'fa-person-falling', effect: 'Movimento apenas rastejando (dobro do custo). Jogadas de ataque contra a criatura têm Vantagem a 1.5m e Desvantagem para ataques à distância.' },
             { name: 'Cego (Blinded)', icon: 'fa-eye-slash', effect: 'Falha automática em testes que requerem visão. Jogadas de ataque contra o cego têm Vantagem, e os ataques dele têm Desvantagem.' },
@@ -199,7 +242,7 @@ export class QuickReference extends ReactiveComponent {
         `;
     }
 
-    _renderActions() {
+    function _renderActions() {
         const acts = [
             { name: 'Atacar (Attack)', cost: 'Ação', desc: 'Realiza um ataque corpo-a-corpo ou à distância com armas ou magias.' },
             { name: 'Conjurar Magia', cost: 'Varie', desc: 'Conjura uma magia cujo tempo de conjuração seja 1 ação (ou ação bônus se permitido).' },
@@ -234,7 +277,7 @@ export class QuickReference extends ReactiveComponent {
         `;
     }
 
-    _renderEnvironment() {
+    function _renderEnvironment() {
         return html`
             <div style="animation: fadeIn 0.4s ease-out;">
                 <h3 style="font-family:'Cinzel', serif; color:var(--success); margin-bottom:15px; font-size:1.8rem; text-shadow:0 0 15px rgba(16,185,129,0.4);">
@@ -277,7 +320,7 @@ export class QuickReference extends ReactiveComponent {
         `;
     }
 
-    _renderSpellcasting() {
+    function _renderSpellcasting() {
         return html`
             <div style="animation: fadeIn 0.4s ease-out;">
                 <h3 style="font-family:'Cinzel', serif; color:var(--warning); margin-bottom:15px; font-size:1.8rem; text-shadow:0 0 15px rgba(245,158,11,0.4);">
@@ -334,7 +377,7 @@ export class QuickReference extends ReactiveComponent {
         `;
     }
 
-    _renderResting() {
+    function _renderResting() {
         return html`
             <div style="animation: fadeIn 0.4s ease-out;">
                 <h3 style="font-family:'Cinzel', serif; color:#ffd700; margin-bottom:15px; font-size:1.8rem; text-shadow:0 0 15px rgba(255,215,0,0.4);">
@@ -373,7 +416,7 @@ export class QuickReference extends ReactiveComponent {
         `;
     }
 
-    _renderDC() {
+    function _renderDC() {
         const dcs = [
             { val: 5, level: 'Muito Fácil', example: 'Arrombar uma porta de madeira velha e podre.' },
             { val: 10, level: 'Fácil', example: 'Ouvir uma conversa abafada atrás de uma porta comum.' },
@@ -407,7 +450,7 @@ export class QuickReference extends ReactiveComponent {
         `;
     }
 
-    _renderAbbreviations() {
+    function _renderAbbreviations() {
         const terms = [
             { s: 'CA / AC', m: 'Classe de Armadura. O valor numérico que um ataque inimigo deve igualar ou superar para desferir um golpe físico com sucesso.' },
             { s: 'CD / DC', m: 'Classe de Dificuldade. A meta numérica a ser atingida em testes de perícia ou testes de resistência.' },
@@ -440,7 +483,7 @@ export class QuickReference extends ReactiveComponent {
         `;
     }
 
-    _renderQuickRef() {
+    function _renderQuickRef() {
         return html`
             <div style="display:flex; flex-direction:column; gap:15px; height:100%;">
                 <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(197,160,89,0.3); padding-bottom:12px; margin-bottom:10px;">
@@ -460,7 +503,7 @@ export class QuickReference extends ReactiveComponent {
             </div>
         `;
     }
-    get _glossaryDatabase() {
+    function _getGlossaryDatabase() {
         return [
             // Weapon Masteries (Maestria de Armas)
             {
@@ -722,80 +765,80 @@ export class QuickReference extends ReactiveComponent {
         ];
     }
 
-    onMount() {
-        if (this._activeSection === 'glossary2024') {
-            const searchInput = this.$('#glossary-search-input');
+    function onMount() {
+        if (self._activeSection === 'glossary2024') {
+            const searchInput = self.$('#glossary-search-input');
             if (searchInput) {
                 searchInput.focus();
                 
-                this.listen(searchInput, 'input', (e) => {
-                    this._glossarySearch = e.target.value;
-                    this._updateGlossaryList();
+                self.listen(searchInput, 'input', (e) => {
+                    self._glossarySearch = e.target.value;
+                    self._updateGlossaryList();
                 });
             }
-            this._updateGlossaryList();
+            self._updateGlossaryList();
         }
 
-        if (this._activeSection === 'magicglossary') {
-            const searchInput = this.$('#magic-search-input');
+        if (self._activeSection === 'magicglossary') {
+            const searchInput = self.$('#magic-search-input');
             if (searchInput) {
                 searchInput.focus();
-                this.listen(searchInput, 'input', (e) => {
-                    this._magicSearch = e.target.value;
-                    this._updateMagicGlossaryList();
+                self.listen(searchInput, 'input', (e) => {
+                    self._magicSearch = e.target.value;
+                    self._updateMagicGlossaryList();
                 });
             }
 
-            const classFilter = this.$('#magic-class-filter');
+            const classFilter = self.$('#magic-class-filter');
             if (classFilter) {
-                this.listen(classFilter, 'change', (e) => {
-                    this._magicFilterClass = e.target.value;
-                    this._updateMagicGlossaryList();
+                self.listen(classFilter, 'change', (e) => {
+                    self._magicFilterClass = e.target.value;
+                    self._updateMagicGlossaryList();
                 });
             }
 
             // Ouvintes para abas do Glossário Mágico
-            const magicTabBtns = this.$$('.magic-tab-btn');
+            const magicTabBtns = self.$$('.magic-tab-btn');
             magicTabBtns.forEach(btn => {
-                this.listen(btn, 'click', (e) => {
-                    this._activeMagicTab = btn.dataset.tab;
-                    this._magicFilterLevel = 'all';
-                    this.render();
+                self.listen(btn, 'click', (e) => {
+                    self._activeMagicTab = btn.dataset.tab;
+                    self._magicFilterLevel = 'all';
+                    self.render();
                 });
             });
 
-            this._updateMagicGlossaryList();
+            self._updateMagicGlossaryList();
         }
 
         // Fechamento de pop-up ao clicar fora (modo clique)
-        this.listen(document, 'mousedown', (e) => {
-            if (this._popupMode === 'click') {
-                const popupEl = this.$('.magic-popup');
+        self.listen(document, 'mousedown', (e) => {
+            if (self._popupMode === 'click') {
+                const popupEl = self.$('.magic-popup');
                 if (popupEl && !popupEl.contains(e.target)) {
                     const clickedCard = e.target.closest('.spell-card');
                     if (!clickedCard) {
-                        this._activePopupSpell = null;
-                        this._popupMode = null;
-                        this.render();
+                        self._activePopupSpell = null;
+                        self._popupMode = null;
+                        self.render();
                     }
                 }
             }
         });
     }
 
-    onUnmount() {
-        if (this._hoverTimer) {
-            clearTimeout(this._hoverTimer);
+    function onUnmount() {
+        if (self._hoverTimer) {
+            clearTimeout(self._hoverTimer);
         }
     }
 
-    setGlossaryFilter(e, el) {
-        this._glossaryFilter = el.dataset.category;
+    function setGlossaryFilter(e, el) {
+        self._glossaryFilter = el.dataset.category;
         
-        const filterContainer = this.$('#glossary-filter-container');
+        const filterContainer = self.$('#glossary-filter-container');
         if (filterContainer) {
             filterContainer.querySelectorAll('button').forEach(btn => {
-                if (btn.dataset.category === this._glossaryFilter) {
+                if (btn.dataset.category === self._glossaryFilter) {
                     btn.classList.remove('btn-ghost');
                     btn.classList.add('btn-primary');
                 } else {
@@ -805,18 +848,18 @@ export class QuickReference extends ReactiveComponent {
             });
         }
         
-        this._updateGlossaryList();
+        self._updateGlossaryList();
     }
 
-    _updateGlossaryList() {
-        const listEl = this.$('#glossary-terms-list');
-        const countEl = this.$('#glossary-count');
+    function _updateGlossaryList() {
+        const listEl = self.$('#glossary-terms-list');
+        const countEl = self.$('#glossary-count');
         if (!listEl) return;
 
-        const query = this._glossarySearch.toLowerCase().trim();
-        const filtered = this._glossaryDatabase.filter(t => {
+        const query = self._glossarySearch.toLowerCase().trim();
+        const filtered = self._getGlossaryDatabase().filter(t => {
             // Category filter
-            if (this._glossaryFilter !== 'all' && t.category !== this._glossaryFilter) {
+            if (self._glossaryFilter !== 'all' && t.category !== self._glossaryFilter) {
                 return false;
             }
             // Search text filter
@@ -865,7 +908,7 @@ export class QuickReference extends ReactiveComponent {
         `);
     }
 
-    _renderGlossary2024() {
+    function _renderGlossary2024() {
         return html`
             <div style="display:flex; flex-direction:column; gap:20px; height:100%; animation: fadeIn 0.4s ease-out;">
                 <div style="display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2px solid rgba(197,160,89,0.15); padding-bottom:15px; margin-bottom:5px;">
@@ -889,17 +932,17 @@ export class QuickReference extends ReactiveComponent {
                         <div style="position: relative; flex: 1; min-width: 280px;">
                             <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--accent); font-size: 1rem;"></i>
                             <input type="text" id="glossary-search-input" placeholder="Buscar regras e termos (ex: Agarrado, Vantagem...)" 
-                                   value="${this._glossarySearch}"
+                                   value="${self._glossarySearch}"
                                    class="tome-input-focus"
                                    style="width: 100%; padding: 14px 14px 14px 45px; border-radius: 10px; border: 1.5px solid rgba(197,160,89,0.3); background: rgba(8, 8, 10, 0.7); color: #fff; font-size: 0.9rem; outline: none; transition: all 0.3s;" />
                         </div>
                         <!-- Category Filters -->
                         <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="glossary-filter-container">
-                            ${this._renderGlossaryFilterBtn('all', '✨ Tudo', this._glossaryFilter === 'all')}
-                            ${this._renderGlossaryFilterBtn('actions', '⚔️ Ações', this._glossaryFilter === 'actions')}
-                            ${this._renderGlossaryFilterBtn('conditions', '🩸 Condições', this._glossaryFilter === 'conditions')}
-                            ${this._renderGlossaryFilterBtn('masteries', '🛡️ Maestrias', this._glossaryFilter === 'masteries')}
-                            ${this._renderGlossaryFilterBtn('rules', '📜 Regras', this._glossaryFilter === 'rules')}
+                            ${self._renderGlossaryFilterBtn('all', '✨ Tudo', self._glossaryFilter === 'all')}
+                            ${self._renderGlossaryFilterBtn('actions', '⚔️ Ações', self._glossaryFilter === 'actions')}
+                            ${self._renderGlossaryFilterBtn('conditions', '🩸 Condições', self._glossaryFilter === 'conditions')}
+                            ${self._renderGlossaryFilterBtn('masteries', '🛡️ Maestrias', self._glossaryFilter === 'masteries')}
+                            ${self._renderGlossaryFilterBtn('rules', '📜 Regras', self._glossaryFilter === 'rules')}
                         </div>
                     </div>
                 </div>
@@ -918,7 +961,7 @@ export class QuickReference extends ReactiveComponent {
         `;
     }
 
-    _renderGlossaryFilterBtn(category, text, isActive) {
+    function _renderGlossaryFilterBtn(category, text, isActive) {
         return html`
             <button class="btn btn-sm ${isActive ? 'active' : ''}" 
                     style="border-radius: 8px; padding: 8px 14px; font-size: 0.8rem; font-weight: 700; background: ${isActive ? 'rgba(197,160,89,0.2)' : 'rgba(0,0,0,0.4)'}; border: 1px solid ${isActive ? 'var(--accent)' : 'rgba(255,255,255,0.1)'}; color: ${isActive ? '#fff' : 'var(--text-dim)'}; transition: all 0.2s;" 
@@ -928,12 +971,12 @@ export class QuickReference extends ReactiveComponent {
         `;
     }
 
-    setSection(e, el) { 
-        this._activeSection = el.dataset.section; 
-        this.render(); 
+    function setSection(e, el) {
+        self._activeSection = el.dataset.section; 
+        self.render(); 
     }
 
-    _buildSpellIndex() {
+    function _buildSpellIndex() {
         const index = [];
         if (spellsData.cantrips) {
             spellsData.cantrips.forEach(c => index.push({ ...c, level: 0 }));
@@ -949,15 +992,15 @@ export class QuickReference extends ReactiveComponent {
         });
     }
 
-    setMagicLevelFilter(e, el) {
+    function setMagicLevelFilter(e, el) {
         if (e) e.stopPropagation();
-        this._magicFilterLevel = el.dataset.level;
-        this._updateMagicGlossaryList();
+        self._magicFilterLevel = el.dataset.level;
+        self._updateMagicGlossaryList();
 
-        const filterContainer = this.$('#magic-level-filter-container');
+        const filterContainer = self.$('#magic-level-filter-container');
         if (filterContainer) {
             filterContainer.querySelectorAll('button').forEach(btn => {
-                if (btn.dataset.level === this._magicFilterLevel) {
+                if (btn.dataset.level === self._magicFilterLevel) {
                     btn.classList.remove('btn-ghost');
                     btn.classList.add('btn-primary');
                 } else {
@@ -968,11 +1011,11 @@ export class QuickReference extends ReactiveComponent {
         }
     }
 
-    _renderMagicGlossary() {
-        const allSpells = this._buildSpellIndex();
+    function _renderMagicGlossary() {
+        const allSpells = self._buildSpellIndex();
         const classes = [...new Set(allSpells.flatMap(s => s.classes || []))].sort();
-        const displayTabTitle = this._activeMagicTab === 'cantrips' ? 'Glossário de Truques' : 'Glossário de Magias';
-        const displayTabSubtitle = this._activeMagicTab === 'cantrips' 
+        const displayTabTitle = self._activeMagicTab === 'cantrips' ? 'Glossário de Truques' : 'Glossário de Magias';
+        const displayTabSubtitle = self._activeMagicTab === 'cantrips' 
             ? 'Consulta rápida e completa de truques (nível 0) D&D 5e.' 
             : 'Consulta de magias arcanas, divinas e naturais de 1º a 5º círculo.';
 
@@ -989,14 +1032,14 @@ export class QuickReference extends ReactiveComponent {
 
                     <!-- ABAS DE SELEÇÃO DO GLOSSÁRIO MÁGICO -->
                     <div style="display: flex; gap: 8px; background: rgba(0,0,0,0.35); padding: 4px; border-radius: 10px; border: 1.5px solid rgba(168,85,247,0.25); box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);">
-                        <button class="btn magic-tab-btn ${this._activeMagicTab === 'cantrips' ? 'btn-primary' : 'btn-ghost'}" 
+                        <button class="btn magic-tab-btn ${self._activeMagicTab === 'cantrips' ? 'btn-primary' : 'btn-ghost'}" 
                                 data-tab="cantrips" 
-                                style="font-family: 'Cinzel'; font-size: 0.75rem; padding: 6px 12px; border: none; border-radius: 6px; display: flex; align-items: center; gap: 6px; color: ${this._activeMagicTab === 'cantrips' ? '#fff' : 'var(--text-dim)'}; background: ${this._activeMagicTab === 'cantrips' ? '#a855f7' : 'transparent'}; border-color: ${this._activeMagicTab === 'cantrips' ? '#a855f7' : 'transparent'};">
+                                style="font-family: 'Cinzel'; font-size: 0.75rem; padding: 6px 12px; border: none; border-radius: 6px; display: flex; align-items: center; gap: 6px; color: ${self._activeMagicTab === 'cantrips' ? '#fff' : 'var(--text-dim)'}; background: ${self._activeMagicTab === 'cantrips' ? '#a855f7' : 'transparent'}; border-color: ${self._activeMagicTab === 'cantrips' ? '#a855f7' : 'transparent'};">
                             <i class="fa-solid fa-wand-magic-sparkles"></i> TRUQUES
                         </button>
-                        <button class="btn magic-tab-btn ${this._activeMagicTab === 'spells' ? 'btn-primary' : 'btn-ghost'}" 
+                        <button class="btn magic-tab-btn ${self._activeMagicTab === 'spells' ? 'btn-primary' : 'btn-ghost'}" 
                                 data-tab="spells" 
-                                style="font-family: 'Cinzel'; font-size: 0.75rem; padding: 6px 12px; border: none; border-radius: 6px; display: flex; align-items: center; gap: 6px; color: ${this._activeMagicTab === 'spells' ? '#fff' : 'var(--text-dim)'}; background: ${this._activeMagicTab === 'spells' ? '#a855f7' : 'transparent'}; border-color: ${this._activeMagicTab === 'spells' ? '#a855f7' : 'transparent'};">
+                                style="font-family: 'Cinzel'; font-size: 0.75rem; padding: 6px 12px; border: none; border-radius: 6px; display: flex; align-items: center; gap: 6px; color: ${self._activeMagicTab === 'spells' ? '#fff' : 'var(--text-dim)'}; background: ${self._activeMagicTab === 'spells' ? '#a855f7' : 'transparent'}; border-color: ${self._activeMagicTab === 'spells' ? '#a855f7' : 'transparent'};">
                             <i class="fa-solid fa-scroll"></i> MAGIAS
                         </button>
                     </div>
@@ -1009,7 +1052,7 @@ export class QuickReference extends ReactiveComponent {
                         <div style="position: relative; flex: 1; min-width: 280px;">
                             <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #a855f7; font-size: 1rem;"></i>
                             <input type="text" id="magic-search-input" placeholder="Buscar magia ou truque (ex: Bola de Fogo, Rajada...)" 
-                                   value="${this._magicSearch}"
+                                   value="${self._magicSearch}"
                                    class="tome-input-focus"
                                    style="width: 100%; padding: 14px 14px 14px 45px; border-radius: 10px; border: 1.5px solid rgba(168,85,247,0.3); background: rgba(8, 8, 10, 0.7); color: #fff; font-size: 0.9rem; outline: none; transition: all 0.3s;" />
                         </div>
@@ -1018,19 +1061,19 @@ export class QuickReference extends ReactiveComponent {
                         <div style="min-width: 160px;">
                             <select id="magic-class-filter" class="tome-input-focus" style="width:100%; padding: 14px; border-radius: 10px; border: 1.5px solid rgba(168,85,247,0.3); background: rgba(8, 8, 10, 0.7); color: #fff; font-size: 0.9rem; cursor:pointer; outline:none; transition: all 0.3s;">
                                 <option value="all">Todas as Classes</option>
-                                ${classes.map(c => html`<option value="${c}" ${this._magicFilterClass === c ? 'selected' : ''}>${c}</option>`)}
+                                ${classes.map(c => html`<option value="${c}" ${self._magicFilterClass === c ? 'selected' : ''}>${c}</option>`)}
                             </select>
                         </div>
 
                         <!-- Level Filters (Apenas na aba de Magias) -->
-                        ${this._activeMagicTab === 'spells' ? html`
+                        ${self._activeMagicTab === 'spells' ? html`
                         <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="magic-level-filter-container">
-                            ${this._renderMagicFilterBtn('all', '✨ Tudo', this._magicFilterLevel === 'all')}
-                            ${this._renderMagicFilterBtn('1', '1º Círculo', this._magicFilterLevel === '1')}
-                            ${this._renderMagicFilterBtn('2', '2º Círculo', this._magicFilterLevel === '2')}
-                            ${this._renderMagicFilterBtn('3', '3º Círculo', this._magicFilterLevel === '3')}
-                            ${this._renderMagicFilterBtn('4', '4º Círculo', this._magicFilterLevel === '4')}
-                            ${this._renderMagicFilterBtn('5', '5º Círculo', this._magicFilterLevel === '5')}
+                            ${self._renderMagicFilterBtn('all', '✨ Tudo', self._magicFilterLevel === 'all')}
+                            ${self._renderMagicFilterBtn('1', '1º Círculo', self._magicFilterLevel === '1')}
+                            ${self._renderMagicFilterBtn('2', '2º Círculo', self._magicFilterLevel === '2')}
+                            ${self._renderMagicFilterBtn('3', '3º Círculo', self._magicFilterLevel === '3')}
+                            ${self._renderMagicFilterBtn('4', '4º Círculo', self._magicFilterLevel === '4')}
+                            ${self._renderMagicFilterBtn('5', '5º Círculo', self._magicFilterLevel === '5')}
                         </div>
                         ` : ''}
                     </div>
@@ -1038,7 +1081,7 @@ export class QuickReference extends ReactiveComponent {
 
                 <!-- Match stats -->
                 <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: var(--text-dim); padding: 0 5px;">
-                    <span>Exibindo <strong id="magic-count" style="color: #a855f7; font-size: 1rem;">0</strong> ${this._activeMagicTab === 'cantrips' ? 'truques catalogados' : 'magias no grimório'}.</span>
+                    <span>Exibindo <strong id="magic-count" style="color: #a855f7; font-size: 1rem;">0</strong> ${self._activeMagicTab === 'cantrips' ? 'truques catalogados' : 'magias no grimório'}.</span>
                     <span style="display: inline-flex; align-items: center; gap: 6px; color: #a855f7; font-weight: 700; text-shadow: 0 0 10px rgba(168,85,247,0.3);"><i class="fa-solid fa-scroll"></i> Pergaminhos Vivos</span>
                 </div>
 
@@ -1050,7 +1093,7 @@ export class QuickReference extends ReactiveComponent {
         `;
     }
 
-    _renderMagicFilterBtn(level, text, isActive) {
+    function _renderMagicFilterBtn(level, text, isActive) {
         return html`
             <button class="btn btn-sm ${isActive ? 'active' : ''}" 
                     style="border-radius: 8px; padding: 8px 14px; font-size: 0.8rem; font-weight: 700; background: ${isActive ? 'rgba(168,85,247,0.2)' : 'rgba(0,0,0,0.4)'}; border: 1px solid ${isActive ? '#a855f7' : 'rgba(255,255,255,0.1)'}; color: ${isActive ? '#fff' : 'var(--text-dim)'}; transition: all 0.2s;" 
@@ -1060,29 +1103,29 @@ export class QuickReference extends ReactiveComponent {
         `;
     }
 
-    _updateMagicGlossaryList() {
-        const listEl = this.$('#magic-glossary-list');
-        const countEl = this.$('#magic-count');
+    function _updateMagicGlossaryList() {
+        const listEl = self.$('#magic-glossary-list');
+        const countEl = self.$('#magic-count');
         if (!listEl) return;
 
-        const allSpells = this._buildSpellIndex();
+        const allSpells = self._buildSpellIndex();
         const filtered = allSpells.filter(s => {
             // Separação rígida de Truques e Magias
-            if (this._activeMagicTab === 'cantrips' && s.level !== 0) return false;
-            if (this._activeMagicTab === 'spells' && s.level === 0) return false;
+            if (self._activeMagicTab === 'cantrips' && s.level !== 0) return false;
+            if (self._activeMagicTab === 'spells' && s.level === 0) return false;
 
-            const q = this._magicSearch.toLowerCase().trim();
+            const q = self._magicSearch.toLowerCase().trim();
             const matchesSearch = !q || 
                 s.name.toLowerCase().includes(q) || 
                 s.englishName.toLowerCase().includes(q) || 
                 (s.effect && s.effect.toLowerCase().includes(q)) ||
                 (s.challenge && s.challenge.toLowerCase().includes(q));
                 
-            const matchesLevel = this._magicFilterLevel === 'all' || 
-                s.level.toString() === this._magicFilterLevel;
+            const matchesLevel = self._magicFilterLevel === 'all' || 
+                s.level.toString() === self._magicFilterLevel;
                 
-            const matchesClass = this._magicFilterClass === 'all' ||
-                (s.classes && s.classes.includes(this._magicFilterClass));
+            const matchesClass = self._magicFilterClass === 'all' ||
+                (s.classes && s.classes.includes(self._magicFilterClass));
                 
             return matchesSearch && matchesLevel && matchesClass;
         });
@@ -1100,12 +1143,12 @@ export class QuickReference extends ReactiveComponent {
             return;
         }
 
-        listEl.innerHTML = filtered.map(s => this._renderMagicCard(s));
-        this._bindMagicCardEvents();
+        listEl.innerHTML = filtered.map(s => self._renderMagicCard(s));
+        self._bindMagicCardEvents();
     }
 
-    _renderPlayersWithSpell(spell) {
-        const players = this.store?.state?.players || [];
+    function _renderPlayersWithSpell(spell) {
+        const players = self.store?.state?.players || [];
         
         const matchesSpell = (playerSpellStr, spellObj) => {
             const cleanPlayerSpell = playerSpellStr.toLowerCase().trim();
@@ -1154,8 +1197,8 @@ export class QuickReference extends ReactiveComponent {
         `;
     }
 
-    _renderPlayersWithSpellMini(spell) {
-        const players = this.store?.state?.players || [];
+    function _renderPlayersWithSpellMini(spell) {
+        const players = self.store?.state?.players || [];
         const matchesSpell = (playerSpellStr, spellObj) => {
             const cleanPlayerSpell = playerSpellStr.toLowerCase().trim();
             if (!cleanPlayerSpell) return false;
@@ -1196,7 +1239,7 @@ export class QuickReference extends ReactiveComponent {
         `;
     }
 
-    _renderMagicCard(spell) {
+    function _renderMagicCard(spell) {
         const isCantrip = spell.level === 0;
         const typeIcons = { 'dano': '⚔️', 'controle': '🔗', 'utilidade': '✨', 'cura': '🏥' };
         const icon = typeIcons[spell.type] || '📜';
@@ -1231,7 +1274,7 @@ export class QuickReference extends ReactiveComponent {
                         <span style="font-size: 0.65rem; color: var(--text-dim); display: flex; align-items: center; gap: 4px;">
                             <i class="fa-solid fa-users" style="color: rgba(${borderGlowColor}, 0.8);"></i> Conjuradores:
                         </span>
-                        ${this._renderPlayersWithSpellMini(spell)}
+                        ${self._renderPlayersWithSpellMini(spell)}
                     </div>
                     
                     <!-- Footer Info -->
@@ -1244,21 +1287,21 @@ export class QuickReference extends ReactiveComponent {
         `;
     }
 
-    _bindMagicCardEvents() {
-        const cards = this.$$('.spell-card');
+    function _bindMagicCardEvents() {
+        const cards = self.$$('.spell-card');
         cards.forEach(card => {
             const spellId = card.dataset.spellId;
-            const spell = this._buildSpellIndex().find(s => s.id === spellId);
+            const spell = self._buildSpellIndex().find(s => s.id === spellId);
             if (!spell) return;
 
-            this.listen(card, 'mouseenter', () => {
-                if (this._popupMode === 'click') return;
+            self.listen(card, 'mouseenter', () => {
+                if (self._popupMode === 'click') return;
 
-                this._hoverTimer = setTimeout(() => {
-                    this._playMagicWhisperSound();
+                self._hoverTimer = setTimeout(() => {
+                    self._playMagicWhisperSound();
                     
-                    this._activePopupSpell = spell;
-                    this._popupMode = 'hover';
+                    self._activePopupSpell = spell;
+                    self._popupMode = 'hover';
                     
                     const rect = card.getBoundingClientRect();
                     let x = rect.right + 12;
@@ -1273,44 +1316,44 @@ export class QuickReference extends ReactiveComponent {
                     }
                     if (y < 10) y = 10;
                     
-                    this._popupPosition = { x, y };
-                    this.render();
+                    self._popupPosition = { x, y };
+                    self.render();
                 }, 1000);
             });
 
-            this.listen(card, 'mouseleave', () => {
-                if (this._hoverTimer) {
-                    clearTimeout(this._hoverTimer);
-                    this._hoverTimer = null;
+            self.listen(card, 'mouseleave', () => {
+                if (self._hoverTimer) {
+                    clearTimeout(self._hoverTimer);
+                    self._hoverTimer = null;
                 }
-                if (this._popupMode === 'hover') {
-                    this._activePopupSpell = null;
-                    this._popupMode = null;
-                    this.render();
+                if (self._popupMode === 'hover') {
+                    self._activePopupSpell = null;
+                    self._popupMode = null;
+                    self.render();
                 }
             });
         });
     }
 
-    toggleMagicPopup(e, el) {
+    function toggleMagicPopup(e, el) {
         if (e) e.stopPropagation();
         const spellId = el.dataset.spellId;
-        const spell = this._buildSpellIndex().find(s => s.id === spellId);
+        const spell = self._buildSpellIndex().find(s => s.id === spellId);
         if (!spell) return;
 
-        if (this._hoverTimer) {
-            clearTimeout(this._hoverTimer);
-            this._hoverTimer = null;
+        if (self._hoverTimer) {
+            clearTimeout(self._hoverTimer);
+            self._hoverTimer = null;
         }
 
-        this._playMagicWhisperSound();
+        self._playMagicWhisperSound();
 
-        if (this._activePopupSpell && this._activePopupSpell.id === spell.id && this._popupMode === 'click') {
-            this._activePopupSpell = null;
-            this._popupMode = null;
+        if (self._activePopupSpell && self._activePopupSpell.id === spell.id && self._popupMode === 'click') {
+            self._activePopupSpell = null;
+            self._popupMode = null;
         } else {
-            this._activePopupSpell = spell;
-            this._popupMode = 'click';
+            self._activePopupSpell = spell;
+            self._popupMode = 'click';
 
             const rect = el.getBoundingClientRect();
             let x = rect.right + 12;
@@ -1325,24 +1368,24 @@ export class QuickReference extends ReactiveComponent {
             }
             if (y < 10) y = 10;
 
-            this._popupPosition = { x, y };
+            self._popupPosition = { x, y };
         }
-        this.render();
+        self.render();
     }
 
-    closeMagicPopup(e) {
+    function closeMagicPopup(e) {
         if (e) e.stopPropagation();
-        this._activePopupSpell = null;
-        this._popupMode = null;
-        this.render();
+        self._activePopupSpell = null;
+        self._popupMode = null;
+        self.render();
     }
 
-    viewFullSpell(e, el) {
+    function viewFullSpell(e, el) {
         if (e) e.stopPropagation();
         const spellId = el.dataset.spellId;
         
         // Navega para a aba de grimório e seleciona a magia completa
-        this.store.update(s => {
+        self.store.update(s => {
             s.activeTab = 'spellbook';
         });
 
@@ -1359,12 +1402,12 @@ export class QuickReference extends ReactiveComponent {
             }
         }, 100);
 
-        this._activePopupSpell = null;
-        this._popupMode = null;
-        this.render();
+        self._activePopupSpell = null;
+        self._popupMode = null;
+        self.render();
     }
 
-    _playMagicWhisperSound() {
+    function _playMagicWhisperSound() {
         try {
             const AudioContext = window.AudioContext || window.webkitAudioContext;
             if (!AudioContext) return;
@@ -1405,7 +1448,7 @@ export class QuickReference extends ReactiveComponent {
         }
     }
 
-    _getSpellPopupHTML(spell) {
+    function _getSpellPopupHTML(spell) {
         const isCantrip = spell.level === 0;
         const circleLabel = isCantrip ? 'TRUQUE' : `${spell.level}º CÍRCULO`;
         
@@ -1544,7 +1587,7 @@ export class QuickReference extends ReactiveComponent {
                     <div style="font-family: 'Cinzel', serif; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 6px; letter-spacing: 0.5px; text-transform: uppercase; display: flex; align-items: center; gap: 4px;">
                         <i class="fa-solid fa-users"></i> Conjuradores Vinculados
                     </div>
-                    ${this._renderPlayersWithSpell(spell)}
+                    ${self._renderPlayersWithSpell(spell)}
                 </div>
 
                 <!-- Dano / Efeito box -->
@@ -1561,7 +1604,7 @@ export class QuickReference extends ReactiveComponent {
                 </div>
             </div>
             
-            ${this._popupMode === 'click' ? html`
+            ${self._popupMode === 'click' ? html`
                 <button class="btn btn-ghost" style="position: absolute; top: 12px; right: 12px; padding: 2px 6px; font-size: 0.65rem; border-radius: 4px; z-index: 10; border: none; background: transparent; color: var(--text-dim); cursor: pointer;" data-action="closeMagicPopup">✕</button>
                 <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; border-top: 1.5px solid rgba(255, 255, 255, 0.08); padding-top: 10px;">
                     <button class="btn btn-ghost" style="padding: 5px 12px; font-size: 0.68rem; border-radius: 6px; border: 1px solid rgba(197, 160, 89, 0.35); color: var(--accent); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; background: rgba(197,160,89,0.05);" data-action="viewFullSpell" data-spell-id="${spell.id}" data-spell-name="${spell.name}">
@@ -1570,6 +1613,6 @@ export class QuickReference extends ReactiveComponent {
                 </div>
             ` : ''}
         `;
-    }
+    return self.template();
 }
 
