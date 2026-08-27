@@ -1,12 +1,11 @@
 import { signal } from '@preact/signals';
 
 /**
- * REACTIVE STORE v15.0 — Leve, Direto e Sem Conflitos Yjs
+ * REACTIVE STORE v22.1 — Refatorado para Imutabilidade Estrita
  *
- * Eliminamos o SyncedStore do frontend para evitar a duplicação de instâncias
- * de Yjs ('Yjs was already imported') e o erro 'cannot set new elements on root doc'.
- * A sincronização CRDT é feita exclusivamente pelo CRDTManager (via WebSocket),
- * enquanto o Store cuida apenas do estado local reativo da UI.
+ * Implementa clone em draft durante o update para garantir
+ * que mutations profundas gerem novas referências (imprescindível
+ * para o Preact re-renderizar corretamente os componentes que usam useStore(path)).
  */
 export class Store {
     constructor(initialState = {}) {
@@ -15,12 +14,13 @@ export class Store {
         this._data = this._sanitize(initialState);
         this.signal = signal(this._data);
 
-        // Sub-divisão reativa para evitar re-render global (V17.8)
+        // Sub-divisão reativa
         this.pathSignals = {};
         for (const key of Object.keys(this._data)) {
             this.pathSignals[key] = signal(this._data[key]);
         }
 
+        // Top-level proxy para compatibilidade com códigos que fazem `store.state.players = ...`
         this.state = new Proxy(this._data, {
             get: (target, prop) => {
                 return target[prop];
@@ -73,33 +73,61 @@ export class Store {
     }
 
     update(fn) {
-        fn(this.state);
-        this._scheduleNotify();
-        this.signal.value = { ...this._data };
+        // Criar um draft mutável baseado no clone profundo
+        const draft = this._deepClone(this._data);
         
-        // Push updates to pathSignals
-        for (const key of Object.keys(this._data)) {
-            if (!this.pathSignals[key]) {
-                this.pathSignals[key] = signal(this._data[key]);
-            } else {
-                this.pathSignals[key].value = this._data[key];
+        // Passar o draft para a função mutadora
+        fn(draft);
+        
+        let changed = false;
+        // Detectar o que mudou
+        for (const key of Object.keys(draft)) {
+            const oldStr = JSON.stringify(this._data[key]);
+            const newStr = JSON.stringify(draft[key]);
+            
+            if (oldStr !== newStr) {
+                this._data[key] = draft[key];
+                
+                if (!this.pathSignals[key]) {
+                    this.pathSignals[key] = signal(this._data[key]);
+                } else {
+                    // Força nova referência para garantir re-render no Preact
+                    this.pathSignals[key].value = this._data[key];
+                }
+                changed = true;
             }
+        }
+        
+        if (changed) {
+            this._scheduleNotify();
+            this.signal.value = { ...this._data };
         }
     }
 
     merge(partial) {
         if (!partial || typeof partial !== 'object') return;
         const clean = this._sanitize(partial);
-        Object.assign(this._data, clean);
-        this._scheduleNotify();
-        this.signal.value = { ...this._data };
         
+        let changed = false;
         for (const key of Object.keys(clean)) {
-            if (!this.pathSignals[key]) {
-                this.pathSignals[key] = signal(this._data[key]);
-            } else {
-                this.pathSignals[key].value = this._data[key];
+            const oldStr = JSON.stringify(this._data[key]);
+            const newStr = JSON.stringify(clean[key]);
+            
+            if (oldStr !== newStr) {
+                this._data[key] = this._deepClone(clean[key]);
+                
+                if (!this.pathSignals[key]) {
+                    this.pathSignals[key] = signal(this._data[key]);
+                } else {
+                    this.pathSignals[key].value = this._data[key];
+                }
+                changed = true;
             }
+        }
+        
+        if (changed) {
+            this._scheduleNotify();
+            this.signal.value = { ...this._data };
         }
     }
 
@@ -114,9 +142,6 @@ export class Store {
         return this.pathSignals[path].subscribe(listener);
     }
 
-    /**
-     * Retorna snapshot JSON limpo do estado atual, sem referências circulares.
-     */
     snapshot() {
         try {
             return this._deepClone(this._data) || {};

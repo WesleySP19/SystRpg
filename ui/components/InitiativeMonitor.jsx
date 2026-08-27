@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'preact/hooks';
 import { TOME } from '../../core/Registry.js';
 import { Dice } from '../../utils/Dice.js';
-import { Toast } from '../components/Toast.js';
+import { Toast } from '../components/core/Toast.jsx';
 import { RulesEngine } from '../../core/RulesEngine.js';
 import { MonsterArt } from '../../services/MonsterArt.js';
 import { FXEngine } from '../../services/FXEngine.js';

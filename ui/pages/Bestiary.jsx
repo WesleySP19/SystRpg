@@ -3,7 +3,7 @@ import { useStore } from "../../../core/hooks.js";
 import { html } from "htm/preact";
 import { TOME } from '../../core/Registry.js';
 import { MonsterData } from '../../data/MonsterData.js';
-import { Toast } from '../components/Toast.js';
+import { Toast } from '../components/core/Toast.jsx';
 import { Dice } from '../../utils/Dice.js';
 import { RulesEngine } from '../../core/RulesEngine.js';
 import { MonsterArt } from '../../services/MonsterArt.js';
@@ -47,45 +47,15 @@ export function Bestiary(opts) {
         ]
     };
 
-    const legacyCtx = {
-        store: window.TOME?.store || { state: storeState },
-        _selectedId: selectedId,
-        _selectedLevel: selectedLevel,
-        _searchQuery: searchQuery,
-        _viewMode: viewMode,
-        _selectedCreature: selectedCreature,
-        _showForgeModal: showForgeModal,
-        _activeRoll: activeRoll,
-        _rollMod: rollMod,
-        _narrativeQuotes: narrativeQuotes,
-        render: () => {},
-        $: (sel) => containerRef.current ? containerRef.current.querySelector(sel) : null,
-        $$: (sel) => containerRef.current ? containerRef.current.querySelectorAll(sel) : []
-    };
 
-    const self = new Proxy(legacyCtx, {
-        get: (target, prop) => {
-            if (prop in target) return target[prop];
-            return eval(prop);
-        },
-        set: (target, prop, value) => {
-            if (prop === "_selectedId") setSelectedId(value);
-            else if (prop === "_selectedLevel") setSelectedLevel(value);
-            else if (prop === "_searchQuery") setSearchQuery(value);
-            else if (prop === "_viewMode") setViewMode(value);
-            else if (prop === "_selectedCreature") setSelectedCreature(value);
-            else if (prop === "_showForgeModal") setShowForgeModal(value);
-            else if (prop === "_activeRoll") setActiveRoll(value);
-            else if (prop === "_rollMod") setRollMod(value);
-            target[prop] = value;
-            return true;
-        }
-    });
+    const store = window.TOME?.store || { state: storeState };
+    const $ = (sel) => containerRef.current ? containerRef.current.querySelector(sel) : null;
+    const $$ = (sel) => containerRef.current ? containerRef.current.querySelectorAll(sel) : [];
 
     function _getCombinedCreatures() {
-        const staticCreatures = MonsterData[_selectedLevel] || [];
+        const staticCreatures = MonsterData[selectedLevel] || [];
         const customCreatures = (store.state.customMonsters || [])
-            .filter(m => m.level === _selectedLevel || m.cr === _selectedLevel || (!m.level && _selectedLevel === 'Nível 1'));
+            .filter(m => m.level === selectedLevel || m.cr === selectedLevel || (!m.level && setSelectedLevel(== 'Nível 1')));
         return [...customCreatures, ...staticCreatures];
     }
 
@@ -167,33 +137,33 @@ export function Bestiary(opts) {
         const btn = e.target.closest("[data-action]");
         if (btn) {
             const action = btn.dataset.action;
-            if (action === "triggerImportJSON") self.triggerImportJSON(e, btn);
-            if (action === "addCustomMonster") self.addCustomMonster(e, btn);
-            if (action === "selectLevel") self.selectLevel(e, btn);
-            if (action === "viewCreature") self.viewCreature(e, btn);
-            if (action === "spawnCreature") self.spawnCreature(e, btn);
-            if (action === "deleteCustomMonster") self.deleteCustomMonster(e, btn);
-            if (action === "backToGrid") self.backToGrid(e, btn);
-            if (action === "spawnFromDetail") self.spawnFromDetail(e, btn);
-            if (action === "rollBestiaryAttack") self.rollBestiaryAttack(e, btn);
-            if (action === "proceedToDamage") self.proceedToDamage(e, btn);
-            if (action === "applyVisualRollResult") self.applyVisualRollResult(e, btn);
-            if (action === "closeVisualRoll") self.closeVisualRoll(e, btn);
+            if (action === "triggerImportJSON") triggerImportJSON(e, btn);
+            if (action === "addCustomMonster") addCustomMonster(e, btn);
+            if (action === "selectLevel") selectLevel(e, btn);
+            if (action === "viewCreature") viewCreature(e, btn);
+            if (action === "spawnCreature") spawnCreature(e, btn);
+            if (action === "deleteCustomMonster") deleteCustomMonster(e, btn);
+            if (action === "backToGrid") backToGrid(e, btn);
+            if (action === "spawnFromDetail") spawnFromDetail(e, btn);
+            if (action === "rollBestiaryAttack") rollBestiaryAttack(e, btn);
+            if (action === "proceedToDamage") proceedToDamage(e, btn);
+            if (action === "applyVisualRollResult") applyVisualRollResult(e, btn);
+            if (action === "closeVisualRoll") closeVisualRoll(e, btn);
         }
     };
     
     useEffect(() => {
-        if (self.onMount) self.onMount();
-        return () => { if (self.onUnmount) self.onUnmount(); };
+        if (onMount) onMount();
+        return () => { if (onUnmount) onUnmount(); };
     }, []);
 
     return (function() {
         const levels = Object.keys(MonsterData);
         const allCreatures = _getCombinedCreatures();
         const filtered = allCreatures.filter(m =>
-            m.name.toLowerCase().includes(_searchQuery.toLowerCase())
+            m.name.toLowerCase().includes(searchQuery.toLowerCase())
         );
-        const isBoss = _selectedLevel === 'BOSS';
+        const isBoss = setSelectedLevel(== 'BOSS');
 
         const customStyle = `
             <style>
@@ -251,7 +221,7 @@ export function Bestiary(opts) {
                     <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
                         <div style="position:relative; margin-right: 10px;">
                             <i class="fa-solid fa-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--accent); opacity:0.7;"></i>
-                            <input type="text" class="legacy-input" placeholder="Buscar criatura..." value="${_searchQuery}"
+                            <input type="text" class="legacy-input" placeholder="Buscar criatura..." value="${searchQuery}"
                                    style="min-width:250px; padding-left:35px !important; border-radius:20px !important; background:rgba(0,0,0,0.5) !important;"
                                    oninput="closest('.bestiary').__component._doSearch(value)">
                         </div>
@@ -270,7 +240,7 @@ export function Bestiary(opts) {
                 <!-- LEVEL FILTER BAR -->
                 <div style="display:flex; overflow-x:auto; gap:10px; padding-bottom:15px; margin-bottom:20px; scrollbar-width:thin;">
                     ${levels.map(lvl => {
-                        const isActive = _selectedLevel === lvl;
+                        const isActive = setSelectedLevel(== lvl);
                         const isBossTab = lvl === 'BOSS';
                         return `
                             <button class="btn ${isActive ? (isBossTab ? 'btn-danger' : 'btn-primary') : 'btn-ghost'}"
@@ -284,13 +254,13 @@ export function Bestiary(opts) {
                 </div>
 
                 <!-- MAIN CONTENT -->
-                ${_selectedCreature ? _renderDetailView(_selectedCreature, isBoss) : _renderGridView(filtered, isBoss)}
+                ${selectedCreature ? _renderDetailView(selectedCreature, isBoss) : _renderGridView(filtered, isBoss)}
                 
                 <!-- FORGE MODAL -->
-                ${_showForgeModal ? _renderForgeModal() : ''}
+                ${showForgeModal ? _renderForgeModal() : ''}
 
                 <!-- VISUAL DYNAMIC DICE ROLLER OVERLAY -->
-                ${_activeRoll ? _renderVisualDiceRoller() : ''}
+                ${activeRoll ? _renderVisualDiceRoller() : ''}
             </div>
         `;
     }
@@ -432,13 +402,13 @@ export function Bestiary(opts) {
                 <div class="bestiary-statblock ${isBoss ? 'is-boss' : ''}">
                     <header class="sb-header">
                         <h1 class="sb-name">${m.name}</h1>
-                        <p class="sb-subtitle">${MonsterArt.getSubtitle(m, _selectedLevel)}</p>
+                        <p class="sb-subtitle">${MonsterArt.getSubtitle(m, selectedLevel)}</p>
                     </header>
                     ${descriptionBlock}
 
                     <div class="sb-class-bar">
                         <span>${MonsterArt.getClassification(m)}</span>
-                        <span class="sb-cr">${MonsterArt.getCrDisplay(_selectedLevel)}</span>
+                        <span class="sb-cr">${MonsterArt.getCrDisplay(selectedLevel)}</span>
                     </div>
 
                     <div class="sb-hero">
@@ -459,7 +429,7 @@ export function Bestiary(opts) {
                     <div class="sb-abilities">${abilityBoxes}</div>
 
                     <div class="sb-traits">
-                        <p><strong>ND</strong> ${_selectedLevel.replace('Nível ', '')} · <strong>Tipo</strong> ${m.type || 'Monstro'}</p>
+                        <p><strong>ND</strong> ${selectedLevel.replace('Nível ', '')} · <strong>Tipo</strong> ${m.type || 'Monstro'}</p>
                         ${traitsBlock}
                     </div>
 
@@ -594,26 +564,26 @@ export function Bestiary(opts) {
         });
 
         Toast.show(`🔥 ${name} foi forjado no fogo eterno do Bestiário!`, 'success');
-        _showForgeModal = false;
+        setShowForgeModal(false);
         render();
     }
 
     function closeForgeModal() {
-        _showForgeModal = false;
+        setShowForgeModal(false);
         render();
     }
 
     /* ── Actions ───────────────────────────────────────────────── */
     function selectLevel(e, el) {
-        _selectedLevel = el.dataset.level;
-        _selectedCreature = null;
-        _searchQuery = '';
+        setSelectedLevel(el.dataset.level);
+        setSelectedCreature(null);
+        setSearchQuery('');
         render();
     }
 
     function rollBestiaryAttack(e, el) {
         const idx = parseInt(el.dataset.index);
-        const m = _selectedCreature;
+        const m = selectedCreature;
         if (!m) return;
         
         const actions = _getCreatureActions(m);
@@ -631,7 +601,7 @@ export function Bestiary(opts) {
     }
 
     function startVisualRoll(attacker, target, action) {
-        _activeRoll = {
+        activeRoll = {
             stage: 'd20',
             rolling: true,
             attacker,
@@ -651,20 +621,20 @@ export function Bestiary(opts) {
         TOME.audio.playSFX('https://assets.mixkit.co/active_storage/sfx/2771/2771-preview.mp3');
 
         setTimeout(() => {
-            const hitRes = RulesEngine.checkHit(action.bonus || 0, target.ac || 10, _rollMod);
+            const hitRes = RulesEngine.checkHit(action.bonus || 0, target.ac || 10, rollMod);
             
-            _activeRoll.rolling = false;
-            _activeRoll.d20Roll = hitRes.roll;
-            _activeRoll.d20Total = hitRes.total;
-            _activeRoll.isCrit = hitRes.isCrit;
-            _activeRoll.isHit = hitRes.success;
+            activeRoll.rolling = false;
+            activeRoll.d20Roll = hitRes.roll;
+            activeRoll.d20Total = hitRes.total;
+            activeRoll.isCrit = hitRes.isCrit;
+            activeRoll.isHit = hitRes.success;
 
             if (hitRes.success) {
                 TOME.audio.playSFX('https://assets.mixkit.co/active_storage/sfx/2770/2770-preview.mp3');
             } else {
                 TOME.audio.playSFX('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
                 const text = _getNarrative('miss', target.name);
-                _activeRoll.narrativeText = text;
+                activeRoll.narrativeText = text;
             }
 
             render();
@@ -672,41 +642,41 @@ export function Bestiary(opts) {
     }
 
     function proceedToDamage() {
-        _activeRoll.stage = 'damage';
+        activeRoll.stage = 'damage';
         render();
 
         TOME.audio.playSFX('https://assets.mixkit.co/active_storage/sfx/2770/2770-preview.mp3');
 
         setTimeout(() => {
-            const dmgNotation = _activeRoll.action.damage || '1d6';
+            const dmgNotation = activeRoll.action.damage || '1d6';
             const dmgRoll = Dice.roll(dmgNotation);
             
-            let totalDmg = _activeRoll.isCrit ? (dmgRoll.total * 2) : dmgRoll.total;
+            let totalDmg = activeRoll.isCrit ? (dmgRoll.total * 2) : dmgRoll.total;
             if (isNaN(totalDmg)) totalDmg = 4;
 
-            _activeRoll.stage = 'complete';
-            _activeRoll.damageRolls = dmgRoll.rolls || [totalDmg];
-            _activeRoll.damageTotal = totalDmg;
+            activeRoll.stage = 'complete';
+            activeRoll.damageRolls = dmgRoll.rolls || [totalDmg];
+            activeRoll.damageTotal = totalDmg;
 
-            const text = _getNarrative(_activeRoll.isCrit ? 'crit' : 'hit', _activeRoll.target.name, totalDmg);
-            _activeRoll.narrativeText = text;
+            const text = _getNarrative(activeRoll.isCrit ? 'crit' : 'hit', activeRoll.target.name, totalDmg);
+            activeRoll.narrativeText = text;
 
             render();
         }, 1100);
     }
 
     function applyVisualRollResult() {
-        _activeRoll = null;
+        setActiveRoll(null);
         render();
     }
 
     function closeVisualRoll() {
-        _activeRoll = null;
+        setActiveRoll(null);
         render();
     }
 
     function _renderVisualDiceRoller() {
-        const roll = _activeRoll;
+        const roll = activeRoll;
         const isD20Stage = roll.stage === 'd20';
         const isDamageStage = roll.stage === 'damage';
         const isComplete = roll.stage === 'complete';
@@ -818,13 +788,13 @@ export function Bestiary(opts) {
         const all = _getCombinedCreatures();
         const m = all.find(c => c.name === name);
         if (m) {
-            _selectedCreature = m;
+            setSelectedCreature(m);
             render();
         }
     }
 
     function backToGrid() {
-        _selectedCreature = null;
+        setSelectedCreature(null);
         render();
     }
 
@@ -837,8 +807,8 @@ export function Bestiary(opts) {
     }
 
     function spawnFromDetail() {
-        if (_selectedCreature) {
-            _addToStore(_selectedCreature);
+        if (selectedCreature) {
+            _addToStore(selectedCreature);
         }
     }
 
@@ -858,7 +828,7 @@ export function Bestiary(opts) {
         let entity = {
             id: 'm-' + Date.now(),
             name: m.name,
-            cr: _selectedLevel.replace('Nível ', ''),
+            cr: selectedLevel.replace('Nível ', ''),
             hp_max: m.hp,
             hp: m.hp, // hp atual
             ac: m.ac || 10,
@@ -867,7 +837,7 @@ export function Bestiary(opts) {
             size: m.size || 'medium',
             speed: m.speed || '30 ft.',
             type: m.type || 'monster',
-            originalData: { ...m, cr: _selectedLevel }
+            originalData: { ...m, cr: selectedLevel }
         };
 
         if (window.TOME && window.TOME.events) {
@@ -876,7 +846,7 @@ export function Bestiary(opts) {
     }
 
     function addCustomMonster() {
-        _showForgeModal = true;
+        setShowForgeModal(true);
         render();
     }
 
@@ -885,17 +855,17 @@ export function Bestiary(opts) {
     }
 
     function _doSearch(val) {
-        _searchQuery = val;
+        setSearchQuery(val);
         render();
     }
 
     function search(val) {
-        _searchQuery = val;
+        setSearchQuery(val);
         render();
     }
 
     function select(id) {
-        _selectedId = id;
+        setSelectedId(id);
         render();
     }
 
@@ -960,5 +930,5 @@ export function Bestiary(opts) {
                 }
             };
         }
-    return html`<div ref=${containerRef} onClick=${handleGlobalClick} dangerouslySetInnerHTML=${{__html: self.template()}}></div>`;
+    return html`<div ref=${containerRef} onClick=${handleGlobalClick} dangerouslySetInnerHTML=${{__html: template()}}></div>`;
 }

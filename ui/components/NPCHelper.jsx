@@ -1,7 +1,7 @@
 import { useState, useRef } from 'preact/hooks';
 import { useStore } from '../core/hooks.js';
 import { TOME } from '../../core/Registry.js';
-import { Toast } from '../components/Toast.js';
+import { Toast } from '../components/core/Toast.jsx';
 
 /**
  * NPC HELPER v4.0

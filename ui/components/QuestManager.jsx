@@ -1,7 +1,7 @@
 import { h, Fragment } from 'preact';
 import { useState, useRef, useEffect } from 'preact/hooks';
 import { TOME } from '../../core/Registry.js';
-import { Toast } from '../components/Toast.js';
+import { Toast } from '../components/core/Toast.jsx';
 
 // D&D 5e DMG Encounter XP thresholds per player character
 const XP_THRESHOLDS = {

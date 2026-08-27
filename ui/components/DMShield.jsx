@@ -1,7 +1,7 @@
 import { h, Fragment } from 'preact';
 import { useState, useRef } from 'preact/hooks';
 import { TOME } from '../../core/Registry.js';
-import { Toast } from '../components/Toast.js';
+import { Toast } from '../components/core/Toast.jsx';
 import { Dice } from '../../utils/Dice.js';
 import { CoreTables } from './CoreTables.jsx';
 import { EncounterCalculator } from './EncounterCalculator.jsx';

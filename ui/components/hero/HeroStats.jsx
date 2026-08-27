@@ -1,6 +1,6 @@
 import { html } from 'htm/preact';
 import { Dice } from '../../../utils/Dice.js';
-import { Toast } from '../../components/Toast.js';
+import { Toast } from '../../components/core/Toast.jsx';
 
 export function HeroStats({ hero, onRoll }) {
     if (!hero) return null;

@@ -1,5 +1,5 @@
 import { useStore } from '../core/hooks.js';
-import { Toast } from '../components/Toast.js';
+import { Toast } from '../components/core/Toast.jsx';
 
 export function HeroHub() {
     const storeState = useStore();

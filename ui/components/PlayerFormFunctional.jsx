@@ -1,5 +1,5 @@
 import { TOME } from '../../core/Registry.js';
-import { Toast } from '../components/Toast.js';
+import { Toast } from '../components/core/Toast.jsx';
 import { Schemas } from '../../data/schemas.js';
 import { CardRenderer } from '../../services/CardRenderer.js';
 import { exportFrontBackPNG } from '../utils/imageExport.js';

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'preact/hooks';
 import { TOME } from '../../core/Registry.js';
 import { CardRenderer } from '../../services/CardRenderer.js';
-import { Toast } from '../components/Toast.js';
+import { Toast } from '../components/core/Toast.jsx';
 import { exportFrontBackPNG } from '../utils/imageExport.js';
 import { PersistenceService } from '../../services/PersistenceService.js';
 import { useStore } from '../core/hooks.js';

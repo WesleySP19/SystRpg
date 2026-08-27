@@ -1,32 +1,50 @@
-import { useState, useEffect, useRef } from 'preact/hooks';
+import { useState, useEffect, useRef, Suspense } from 'preact/compat';
+import { lazy } from 'preact/compat';
 import { useStore } from '../core/hooks.js';
 import { TOME } from '../../core/Registry.js';
 import { MatchHistoryService } from '../../services/MatchHistoryService.js';
 import { MainPanel } from '../components/MainPanel.jsx';
-import { render } from 'preact';
 
+// V22.3 Lazy Loading Nativo via Preact (Code Splitting Otimizado)
+const lazyLoad = (importFunc) => lazy(async () => {
+    const module = await importFunc();
+    // Encontrar o componente exportado
+    const Component = module[Object.keys(module)[0]];
+    return { default: Component };
+});
+
+// Componentes já Funcionais e compativeis com Lazy puro:
 const MODULE_MAP = {
-    'campaign': { path: () => import('../components/CampaignManager.jsx'), cls: 'CampaignManager' },
-    'dmtable': { path: () => import('../components/DMTable.jsx'), cls: 'DMTable' },
-    'dmshield': { path: () => import('../components/DMShield.jsx'), cls: 'DMShield' },
-    'worldbuilder': { path: () => import('../components/WorldBuilder.js'), cls: 'WorldBuilder' },
-    'combat': { path: () => import('../components/combat/CombatTrackerV22.jsx'), cls: 'CombatTrackerV22' },
-    'quest': { path: () => import('../components/QuestManager.jsx'), cls: 'QuestManager' },
-    'chareditor': { path: () => import('../components/DynamicCharacterBuilder.js'), cls: 'DynamicCharacterBuilder' },
-    'character': { path: () => import('../components/DynamicCharacterBuilder.js'), cls: 'DynamicCharacterBuilder' },
-    'builder': { path: () => import('../components/PlayerForm.jsx'), cls: 'PlayerForm' },
-    'herohub': { path: () => import('../components/HeroHub.js'), cls: 'HeroHub' },
-    'herosheet': { path: () => import('../components/hero/HeroSheetV22.jsx'), cls: 'HeroSheetV22' },
-    'cardgenerator': { path: () => import('../components/CardGenerator.js'), cls: 'CardGenerator' },
-    'bestiary': { path: () => import('./Bestiary.jsx'), cls: 'Bestiary' },
-    'journal': { path: () => import('../components/SessionJournal.js'), cls: 'SessionJournal' },
-    'loot': { path: () => import('../components/LootGenerator.js'), cls: 'LootGenerator' },
-    'spellbook': { path: () => import('../components/SpellBook.jsx'), cls: 'SpellBook' },
-    'npc': { path: () => import('../components/NPCHelper.js'), cls: 'NPCHelper' },
-    'settings': { path: () => import('../components/QuickReference.js'), cls: 'QuickReference' },
-    'initiative': { path: () => import('../components/InitiativeMonitor.jsx'), cls: 'InitiativeMonitor' },
-    'tomesinal': { path: () => import('../components/TomeSinalPanel.js'), cls: 'TomeSinalPanel' }
+    'campaign': { path: () => import('../components/CampaignManager.jsx'), type: 'legacy' },
+    'dmtable': { path: () => import('../components/DMTable.jsx'), type: 'legacy' },
+    'dmshield': { path: () => import('../components/DMShield.jsx'), type: 'legacy' },
+    'worldbuilder': { path: () => import('../components/WorldBuilder.js'), type: 'legacy' },
+    'combat': { path: () => import('../components/combat/CombatTrackerV22.jsx'), type: 'legacy' },
+    'quest': { path: () => import('../components/QuestManager.jsx'), type: 'legacy' },
+    'chareditor': { path: () => import('../components/DynamicCharacterBuilder.js'), type: 'legacy' },
+    'character': { path: () => import('../components/DynamicCharacterBuilder.js'), type: 'legacy' },
+    'builder': { path: () => import('../components/PlayerForm.jsx'), type: 'legacy' },
+    'herohub': { path: () => import('../components/HeroHub.js'), type: 'legacy' },
+    'herosheet': { path: () => import('../components/hero/HeroSheetV22.jsx'), type: 'functional', Component: lazyLoad(() => import('../components/hero/HeroSheetV22.jsx')) },
+    'cardgenerator': { path: () => import('../components/CardGenerator.js'), type: 'legacy' },
+    'bestiary': { path: () => import('./Bestiary.jsx'), type: 'functional', Component: lazyLoad(() => import('./Bestiary.jsx')) },
+    'journal': { path: () => import('../components/SessionJournal.js'), type: 'functional', Component: lazyLoad(() => import('../components/SessionJournal.js')) },
+    'loot': { path: () => import('../components/LootGenerator.js'), type: 'legacy' },
+    'spellbook': { path: () => import('../components/SpellBook.jsx'), type: 'legacy' },
+    'npc': { path: () => import('../components/NPCHelper.js'), type: 'legacy' },
+    'settings': { path: () => import('../components/QuickReference.js'), type: 'functional', Component: lazyLoad(() => import('../components/QuickReference.js')) },
+    'initiative': { path: () => import('../components/InitiativeMonitor.jsx'), type: 'functional', Component: lazyLoad(() => import('../components/InitiativeMonitor.jsx')) },
+    'tomesinal': { path: () => import('../components/TomeSinalPanel.js'), type: 'legacy' }
 };
+
+function LoadingSpinner({ label = "Carregando..." }) {
+    return (
+        <div class="absolute inset-0 flex flex-col items-center justify-center text-accent p-8 font-cinzel bg-bgbase z-10 animate-fadeIn">
+            <i class="fa-solid fa-circle-notch fa-spin text-5xl mb-5 opacity-80"></i>
+            <h3 class="text-xl m-0 text-slate-400">{label}</h3>
+        </div>
+    );
+}
 
 function LegacyComponentMount({ tab, store }) {
     const containerRef = useRef(null);
@@ -58,16 +76,12 @@ function LegacyComponentMount({ tab, store }) {
                 const mod = await Promise.race([entry.path(), timeoutPromise]);
                 if (isCancelled) return;
 
-                const Cls = mod[entry.cls];
-                // Check se já é um componente funcional Preact (não tem mount)
-                if (typeof Cls === 'function' && !Cls.prototype?.mount) {
-                    // É um componente funcional Preact, renderizamos nele
-                    render(<Cls store={store} />, containerRef.current);
-                } else {
-                    // Componente Legacy
-                    instanceRef.current = new Cls({ store, element: containerRef.current });
-                    instanceRef.current.mount();
-                }
+                // Para encontrar a classe independentemente do nome exato
+                const Cls = mod[Object.keys(mod)[0]];
+                
+                instanceRef.current = new Cls({ store, element: containerRef.current });
+                instanceRef.current.mount();
+                
                 setLoading(false);
             } catch (err) {
                 if (!isCancelled) {
@@ -100,24 +114,32 @@ function LegacyComponentMount({ tab, store }) {
                 <div class="mt-4 p-3 bg-black/50 border-l-4 border-red-500 text-left w-full max-w-[600px] font-mono text-xs text-red-300 overflow-x-auto">
                     {error}
                 </div>
-                <button onClick={() => window.location.href='/index.html?reset=1'} class="btn btn-premium mt-6 px-6 py-3 text-sm font-extrabold rounded-xl border border-red-500">
-                    <i class="fa-solid fa-broom"></i> Limpar Cache e Reiniciar App
-                </button>
             </div>
         );
     }
 
     return (
         <div class="relative w-full h-full">
-            {loading && (
-                <div class="absolute inset-0 flex flex-col items-center justify-center text-accent p-8 font-cinzel bg-bgbase z-10 animate-fadeIn">
-                    <i class="fa-solid fa-circle-notch fa-spin text-5xl mb-5 opacity-80"></i>
-                    <h3 class="text-xl m-0 text-slate-400">Invocando {tab.toUpperCase()}...</h3>
-                </div>
-            )}
+            {loading && <LoadingSpinner label={`Invocando ${tab.toUpperCase()}...`} />}
             <div ref={containerRef} class="w-full h-full"></div>
         </div>
     );
+}
+
+function DynamicModuleRenderer({ tab }) {
+    const entry = MODULE_MAP[tab];
+    if (!entry) return null;
+
+    if (entry.type === 'functional') {
+        const LazyComp = entry.Component;
+        return (
+            <Suspense fallback={<LoadingSpinner label={`Invocando ${tab.toUpperCase()}...`} />}>
+                <LazyComp />
+            </Suspense>
+        );
+    } else {
+        return <LegacyComponentMount tab={tab} store={TOME.store} />;
+    }
 }
 
 function HomePage() {
@@ -125,7 +147,6 @@ function HomePage() {
     const players = useStore('players') || [];
     const monsters = useStore('monsters') || [];
     const savedNPCs = useStore('savedNPCs') || [];
-    const quests = useStore('quests') || [];
     const journalEntries = useStore('journalEntries') || [];
     const sessionNotes = useStore('sessionNotes');
     const oracleHook = useStore('_oracleHook');
@@ -161,7 +182,6 @@ function HomePage() {
         }
     };
 
-    // Montar o MainPanel (Legacy)
     const mainPanelRef = useRef(null);
     useEffect(() => {
         if (mainPanelRef.current) {
@@ -175,7 +195,6 @@ function HomePage() {
         <div class="legacy-sheet-container animate-fadeIn">
             <div ref={mainPanelRef} id="main-panel"></div>
 
-            {/* BLOCO SUPERIOR */}
             <div class="bg-black/70 border border-accent/25 rounded-2xl px-8 py-5 mb-8 flex justify-between items-center flex-wrap gap-4 shadow-[0_10px_30px_rgba(0,0,0,0.6)] relative overflow-hidden">
                 <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-accent to-red-800"></div>
                 <div>
@@ -184,10 +203,6 @@ function HomePage() {
                         <span>Mestre: <strong class="text-accent">{masterName}</strong></span>
                         <span>ID: <strong class="text-white font-mono">{internalId}</strong></span>
                     </div>
-                </div>
-                <div class="flex items-center gap-2 bg-green-500/10 border border-green-500/25 px-3.5 py-1.5 rounded-full">
-                    <span class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_10px_#22c55e] inline-block animate-[pulse_1.5s_infinite]"></span>
-                    <span class="text-[0.7rem] font-extrabold tracking-widest text-green-500 uppercase">Sincronizado</span>
                 </div>
             </div>
 
@@ -207,24 +222,6 @@ function HomePage() {
                     <div class="text-[0.65rem] text-slate-400/80 uppercase font-bold tracking-widest relative z-10">Heróis</div>
                     <div class="text-[1.6rem] font-extrabold text-white mt-1 font-cinzel relative z-10 drop-shadow-md group-hover:text-accent transition-colors">{players.length}</div>
                 </div>
-                <div class="card bg-black/40 backdrop-blur-md p-5 rounded-2xl text-center border border-white/5 shadow-xl relative overflow-hidden group hover:border-red-500/30 transition-all">
-                    <div class="absolute inset-0 bg-gradient-to-b from-transparent to-black/60 pointer-events-none"></div>
-                    <div class="absolute top-0 left-0 w-full h-[2px] bg-red-500 shadow-[0_0_15px_#ef4444]"></div>
-                    <div class="text-[0.65rem] text-slate-400/80 uppercase font-bold tracking-widest relative z-10">Criaturas</div>
-                    <div class="text-[1.6rem] font-extrabold text-white mt-1 font-cinzel relative z-10 drop-shadow-md group-hover:text-red-400 transition-colors">{monsters.length}</div>
-                </div>
-                <div class="card bg-black/40 backdrop-blur-md p-5 rounded-2xl text-center border border-white/5 shadow-xl relative overflow-hidden group hover:border-blue-500/30 transition-all">
-                    <div class="absolute inset-0 bg-gradient-to-b from-transparent to-black/60 pointer-events-none"></div>
-                    <div class="absolute top-0 left-0 w-full h-[2px] bg-blue-500 shadow-[0_0_15px_#3b82f6]"></div>
-                    <div class="text-[0.65rem] text-slate-400/80 uppercase font-bold tracking-widest relative z-10">NPCs Salvos</div>
-                    <div class="text-[1.6rem] font-extrabold text-white mt-1 font-cinzel relative z-10 drop-shadow-md group-hover:text-blue-400 transition-colors">{savedNPCs.length}</div>
-                </div>
-                <div class="card bg-black/40 backdrop-blur-md p-5 rounded-2xl text-center border border-white/5 shadow-xl relative overflow-hidden group hover:border-green-500/30 transition-all">
-                    <div class="absolute inset-0 bg-gradient-to-b from-transparent to-black/60 pointer-events-none"></div>
-                    <div class="absolute top-0 left-0 w-full h-[2px] bg-green-500 shadow-[0_0_15px_#22c55e]"></div>
-                    <div class="text-[0.65rem] text-slate-400/80 uppercase font-bold tracking-widest relative z-10">Data</div>
-                    <div class="text-base font-extrabold text-white mt-3 font-cinzel relative z-10 group-hover:text-green-400 transition-colors">{new Date().toLocaleDateString('pt-BR')}</div>
-                </div>
             </div>
 
             {/* PORTAL DE CONTINUIDADE */}
@@ -233,24 +230,6 @@ function HomePage() {
                     🔮 Portal de Continuidade Arcana
                 </div>
                 <h3 class="font-cinzel text-[1.8rem] font-bold m-0 mb-5 text-white">Bem-vindo de volta, Mestre {masterName}.</h3>
-                
-                <div class="grid grid-cols-1 gap-5 bg-black/30 border border-white/5 p-5 rounded-xl mb-6">
-                    <div class="flex justify-between flex-wrap gap-4">
-                        <div>
-                            <span class="text-[0.65rem] text-slate-400 uppercase tracking-widest block mb-1">Última Sessão</span>
-                            <span class="font-cinzel text-[1.1rem] font-extrabold text-accent">Sessão #{sessionNum}</span>
-                        </div>
-                        <div>
-                            <span class="text-[0.65rem] text-slate-400 uppercase tracking-widest block mb-1">Mesa</span>
-                            <span class="text-[1.1rem] font-bold text-white">{sessionTitle} (Mesa #{activeTableId})</span>
-                        </div>
-                    </div>
-                    <div class="border-t border-dashed border-accent/20 pt-4 mt-1">
-                        <span class="text-[0.65rem] text-accent uppercase tracking-widest block mb-1.5">Última Jogada (Resumo Narrativo)</span>
-                        <p class="font-cinzel italic text-[0.95rem] leading-relaxed text-slate-300 m-0">"{lastPlay}"</p>
-                    </div>
-                </div>
-
                 <div class="flex flex-col items-center gap-2">
                     <span class="text-[0.8rem] text-slate-400 font-semibold tracking-wide">Deseja continuar?</span>
                     <button class="btn-magic w-full max-w-[320px] text-base py-3.5 rounded-xl" onClick={() => navigate('campaign')}>
@@ -265,43 +244,14 @@ function HomePage() {
                     { id: 'dmshield', icon: 'fa-shield-halved', label: 'Escudo' },
                     { id: 'worldbuilder', icon: 'fa-earth-americas', label: 'Construtor' },
                     { id: 'herohub', icon: 'fa-users', label: 'Heróis' },
-                    { id: 'chareditor', icon: 'fa-user-pen', label: 'Editor' },
                     { id: 'loot', icon: 'fa-coins', label: 'Loot', glow: true },
-                    { id: 'spellbook', icon: 'fa-book-open', label: 'Grimório' },
                     { id: 'bestiary', icon: 'fa-dragon', label: 'Bestiário' }
                 ].map(tool => (
                     <button class={`btn p-4 rounded-xl flex flex-col items-center justify-center gap-2 h-auto relative overflow-hidden group transition-all duration-300 ${tool.glow ? 'bg-accent/10 border-accent/50 hover:bg-accent/20 hover:shadow-[0_0_20px_rgba(197,160,89,0.3)]' : 'bg-black/40 border-white/10 hover:border-accent/40 hover:bg-black/60'} backdrop-blur-sm border`} onClick={() => navigate(tool.id)} key={tool.id}>
-                        <div class="absolute inset-0 opacity-0 group-hover:opacity-100 bg-gradient-to-t from-accent/10 to-transparent transition-opacity"></div>
                         <i class={`fa-solid ${tool.icon} text-2xl ${tool.glow ? 'text-accent drop-shadow-[0_0_8px_var(--accent)]' : 'text-slate-300 group-hover:text-accent transition-colors'}`}></i>
                         <span class={`text-[0.75rem] font-bold tracking-wider uppercase mt-1 ${tool.glow ? 'text-accent' : 'text-slate-400 group-hover:text-white transition-colors'}`}>{tool.label}</span>
                     </button>
                 ))}
-            </div>
-
-            {/* ORACLE & EXTRA */}
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div class="lg:col-span-2 flex flex-col gap-8">
-                    <div class="card glass-accent p-6 border-l-4 border-accent shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
-                        <div class="flex justify-between items-center mb-4">
-                            <div>
-                                <h3 class="font-cinzel text-[1.1rem] m-0 text-accent drop-shadow-[0_0_8px_rgba(197,160,89,0.3)]">🔮 Oráculo de Sessão</h3>
-                                <p class="text-[0.7rem] text-slate-400 m-0 mt-1">Gere um gancho narrativo para iniciar sua sessão com impacto.</p>
-                            </div>
-                            <button class="btn btn-primary btn-sm" onClick={generateOracleHook}>
-                                <i class="fa-solid fa-wand-sparkles"></i> Inspirar
-                            </button>
-                        </div>
-                        <div class="font-cinzel text-[0.9rem] italic leading-relaxed text-slate-300 min-h-[40px] p-4 bg-black/30 rounded-lg border border-white/5">
-                            {oracleHook ? oracleHook : <span class="opacity-40 text-slate-400">Clique em "Inspirar" para gerar um gancho narrativo...</span>}
-                        </div>
-                    </div>
-                </div>
-                <div class="flex flex-col gap-8">
-                    <div class="card glass-accent p-6 rounded-xl border-t-4 border-accent shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
-                        <h3 class="font-cinzel text-center mb-4 text-accent tracking-widest">MONITOR RÁPIDO</h3>
-                        <button class="btn btn-primary w-full mt-2" onClick={() => navigate('combat')}>ACESSAR ARENA</button>
-                    </div>
-                </div>
             </div>
         </div>
     );
@@ -362,7 +312,7 @@ export function Dashboard() {
             <div class="w-full h-full overflow-y-auto custom-scrollbar">
                 {activeTab === 'dashboard' || !activeTab 
                     ? <HomePage /> 
-                    : <LegacyComponentMount tab={activeTab} store={TOME.store} />
+                    : <DynamicModuleRenderer tab={activeTab} />
                 }
             </div>
             <div ref={hudRef} id="hud-target"></div>

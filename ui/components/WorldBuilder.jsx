@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'preact/hooks';
 import { useStore } from '../core/hooks.js';
 import { html } from 'htm/preact';
 import { TOME } from '../../core/Registry.js';
-import { Toast } from '../components/Toast.js';
+import { Toast } from '../components/core/Toast.jsx';
 
 /**
  * DM SHIELD v1.0

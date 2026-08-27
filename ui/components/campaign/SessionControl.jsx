@@ -1,7 +1,7 @@
 import { h } from 'preact';
 import { useState, useEffect, useRef } from 'preact/hooks';
 import { TOME } from '../../../core/Registry.js';
-import { Toast } from '../../components/Toast.js';
+import { Toast } from '../../components/core/Toast.jsx';
 
 export function SessionControl({ 
     onSystemAnalysis, 

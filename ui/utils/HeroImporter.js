@@ -1,4 +1,4 @@
-import { Toast } from '../components/Toast.js';
+import { Toast } from '../components/core/Toast.jsx';
 import { TOME } from '../../core/Registry.js';
 import { Schemas } from '../../data/schemas.js';
 

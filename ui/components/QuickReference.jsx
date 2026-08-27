@@ -24,17 +24,17 @@ export function QuickReference(opts) {
 
     const legacyCtx = {
         store: window.TOME?.store || { state: storeState },
-        _activeSection: activeSection,
-        _glossarySearch: glossarySearch,
-        _glossaryFilter: glossaryFilter,
-        _magicSearch: magicSearch,
-        _magicFilterLevel: magicFilterLevel,
-        _magicFilterClass: magicFilterClass,
-        _activeMagicTab: activeMagicTab,
+        activeSection: activeSection,
+        glossarySearch: glossarySearch,
+        glossaryFilter: glossaryFilter,
+        magicSearch: magicSearch,
+        magicFilterLevel: magicFilterLevel,
+        magicFilterClass: magicFilterClass,
+        activeMagicTab: activeMagicTab,
         _hoverTimer: hoverTimerRef.current,
-        _activePopupSpell: activePopupSpell,
-        _popupMode: popupMode,
-        _popupPosition: popupPosition,
+        activePopupSpell: activePopupSpell,
+        popupMode: popupMode,
+        popupPosition: popupPosition,
         render: () => {},
         listen: (el, evt, cb) => {
             if (!el) return;
@@ -52,16 +52,16 @@ export function QuickReference(opts) {
             return eval(prop);
         },
         set: (target, prop, value) => {
-            if (prop === '_activeSection') setActiveSection(value);
-            else if (prop === '_glossarySearch') setGlossarySearch(value);
-            else if (prop === '_glossaryFilter') setGlossaryFilter(value);
-            else if (prop === '_magicSearch') setMagicSearch(value);
-            else if (prop === '_magicFilterLevel') setMagicFilterLevel(value);
-            else if (prop === '_magicFilterClass') setMagicFilterClass(value);
-            else if (prop === '_activeMagicTab') setActiveMagicTab(value);
-            else if (prop === '_activePopupSpell') setActivePopupSpell(value);
-            else if (prop === '_popupMode') setPopupMode(value);
-            else if (prop === '_popupPosition') setPopupPosition(value);
+            if (prop === 'activeSection') setActiveSection(value);
+            else if (prop === 'glossarySearch') setGlossarySearch(value);
+            else if (prop === 'glossaryFilter') setGlossaryFilter(value);
+            else if (prop === 'magicSearch') setMagicSearch(value);
+            else if (prop === 'magicFilterLevel') setMagicFilterLevel(value);
+            else if (prop === 'magicFilterClass') setMagicFilterClass(value);
+            else if (prop === 'activeMagicTab') setActiveMagicTab(value);
+            else if (prop === 'activePopupSpell') setActivePopupSpell(value);
+            else if (prop === 'popupMode') setPopupMode(value);
+            else if (prop === 'popupPosition') setPopupPosition(value);
             else if (prop === '_hoverTimer') hoverTimerRef.current = value;
             target[prop] = value;
             return true;
@@ -71,8 +71,8 @@ export function QuickReference(opts) {
 
     function template() {
         let popupHTML = '';
-        if (self._activePopupSpell) {
-            const spell = self._activePopupSpell;
+        if (activePopupSpell) {
+            const spell = activePopupSpell;
             const isCantrip = spell.level === 0;
             const isAttack = spell.type === 'dano' || spell.baseDamage;
             
@@ -80,12 +80,12 @@ export function QuickReference(opts) {
             if (isCantrip) glowClass = 'cantrip-glow';
             else if (isAttack) glowClass = 'attack-glow';
 
-            const pinnedClass = self._popupMode === 'click' ? 'pinned' : '';
+            const pinnedClass = setPopupMode(== 'click' ? 'pinned' : '');
             
             popupHTML = html`
                 <div class="magic-popup ${glowClass} ${pinnedClass}" 
-                     style="left: ${self._popupPosition.x}px; top: ${self._popupPosition.y}px; pointer-events: ${self._popupMode === 'click' ? 'auto' : 'none'};">
-                    ${self._getSpellPopupHTML(spell)}
+                     style="left: ${popupPosition.x}px; top: ${popupPosition.y}px; pointer-events: ${setPopupMode(== 'click' ? 'auto' : 'none'});">
+                    ${_getSpellPopupHTML(spell)}
                 </div>
             `;
         }
@@ -124,23 +124,23 @@ export function QuickReference(opts) {
                             <div style="height:1px; flex:1; background:linear-gradient(to left, transparent, rgba(197,160,89,0.3));"></div>
                         </div>
                         
-                        ${self._renderNavButton('quickref', 'fa-compass', 'Guia Rápido D&D 5e', '255, 170, 0')}
-                        ${self._renderNavButton('glossary2024', 'fa-book-sparkles', 'Glossário D&D 2024', '197, 160, 89')}
-                        ${self._renderNavButton('magicglossary', 'fa-wand-magic-sparkles', 'Glossário Mágico', '168, 85, 247')}
-                        ${self._renderNavButton('conditions', 'fa-skull-crossbones', 'Condições de Status', '239, 68, 68')}
-                        ${self._renderNavButton('actions', 'fa-swords', 'Ações de Turno', '59, 130, 246')}
-                        ${self._renderNavButton('environment', 'fa-mountain-sun', 'Ambiente & Movimento', '34, 197, 94')}
-                        ${self._renderNavButton('spellcasting', 'fa-hat-wizard', 'Regras de Magia', '245, 158, 11')}
-                        ${self._renderNavButton('resting', 'fa-campground', 'Descansos & Cura', '255, 215, 0')}
-                        ${self._renderNavButton('dc', 'fa-bullseye', 'Dificuldades (CD)', '197, 160, 89')}
-                        ${self._renderNavButton('abbreviations', 'fa-language', 'Dicionário do Mestre', '255, 255, 255')}
+                        ${_renderNavButton('quickref', 'fa-compass', 'Guia Rápido D&D 5e', '255, 170, 0')}
+                        ${_renderNavButton('glossary2024', 'fa-book-sparkles', 'Glossário D&D 2024', '197, 160, 89')}
+                        ${_renderNavButton('magicglossary', 'fa-wand-magic-sparkles', 'Glossário Mágico', '168, 85, 247')}
+                        ${_renderNavButton('conditions', 'fa-skull-crossbones', 'Condições de Status', '239, 68, 68')}
+                        ${_renderNavButton('actions', 'fa-swords', 'Ações de Turno', '59, 130, 246')}
+                        ${_renderNavButton('environment', 'fa-mountain-sun', 'Ambiente & Movimento', '34, 197, 94')}
+                        ${_renderNavButton('spellcasting', 'fa-hat-wizard', 'Regras de Magia', '245, 158, 11')}
+                        ${_renderNavButton('resting', 'fa-campground', 'Descansos & Cura', '255, 215, 0')}
+                        ${_renderNavButton('dc', 'fa-bullseye', 'Dificuldades (CD)', '197, 160, 89')}
+                        ${_renderNavButton('abbreviations', 'fa-language', 'Dicionário do Mestre', '255, 255, 255')}
                     </div>
 
                     <!-- CONTENT AREA PREMIUM -->
                     <div class="card glass-accent animate-fadeIn" style="min-height:75vh; padding:40px; border-radius:16px; background: rgba(12, 14, 20, 0.9); border: 1px solid rgba(197,160,89,0.15); border-top: 3px solid var(--accent); box-shadow: 0 25px 50px rgba(0,0,0,0.8), inset 0 0 50px rgba(197,160,89,0.05); position: relative; overflow: hidden;">
                         <div style="position: absolute; top: -100px; right: -100px; width: 300px; height: 300px; background: radial-gradient(circle, rgba(197,160,89,0.08) 0%, transparent 70%); border-radius: 50%; pointer-events: none;"></div>
                         <div style="position: relative; z-index: 1;">
-                            ${self._renderActiveContent()}
+                            ${_renderActiveContent()}
                         </div>
                     </div>
                 </div>
@@ -150,7 +150,7 @@ export function QuickReference(opts) {
     }
 
     function _renderNavButton(sectionId, iconClass, text, rgbColor) {
-        const isActive = self._activeSection === sectionId;
+        const isActive = setActiveSection(== sectionId);
         const bg = isActive ? `rgba(${rgbColor}, 0.2)` : 'transparent';
         const border = isActive ? `1px solid rgba(${rgbColor}, 0.5)` : '1px solid transparent';
         const textColor = isActive ? '#fff' : 'var(--text-dim)';
@@ -168,17 +168,17 @@ export function QuickReference(opts) {
     }
 
     function _renderActiveContent() {
-        switch(self._activeSection) {
-            case 'quickref': return self._renderQuickRef();
-            case 'glossary2024': return self._renderGlossary2024();
-            case 'magicglossary': return self._renderMagicGlossary();
-            case 'conditions': return self._renderConditions();
-            case 'actions': return self._renderActions();
-            case 'environment': return self._renderEnvironment();
-            case 'spellcasting': return self._renderSpellcasting();
-            case 'resting': return self._renderResting();
-            case 'dc': return self._renderDC();
-            case 'abbreviations': return self._renderAbbreviations();
+        switch(activeSection) {
+            case 'quickref': return _renderQuickRef();
+            case 'glossary2024': return _renderGlossary2024();
+            case 'magicglossary': return _renderMagicGlossary();
+            case 'conditions': return _renderConditions();
+            case 'actions': return _renderActions();
+            case 'environment': return _renderEnvironment();
+            case 'spellcasting': return _renderSpellcasting();
+            case 'resting': return _renderResting();
+            case 'dc': return _renderDC();
+            case 'abbreviations': return _renderAbbreviations();
             default: return '';
         }
     }
@@ -766,60 +766,60 @@ export function QuickReference(opts) {
     }
 
     function onMount() {
-        if (self._activeSection === 'glossary2024') {
-            const searchInput = self.$('#glossary-search-input');
+        if (activeSection === 'glossary2024') {
+            const searchInput = $('#glossary-search-input');
             if (searchInput) {
                 searchInput.focus();
                 
-                self.listen(searchInput, 'input', (e) => {
-                    self._glossarySearch = e.target.value;
-                    self._updateGlossaryList();
+                listen(searchInput, 'input', (e) => {
+                    setGlossarySearch(e.target.value);
+                    _updateGlossaryList();
                 });
             }
-            self._updateGlossaryList();
+            _updateGlossaryList();
         }
 
-        if (self._activeSection === 'magicglossary') {
-            const searchInput = self.$('#magic-search-input');
+        if (activeSection === 'magicglossary') {
+            const searchInput = $('#magic-search-input');
             if (searchInput) {
                 searchInput.focus();
-                self.listen(searchInput, 'input', (e) => {
-                    self._magicSearch = e.target.value;
-                    self._updateMagicGlossaryList();
+                listen(searchInput, 'input', (e) => {
+                    setMagicSearch(e.target.value);
+                    _updateMagicGlossaryList();
                 });
             }
 
-            const classFilter = self.$('#magic-class-filter');
+            const classFilter = $('#magic-class-filter');
             if (classFilter) {
-                self.listen(classFilter, 'change', (e) => {
-                    self._magicFilterClass = e.target.value;
-                    self._updateMagicGlossaryList();
+                listen(classFilter, 'change', (e) => {
+                    setMagicFilterClass(e.target.value);
+                    _updateMagicGlossaryList();
                 });
             }
 
             // Ouvintes para abas do Glossário Mágico
-            const magicTabBtns = self.$$('.magic-tab-btn');
+            const magicTabBtns = $$('.magic-tab-btn');
             magicTabBtns.forEach(btn => {
-                self.listen(btn, 'click', (e) => {
-                    self._activeMagicTab = btn.dataset.tab;
-                    self._magicFilterLevel = 'all';
-                    self.render();
+                listen(btn, 'click', (e) => {
+                    setActiveMagicTab(btn.dataset.tab);
+                    setMagicFilterLevel('all');
+                    render();
                 });
             });
 
-            self._updateMagicGlossaryList();
+            _updateMagicGlossaryList();
         }
 
         // Fechamento de pop-up ao clicar fora (modo clique)
-        self.listen(document, 'mousedown', (e) => {
-            if (self._popupMode === 'click') {
-                const popupEl = self.$('.magic-popup');
+        listen(document, 'mousedown', (e) => {
+            if (popupMode === 'click') {
+                const popupEl = $('.magic-popup');
                 if (popupEl && !popupEl.contains(e.target)) {
                     const clickedCard = e.target.closest('.spell-card');
                     if (!clickedCard) {
-                        self._activePopupSpell = null;
-                        self._popupMode = null;
-                        self.render();
+                        setActivePopupSpell(null);
+                        setPopupMode(null);
+                        render();
                     }
                 }
             }
@@ -827,18 +827,18 @@ export function QuickReference(opts) {
     }
 
     function onUnmount() {
-        if (self._hoverTimer) {
-            clearTimeout(self._hoverTimer);
+        if (_hoverTimer) {
+            clearTimeout(_hoverTimer);
         }
     }
 
     function setGlossaryFilter(e, el) {
-        self._glossaryFilter = el.dataset.category;
+        setGlossaryFilter(el.dataset.category);
         
-        const filterContainer = self.$('#glossary-filter-container');
+        const filterContainer = $('#glossary-filter-container');
         if (filterContainer) {
             filterContainer.querySelectorAll('button').forEach(btn => {
-                if (btn.dataset.category === self._glossaryFilter) {
+                if (btn.dataset.category === glossaryFilter) {
                     btn.classList.remove('btn-ghost');
                     btn.classList.add('btn-primary');
                 } else {
@@ -848,18 +848,18 @@ export function QuickReference(opts) {
             });
         }
         
-        self._updateGlossaryList();
+        _updateGlossaryList();
     }
 
     function _updateGlossaryList() {
-        const listEl = self.$('#glossary-terms-list');
-        const countEl = self.$('#glossary-count');
+        const listEl = $('#glossary-terms-list');
+        const countEl = $('#glossary-count');
         if (!listEl) return;
 
-        const query = self._glossarySearch.toLowerCase().trim();
-        const filtered = self._getGlossaryDatabase().filter(t => {
+        const query = glossarySearch.toLowerCase().trim();
+        const filtered = _getGlossaryDatabase().filter(t => {
             // Category filter
-            if (self._glossaryFilter !== 'all' && t.category !== self._glossaryFilter) {
+            if (glossaryFilter !== 'all' && t.category !== glossaryFilter) {
                 return false;
             }
             // Search text filter
@@ -932,17 +932,17 @@ export function QuickReference(opts) {
                         <div style="position: relative; flex: 1; min-width: 280px;">
                             <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--accent); font-size: 1rem;"></i>
                             <input type="text" id="glossary-search-input" placeholder="Buscar regras e termos (ex: Agarrado, Vantagem...)" 
-                                   value="${self._glossarySearch}"
+                                   value="${glossarySearch}"
                                    class="tome-input-focus"
                                    style="width: 100%; padding: 14px 14px 14px 45px; border-radius: 10px; border: 1.5px solid rgba(197,160,89,0.3); background: rgba(8, 8, 10, 0.7); color: #fff; font-size: 0.9rem; outline: none; transition: all 0.3s;" />
                         </div>
                         <!-- Category Filters -->
                         <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="glossary-filter-container">
-                            ${self._renderGlossaryFilterBtn('all', '✨ Tudo', self._glossaryFilter === 'all')}
-                            ${self._renderGlossaryFilterBtn('actions', '⚔️ Ações', self._glossaryFilter === 'actions')}
-                            ${self._renderGlossaryFilterBtn('conditions', '🩸 Condições', self._glossaryFilter === 'conditions')}
-                            ${self._renderGlossaryFilterBtn('masteries', '🛡️ Maestrias', self._glossaryFilter === 'masteries')}
-                            ${self._renderGlossaryFilterBtn('rules', '📜 Regras', self._glossaryFilter === 'rules')}
+                            ${_renderGlossaryFilterBtn('all', '✨ Tudo', glossaryFilter === 'all')}
+                            ${_renderGlossaryFilterBtn('actions', '⚔️ Ações', glossaryFilter === 'actions')}
+                            ${_renderGlossaryFilterBtn('conditions', '🩸 Condições', glossaryFilter === 'conditions')}
+                            ${_renderGlossaryFilterBtn('masteries', '🛡️ Maestrias', glossaryFilter === 'masteries')}
+                            ${_renderGlossaryFilterBtn('rules', '📜 Regras', glossaryFilter === 'rules')}
                         </div>
                     </div>
                 </div>
@@ -972,8 +972,8 @@ export function QuickReference(opts) {
     }
 
     function setSection(e, el) {
-        self._activeSection = el.dataset.section; 
-        self.render(); 
+        setActiveSection(el.dataset.section); 
+        render(); 
     }
 
     function _buildSpellIndex() {
@@ -994,13 +994,13 @@ export function QuickReference(opts) {
 
     function setMagicLevelFilter(e, el) {
         if (e) e.stopPropagation();
-        self._magicFilterLevel = el.dataset.level;
-        self._updateMagicGlossaryList();
+        setMagicFilterLevel(el.dataset.level);
+        _updateMagicGlossaryList();
 
-        const filterContainer = self.$('#magic-level-filter-container');
+        const filterContainer = $('#magic-level-filter-container');
         if (filterContainer) {
             filterContainer.querySelectorAll('button').forEach(btn => {
-                if (btn.dataset.level === self._magicFilterLevel) {
+                if (btn.dataset.level === magicFilterLevel) {
                     btn.classList.remove('btn-ghost');
                     btn.classList.add('btn-primary');
                 } else {
@@ -1012,10 +1012,10 @@ export function QuickReference(opts) {
     }
 
     function _renderMagicGlossary() {
-        const allSpells = self._buildSpellIndex();
+        const allSpells = _buildSpellIndex();
         const classes = [...new Set(allSpells.flatMap(s => s.classes || []))].sort();
-        const displayTabTitle = self._activeMagicTab === 'cantrips' ? 'Glossário de Truques' : 'Glossário de Magias';
-        const displayTabSubtitle = self._activeMagicTab === 'cantrips' 
+        const displayTabTitle = setActiveMagicTab(== 'cantrips' ? 'Glossário de Truques' : 'Glossário de Magias');
+        const displayTabSubtitle = activeMagicTab === 'cantrips' 
             ? 'Consulta rápida e completa de truques (nível 0) D&D 5e.' 
             : 'Consulta de magias arcanas, divinas e naturais de 1º a 5º círculo.';
 
@@ -1032,14 +1032,14 @@ export function QuickReference(opts) {
 
                     <!-- ABAS DE SELEÇÃO DO GLOSSÁRIO MÁGICO -->
                     <div style="display: flex; gap: 8px; background: rgba(0,0,0,0.35); padding: 4px; border-radius: 10px; border: 1.5px solid rgba(168,85,247,0.25); box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);">
-                        <button class="btn magic-tab-btn ${self._activeMagicTab === 'cantrips' ? 'btn-primary' : 'btn-ghost'}" 
+                        <button class="btn magic-tab-btn ${activeMagicTab === 'cantrips' ? 'btn-primary' : 'btn-ghost'}" 
                                 data-tab="cantrips" 
-                                style="font-family: 'Cinzel'; font-size: 0.75rem; padding: 6px 12px; border: none; border-radius: 6px; display: flex; align-items: center; gap: 6px; color: ${self._activeMagicTab === 'cantrips' ? '#fff' : 'var(--text-dim)'}; background: ${self._activeMagicTab === 'cantrips' ? '#a855f7' : 'transparent'}; border-color: ${self._activeMagicTab === 'cantrips' ? '#a855f7' : 'transparent'};">
+                                style="font-family: 'Cinzel'; font-size: 0.75rem; padding: 6px 12px; border: none; border-radius: 6px; display: flex; align-items: center; gap: 6px; color: ${setActiveMagicTab(== 'cantrips' ? '#fff' : 'var(--text-dim)'}); background: ${setActiveMagicTab(== 'cantrips' ? '#a855f7' : 'transparent'}); border-color: ${setActiveMagicTab(== 'cantrips' ? '#a855f7' : 'transparent'});">
                             <i class="fa-solid fa-wand-magic-sparkles"></i> TRUQUES
                         </button>
-                        <button class="btn magic-tab-btn ${self._activeMagicTab === 'spells' ? 'btn-primary' : 'btn-ghost'}" 
+                        <button class="btn magic-tab-btn ${activeMagicTab === 'spells' ? 'btn-primary' : 'btn-ghost'}" 
                                 data-tab="spells" 
-                                style="font-family: 'Cinzel'; font-size: 0.75rem; padding: 6px 12px; border: none; border-radius: 6px; display: flex; align-items: center; gap: 6px; color: ${self._activeMagicTab === 'spells' ? '#fff' : 'var(--text-dim)'}; background: ${self._activeMagicTab === 'spells' ? '#a855f7' : 'transparent'}; border-color: ${self._activeMagicTab === 'spells' ? '#a855f7' : 'transparent'};">
+                                style="font-family: 'Cinzel'; font-size: 0.75rem; padding: 6px 12px; border: none; border-radius: 6px; display: flex; align-items: center; gap: 6px; color: ${setActiveMagicTab(== 'spells' ? '#fff' : 'var(--text-dim)'}); background: ${setActiveMagicTab(== 'spells' ? '#a855f7' : 'transparent'}); border-color: ${setActiveMagicTab(== 'spells' ? '#a855f7' : 'transparent'});">
                             <i class="fa-solid fa-scroll"></i> MAGIAS
                         </button>
                     </div>
@@ -1052,7 +1052,7 @@ export function QuickReference(opts) {
                         <div style="position: relative; flex: 1; min-width: 280px;">
                             <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #a855f7; font-size: 1rem;"></i>
                             <input type="text" id="magic-search-input" placeholder="Buscar magia ou truque (ex: Bola de Fogo, Rajada...)" 
-                                   value="${self._magicSearch}"
+                                   value="${magicSearch}"
                                    class="tome-input-focus"
                                    style="width: 100%; padding: 14px 14px 14px 45px; border-radius: 10px; border: 1.5px solid rgba(168,85,247,0.3); background: rgba(8, 8, 10, 0.7); color: #fff; font-size: 0.9rem; outline: none; transition: all 0.3s;" />
                         </div>
@@ -1061,19 +1061,19 @@ export function QuickReference(opts) {
                         <div style="min-width: 160px;">
                             <select id="magic-class-filter" class="tome-input-focus" style="width:100%; padding: 14px; border-radius: 10px; border: 1.5px solid rgba(168,85,247,0.3); background: rgba(8, 8, 10, 0.7); color: #fff; font-size: 0.9rem; cursor:pointer; outline:none; transition: all 0.3s;">
                                 <option value="all">Todas as Classes</option>
-                                ${classes.map(c => html`<option value="${c}" ${self._magicFilterClass === c ? 'selected' : ''}>${c}</option>`)}
+                                ${classes.map(c => html`<option value="${c}" ${magicFilterClass === c ? 'selected' : ''}>${c}</option>`)}
                             </select>
                         </div>
 
                         <!-- Level Filters (Apenas na aba de Magias) -->
-                        ${self._activeMagicTab === 'spells' ? html`
+                        ${activeMagicTab === 'spells' ? html`
                         <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="magic-level-filter-container">
-                            ${self._renderMagicFilterBtn('all', '✨ Tudo', self._magicFilterLevel === 'all')}
-                            ${self._renderMagicFilterBtn('1', '1º Círculo', self._magicFilterLevel === '1')}
-                            ${self._renderMagicFilterBtn('2', '2º Círculo', self._magicFilterLevel === '2')}
-                            ${self._renderMagicFilterBtn('3', '3º Círculo', self._magicFilterLevel === '3')}
-                            ${self._renderMagicFilterBtn('4', '4º Círculo', self._magicFilterLevel === '4')}
-                            ${self._renderMagicFilterBtn('5', '5º Círculo', self._magicFilterLevel === '5')}
+                            ${_renderMagicFilterBtn('all', '✨ Tudo', magicFilterLevel === 'all')}
+                            ${_renderMagicFilterBtn('1', '1º Círculo', magicFilterLevel === '1')}
+                            ${_renderMagicFilterBtn('2', '2º Círculo', magicFilterLevel === '2')}
+                            ${_renderMagicFilterBtn('3', '3º Círculo', magicFilterLevel === '3')}
+                            ${_renderMagicFilterBtn('4', '4º Círculo', magicFilterLevel === '4')}
+                            ${_renderMagicFilterBtn('5', '5º Círculo', magicFilterLevel === '5')}
                         </div>
                         ` : ''}
                     </div>
@@ -1081,7 +1081,7 @@ export function QuickReference(opts) {
 
                 <!-- Match stats -->
                 <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: var(--text-dim); padding: 0 5px;">
-                    <span>Exibindo <strong id="magic-count" style="color: #a855f7; font-size: 1rem;">0</strong> ${self._activeMagicTab === 'cantrips' ? 'truques catalogados' : 'magias no grimório'}.</span>
+                    <span>Exibindo <strong id="magic-count" style="color: #a855f7; font-size: 1rem;">0</strong> ${activeMagicTab === 'cantrips' ? 'truques catalogados' : 'magias no grimório'}.</span>
                     <span style="display: inline-flex; align-items: center; gap: 6px; color: #a855f7; font-weight: 700; text-shadow: 0 0 10px rgba(168,85,247,0.3);"><i class="fa-solid fa-scroll"></i> Pergaminhos Vivos</span>
                 </div>
 
@@ -1104,28 +1104,28 @@ export function QuickReference(opts) {
     }
 
     function _updateMagicGlossaryList() {
-        const listEl = self.$('#magic-glossary-list');
-        const countEl = self.$('#magic-count');
+        const listEl = $('#magic-glossary-list');
+        const countEl = $('#magic-count');
         if (!listEl) return;
 
-        const allSpells = self._buildSpellIndex();
+        const allSpells = _buildSpellIndex();
         const filtered = allSpells.filter(s => {
             // Separação rígida de Truques e Magias
-            if (self._activeMagicTab === 'cantrips' && s.level !== 0) return false;
-            if (self._activeMagicTab === 'spells' && s.level === 0) return false;
+            if (setActiveMagicTab(== 'cantrips' && s.level !== 0) return false);
+            if (setActiveMagicTab(== 'spells' && s.level === 0) return false);
 
-            const q = self._magicSearch.toLowerCase().trim();
+            const q = magicSearch.toLowerCase().trim();
             const matchesSearch = !q || 
                 s.name.toLowerCase().includes(q) || 
                 s.englishName.toLowerCase().includes(q) || 
                 (s.effect && s.effect.toLowerCase().includes(q)) ||
                 (s.challenge && s.challenge.toLowerCase().includes(q));
                 
-            const matchesLevel = self._magicFilterLevel === 'all' || 
-                s.level.toString() === self._magicFilterLevel;
+            const matchesLevel = magicFilterLevel === 'all' || 
+                s.level.toString() === magicFilterLevel;
                 
-            const matchesClass = self._magicFilterClass === 'all' ||
-                (s.classes && s.classes.includes(self._magicFilterClass));
+            const matchesClass = magicFilterClass === 'all' ||
+                (s.classes && s.classes.includes(magicFilterClass));
                 
             return matchesSearch && matchesLevel && matchesClass;
         });
@@ -1143,12 +1143,12 @@ export function QuickReference(opts) {
             return;
         }
 
-        listEl.innerHTML = filtered.map(s => self._renderMagicCard(s));
-        self._bindMagicCardEvents();
+        listEl.innerHTML = filtered.map(s => _renderMagicCard(s));
+        _bindMagicCardEvents();
     }
 
     function _renderPlayersWithSpell(spell) {
-        const players = self.store?.state?.players || [];
+        const players = store?.state?.players || [];
         
         const matchesSpell = (playerSpellStr, spellObj) => {
             const cleanPlayerSpell = playerSpellStr.toLowerCase().trim();
@@ -1198,7 +1198,7 @@ export function QuickReference(opts) {
     }
 
     function _renderPlayersWithSpellMini(spell) {
-        const players = self.store?.state?.players || [];
+        const players = store?.state?.players || [];
         const matchesSpell = (playerSpellStr, spellObj) => {
             const cleanPlayerSpell = playerSpellStr.toLowerCase().trim();
             if (!cleanPlayerSpell) return false;
@@ -1274,7 +1274,7 @@ export function QuickReference(opts) {
                         <span style="font-size: 0.65rem; color: var(--text-dim); display: flex; align-items: center; gap: 4px;">
                             <i class="fa-solid fa-users" style="color: rgba(${borderGlowColor}, 0.8);"></i> Conjuradores:
                         </span>
-                        ${self._renderPlayersWithSpellMini(spell)}
+                        ${_renderPlayersWithSpellMini(spell)}
                     </div>
                     
                     <!-- Footer Info -->
@@ -1288,20 +1288,20 @@ export function QuickReference(opts) {
     }
 
     function _bindMagicCardEvents() {
-        const cards = self.$$('.spell-card');
+        const cards = $$('.spell-card');
         cards.forEach(card => {
             const spellId = card.dataset.spellId;
-            const spell = self._buildSpellIndex().find(s => s.id === spellId);
+            const spell = _buildSpellIndex().find(s => s.id === spellId);
             if (!spell) return;
 
-            self.listen(card, 'mouseenter', () => {
-                if (self._popupMode === 'click') return;
+            listen(card, 'mouseenter', () => {
+                if (setPopupMode(== 'click') return);
 
-                self._hoverTimer = setTimeout(() => {
-                    self._playMagicWhisperSound();
+                _hoverTimer = setTimeout(() => {
+                    _playMagicWhisperSound();
                     
-                    self._activePopupSpell = spell;
-                    self._popupMode = 'hover';
+                    setActivePopupSpell(spell);
+                    setPopupMode('hover');
                     
                     const rect = card.getBoundingClientRect();
                     let x = rect.right + 12;
@@ -1316,20 +1316,20 @@ export function QuickReference(opts) {
                     }
                     if (y < 10) y = 10;
                     
-                    self._popupPosition = { x, y };
-                    self.render();
+                    setPopupPosition({ x, y });
+                    render();
                 }, 1000);
             });
 
-            self.listen(card, 'mouseleave', () => {
-                if (self._hoverTimer) {
-                    clearTimeout(self._hoverTimer);
-                    self._hoverTimer = null;
+            listen(card, 'mouseleave', () => {
+                if (_hoverTimer) {
+                    clearTimeout(_hoverTimer);
+                    _hoverTimer = null;
                 }
-                if (self._popupMode === 'hover') {
-                    self._activePopupSpell = null;
-                    self._popupMode = null;
-                    self.render();
+                if (popupMode === 'hover') {
+                    setActivePopupSpell(null);
+                    setPopupMode(null);
+                    render();
                 }
             });
         });
@@ -1338,22 +1338,22 @@ export function QuickReference(opts) {
     function toggleMagicPopup(e, el) {
         if (e) e.stopPropagation();
         const spellId = el.dataset.spellId;
-        const spell = self._buildSpellIndex().find(s => s.id === spellId);
+        const spell = _buildSpellIndex().find(s => s.id === spellId);
         if (!spell) return;
 
-        if (self._hoverTimer) {
-            clearTimeout(self._hoverTimer);
-            self._hoverTimer = null;
+        if (_hoverTimer) {
+            clearTimeout(_hoverTimer);
+            _hoverTimer = null;
         }
 
-        self._playMagicWhisperSound();
+        _playMagicWhisperSound();
 
-        if (self._activePopupSpell && self._activePopupSpell.id === spell.id && self._popupMode === 'click') {
-            self._activePopupSpell = null;
-            self._popupMode = null;
+        if (activePopupSpell && activePopupSpell.id === spell.id && popupMode === 'click') {
+            setActivePopupSpell(null);
+            setPopupMode(null);
         } else {
-            self._activePopupSpell = spell;
-            self._popupMode = 'click';
+            setActivePopupSpell(spell);
+            setPopupMode('click');
 
             const rect = el.getBoundingClientRect();
             let x = rect.right + 12;
@@ -1368,16 +1368,16 @@ export function QuickReference(opts) {
             }
             if (y < 10) y = 10;
 
-            self._popupPosition = { x, y };
+            setPopupPosition({ x, y });
         }
-        self.render();
+        render();
     }
 
     function closeMagicPopup(e) {
         if (e) e.stopPropagation();
-        self._activePopupSpell = null;
-        self._popupMode = null;
-        self.render();
+        setActivePopupSpell(null);
+        setPopupMode(null);
+        render();
     }
 
     function viewFullSpell(e, el) {
@@ -1385,7 +1385,7 @@ export function QuickReference(opts) {
         const spellId = el.dataset.spellId;
         
         // Navega para a aba de grimório e seleciona a magia completa
-        self.store.update(s => {
+        store.update(s => {
             s.activeTab = 'spellbook';
         });
 
@@ -1402,9 +1402,9 @@ export function QuickReference(opts) {
             }
         }, 100);
 
-        self._activePopupSpell = null;
-        self._popupMode = null;
-        self.render();
+        setActivePopupSpell(null);
+        setPopupMode(null);
+        render();
     }
 
     function _playMagicWhisperSound() {
@@ -1587,7 +1587,7 @@ export function QuickReference(opts) {
                     <div style="font-family: 'Cinzel', serif; font-size: 0.65rem; color: var(--accent); font-weight: 700; margin-bottom: 6px; letter-spacing: 0.5px; text-transform: uppercase; display: flex; align-items: center; gap: 4px;">
                         <i class="fa-solid fa-users"></i> Conjuradores Vinculados
                     </div>
-                    ${self._renderPlayersWithSpell(spell)}
+                    ${_renderPlayersWithSpell(spell)}
                 </div>
 
                 <!-- Dano / Efeito box -->
@@ -1604,7 +1604,7 @@ export function QuickReference(opts) {
                 </div>
             </div>
             
-            ${self._popupMode === 'click' ? html`
+            ${popupMode === 'click' ? html`
                 <button class="btn btn-ghost" style="position: absolute; top: 12px; right: 12px; padding: 2px 6px; font-size: 0.65rem; border-radius: 4px; z-index: 10; border: none; background: transparent; color: var(--text-dim); cursor: pointer;" data-action="closeMagicPopup">✕</button>
                 <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; border-top: 1.5px solid rgba(255, 255, 255, 0.08); padding-top: 10px;">
                     <button class="btn btn-ghost" style="padding: 5px 12px; font-size: 0.68rem; border-radius: 6px; border: 1px solid rgba(197, 160, 89, 0.35); color: var(--accent); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; background: rgba(197,160,89,0.05);" data-action="viewFullSpell" data-spell-id="${spell.id}" data-spell-name="${spell.name}">
@@ -1613,6 +1613,6 @@ export function QuickReference(opts) {
                 </div>
             ` : ''}
         `;
-    return self.template();
+    return template();
 }
 

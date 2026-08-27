@@ -1,7 +1,7 @@
 import { useState, useRef, useMemo } from 'preact/hooks';
 import { useStore } from '../core/hooks.js';
 import { TOME } from '../../core/Registry.js';
-import { Toast } from '../components/Toast.js';
+import { Toast } from '../components/core/Toast.jsx';
 import { Dice } from '../../utils/Dice.js';
 import { render } from 'preact';
 

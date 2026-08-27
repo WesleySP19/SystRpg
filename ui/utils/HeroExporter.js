@@ -1,4 +1,4 @@
-import { Toast } from '../components/Toast.js';
+import { Toast } from '../components/core/Toast.jsx';
 import { html } from 'htm/preact';
 
 export class HeroExporter {
