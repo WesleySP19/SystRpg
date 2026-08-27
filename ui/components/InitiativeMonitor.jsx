@@ -312,7 +312,7 @@ export class InitiativeMonitor extends Component {
                                 </div>
 
                                 <!-- Economia de Ações -->
-                                <div class="im-economy" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <div class="im-economy.value" style="display: flex; gap: 8px; flex-wrap: wrap;">
                                     <button class="im-econ-btn" style="background: ${this._economy.value.action ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.02)'}; color: ${this._economy.value.action ? '#86efac' : 'var(--text-dim)'}; border: 1px solid ${this._economy.value.action ? 'rgba(34,197,94,0.4)' : 'rgba(255,255,255,0.05)'}; border-radius: 20px; padding: 6px 12px; font-size: 0.65rem; font-weight: 800; cursor: pointer; transition: all 0.2s;" data-action="toggleEconomy" data-type="action" title="Ação Principal (Clique para alternar)">
                                         <i class="fa-solid ${this._economy.value.action ? 'fa-play' : 'fa-check'}"></i> ${this._economy.value.action ? 'AÇÃO' : 'USADA'}
                                     </button>
@@ -569,8 +569,8 @@ export class InitiativeMonitor extends Component {
 
     _renderTurnAnnounce() {
         return `
-            <div class="im-turn-announce">
-                <div class="im-turn-announce-inner">
+            <div class="im-turn-announce.value">
+                <div class="im-turn-announce.value-inner">
                     <i class="fa-solid fa-swords" style="color:var(--accent);"></i>
                     ${this._announceText}
                 </div>

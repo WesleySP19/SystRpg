@@ -709,14 +709,14 @@ export function PlayerForm({ store }) {
                     <div className="flex flex-col gap-2.5">
                         <div className="portrait-box-legacy h-[350px] border-2 border-tomeGold/30 rounded-2xl relative overflow-hidden bg-black/20 cursor-pointer" data-action="triggerPortrait">
                             <div id="portrait-preview" className="w-full h-full flex items-center justify-center overflow-hidden">
-                                {portraitData ? <img src={portraitData} style={{ width: '100%', height: '100%', objectFit: 'cover', transform: `scale(${portraitSettings.scale || 1}) translate(${portraitSettings.x || 0}px, ${portraitSettings.y || 0}px)`, transition: 'transform 0.1s ease-out' }} /> : <i className="fa-solid fa-user-shield fa-4x text-tomeGold/20"></i>}
+                                {portraitData ? <img src={portraitData} className="w-full h-full object-cover transition-transform duration-100 ease-out" style={{ transform: `scale(${portraitSettings.scale || 1}) translate(${portraitSettings.x || 0}px, ${portraitSettings.y || 0}px)` }} /> : <i className="fa-solid fa-user-shield fa-4x text-tomeGold/20"></i>}
                             </div>
                             <span className="absolute bottom-2.5 w-full text-center text-[0.6rem] font-extrabold bg-black/60 text-sheetLabel">MUDAR RETRATO</span>
                             <input type="file" id="portrait-input" className="hidden" accept="image/*" />
                         </div>
                         
                         {/* PORTRAIT CONTROLS */}
-                        <div className="skills-list p-2.5 text-[0.6rem] flex flex-col gap-1.5" style={{ display: portraitData ? 'flex' : 'none' }}>
+                        <div className={`skills-list p-2.5 text-[0.6rem] flex-col gap-1.5 ${portraitData ? 'flex' : 'hidden'}`}>
                             <div className="flex justify-between items-center mb-1.5">
                                 <label class="font-extrabold">CONTROLE DE FOTO</label>
                                 <button type="button" className="btn btn-ghost btn-sm text-[0.5rem] px-1.5 py-0.5" data-action="resetPortrait">CENTRALIZAR</button>
