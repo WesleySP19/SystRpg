@@ -33,11 +33,18 @@ export class PersistenceService {
     }
 
     startAutoSave() {
-        console.log('[Persistence] Iniciando motor de Auto-Save (3s debounce)...');
+        console.log('[Persistence] Iniciando motor de Auto-Save (Local 200ms, Network 3s)...');
         TOME.store.subscribe(() => {
-            if (this._saveTimeout) clearTimeout(this._saveTimeout);
-            this._saveTimeout = setTimeout(() => {
-                this.save();
+            // Local-First: Debounce curtíssimo (200ms) para gravação instantânea no IndexedDB
+            if (this._localSaveTimeout) clearTimeout(this._localSaveTimeout);
+            this._localSaveTimeout = setTimeout(() => {
+                this.saveLocalOnly();
+            }, 200);
+
+            // Network: Debounce longo (3s) para agrupar uploads pro servidor/WebSocket
+            if (this._networkSaveTimeout) clearTimeout(this._networkSaveTimeout);
+            this._networkSaveTimeout = setTimeout(() => {
+                this.saveNetworkOnly();
             }, 3000);
         });
     }
@@ -53,6 +60,8 @@ export class PersistenceService {
 
     // --- DELEGATE TO SESSION MANAGER ---
     async save() { return SessionManager.save(this.filename, TOME.store); }
+    async saveLocalOnly() { return SessionManager.saveLocalOnly(this.filename, TOME.store); }
+    async saveNetworkOnly() { return SessionManager.saveNetworkOnly(this.filename, TOME.store); }
     async load() { return SessionManager.load(this.filename, TOME.store); }
     async switchSession(newFilename) { return SessionManager.switchSession(newFilename, TOME.store); }
     static async startNewSession(tableId) { return SessionManager.startNewSession(tableId); }

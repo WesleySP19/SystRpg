@@ -37,7 +37,7 @@ function printHeader() {
      
   ================================================================
   ` + colors.reset);
-  console.log(colors.fgCyan + "          Mesa Psigologos V23.0.0 (Obsidian) - The Atomic Engine\n" + colors.reset);
+  console.log(colors.fgCyan + "          Mesa Psigologos (Obsidian) - The Atomic Engine\n" + colors.reset);
 }
 
 function runViteBuild() {
@@ -101,7 +101,7 @@ function startServer(mode) {
 
   // Dá um pequeno tempo para o servidor iniciar antes de abrir abas
   setTimeout(() => {
-    const baseUrl = 'http://localhost:4000';
+    const baseUrl = 'http://localhost:4455';
     if (mode === 'master') {
       console.log(colors.fgGold + "Iniciando Frequência do Mestre..." + colors.reset);
       openBrowser(`${baseUrl}/`);

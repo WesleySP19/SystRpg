@@ -1,5 +1,5 @@
 @echo off
-title Mesa Psigologos V23.1.0 - Otimizada (Obsidian Glassmorphism)
+title Mesa Psigologos - Otimizada (PixiJS/WebRTC)
 color 0E
 cls
 cd /d "%~dp0"
@@ -19,10 +19,10 @@ if exist "%~dp0node-v20.11.1-win-x64\node.exe" (
 )
 
 echo ==============================================================================
-echo [Mesa Psigologos V23.1.0] Iniciando Engine Obsidian Otimizada...
-echo [Mesa Psigologos V23.1.0] Habilitando Garbage Collection Manual (4GB RAM)...
-echo [Mesa Psigologos V23.1.0] VTT Independente e UI Funcional Carregados...
-echo [Mesa Psigologos V23.1.0] Console de Relatorios ATIVO.
+echo [Mesa Psigologos] Iniciando Engine Obsidian Otimizada...
+echo [Mesa Psigologos] Habilitando Garbage Collection Manual (4GB RAM)...
+echo [Mesa Psigologos] WebGL (PixiJS) e P2P Sync (WebRTC) Carregados...
+echo [Mesa Psigologos] Console de Servidor ATIVO.
 echo ==============================================================================
 "%NODE_EXE%" --expose-gc --max-old-space-size=4096 "%~dp0scripts\start-cli.js" %*
 

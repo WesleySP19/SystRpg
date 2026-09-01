@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'preact/hooks';
 import { useStore } from '../core/hooks.js';
 import { RulesEngine } from '../../core/RulesEngine.js';
 import { CRDTManager } from '../core/CRDTManager.js';
+import { Button } from './core/Button.jsx';
+import { Input } from './core/Input.jsx';
 
 /**
  * Componente Global de Chat da Mesa Virtual Avançada (v15.9 Reativo & Unificado)
@@ -178,13 +180,13 @@ export function ChatBox() {
     return (
         <div id="chat-container" className={`glass-accent fixed bottom-5 right-5 z-[9999] flex flex-col overflow-hidden backdrop-blur-md shadow-[0_12px_35px_rgba(0,0,0,0.85),0_0_15px_rgba(197,160,89,0.25)] border border-accent/50 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] ${isExpanded ? 'w-[350px] h-[460px] rounded-2xl bg-[#0f0c12]/75' : 'w-[60px] h-[60px] rounded-full bg-accent'}`}>
             {!isExpanded ? (
-                <button 
+                <Button 
                     id="chat-toggle" 
                     onClick={toggleExpand} 
-                    className="btn btn-ghost w-full h-full rounded-full flex items-center justify-center text-white text-2xl p-0 border-none bg-transparent cursor-pointer transition-transform duration-200 hover:scale-110"
-                >
-                    <i class="fa-solid fa-comment-dots"></i>
-                </button>
+                    className="w-full h-full rounded-full p-0 bg-transparent text-white text-2xl hover:scale-110 border-none"
+                    icon="fa-comment-dots"
+                    variant="ghost"
+                />
             ) : (
                 <>
                     <div className="bg-gradient-to-br from-accent/20 to-black/80 px-4 py-3 border-b border-accent/30 flex justify-between items-center">
@@ -192,9 +194,13 @@ export function ChatBox() {
                             <i class="fa-solid fa-dice-d20 text-accent drop-shadow-[0_0_5px_rgba(197,160,89,0.5)]"></i> 
                             Chat Arcana
                         </h4>
-                        <button onClick={toggleExpand} className="btn btn-ghost btn-sm px-2 py-1 text-slate-400 bg-transparent border-none cursor-pointer">
-                            <i class="fa-solid fa-chevron-down"></i>
-                        </button>
+                        <Button 
+                            onClick={toggleExpand} 
+                            variant="ghost" 
+                            size="icon" 
+                            icon="fa-chevron-down" 
+                            className="text-slate-400 hover:text-white"
+                        />
                     </div>
                     
                     <div id="chat-history" ref={historyRef} className="flex-1 p-4 overflow-y-auto flex flex-col gap-2.5 custom-scrollbar scroll-smooth">
@@ -203,21 +209,21 @@ export function ChatBox() {
                     
                     <div className="p-3 border-t border-accent/30 bg-black/50">
                         <form id="chat-form" onSubmit={handleSubmit} className="flex gap-2 m-0">
-                            <input 
+                            <Input 
                                 type="text" 
                                 name="message" 
                                 id="chat-input" 
                                 ref={inputRef}
                                 placeholder="/roll 1d20+FOR..." 
                                 autoComplete="off" 
-                                className="flex-1 bg-white/10 border border-accent/40 rounded-lg py-2 px-3 text-white text-[0.95rem] outline-none transition-all duration-200 shadow-inner focus:bg-white/15 focus:border-accent"
+                                className="flex-1"
                             />
-                            <button 
+                            <Button 
                                 type="submit" 
-                                className="btn btn-primary btn-sm px-4 rounded-lg border-none bg-gradient-to-br from-[#d4af37] to-[#b38b2d] text-[#0a0c10] cursor-pointer font-extrabold text-lg shadow-[0_4px_10px_rgba(0,0,0,0.5)] transition-transform duration-200 hover:scale-105"
-                            >
-                                <i class="fa-solid fa-paper-plane"></i>
-                            </button>
+                                variant="primary"
+                                icon="fa-paper-plane"
+                                className="px-4 text-lg bg-gradient-to-br from-[#d4af37] to-[#b38b2d] text-[#0a0c10] shadow-[0_4px_10px_rgba(0,0,0,0.5)] hover:scale-105"
+                            />
                         </form>
                     </div>
                 </>

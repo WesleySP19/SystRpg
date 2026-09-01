@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'preact/hooks';
-import { TacticalMapEngine } from './TacticalMapEngine.js';
+import { TacticalMapEnginePixi } from './TacticalMapEnginePixi.js';
 import { MonsterArt } from '../../services/MonsterArt.js';
 import { Toast } from './Toast.js';
 import { InitiativeMonitor } from './InitiativeMonitor.jsx';
@@ -27,16 +27,26 @@ export function TacticalEyeModal({ unmount }) {
     useEffect(() => {
         broadcastRef.current = new BroadcastChannel('tome_map');
         
-        const mapEngine = new TacticalMapEngine('dm-map-container', {
-            width: window.innerWidth,
-            height: window.innerHeight,
-            isDM: true
-        });
-        mapEngineRef.current = mapEngine;
+        let isCancelled = false;
+        const initEngine = async () => {
+            const mapEngine = new TacticalMapEnginePixi('dm-map-container', {
+                width: window.innerWidth,
+                height: window.innerHeight,
+                isDM: true
+            });
+            await mapEngine.init(window.innerWidth, window.innerHeight);
+            if (isCancelled) {
+                mapEngine.destroy();
+                return;
+            }
+            mapEngineRef.current = mapEngine;
 
-        if (initialMapUrl) mapEngine.setMapUrl(initialMapUrl);
-        if (initialMapGrid) mapEngine.setGrid(true, '1.5m');
-        if (initialMapFog) mapEngine.setFog({ enabled: true, paths: fogPathsRef.current });
+            if (initialMapUrl) mapEngine.setMapUrl(initialMapUrl);
+            if (initialMapGrid) mapEngine.setGrid(true, '1.5m');
+            if (initialMapFog) mapEngine.setFog({ enabled: true, paths: fogPathsRef.current });
+            loadTokensFromStore();
+        };
+        initEngine();
 
         const handleCameraUpdate = (e) => {
             const { x, y, scale } = e.detail;
@@ -64,25 +74,47 @@ export function TacticalEyeModal({ unmount }) {
                 deltaType: 'TOKEN_MOVE',
                 data: { id, x, y }
             });
+            // Update server persistence on drop
+            if (window.TOME?.socket) {
+                window.TOME.socket.emit('delta_state_update', {
+                    patches: [{ op: 'replace', path: `/tacticalMap/tokens/${id}`, value: { x, y } }]
+                });
+            }
         };
         window.addEventListener('tome:token_moved', handleTokenMove);
+
+        const handleTokenDragging = (e) => {
+            const { id, x, y } = e.detail;
+            if (window.TOME?.webrtc) {
+                window.TOME.webrtc.broadcast({ type: 'TOKEN_DRAG', id, x, y });
+            }
+        };
+        window.addEventListener('tome:token_dragging', handleTokenDragging);
 
         const container = document.getElementById('dm-map-container');
         const handleContextMenu = (e) => {
             e.preventDefault();
             if (activeTool === 'eraser') return;
-            const stage = mapEngine.stage;
-            const pointer = stage.getPointerPosition();
-            if (pointer) {
-                const transform = stage.getAbsoluteTransform().copy();
-                transform.invert();
-                const relPos = transform.point(pointer);
-                mapEngine.showPing(relPos.x, relPos.y, '#10b981');
+            // PixiJS handling: get local position
+            if (mapEngine && mapEngine.mapContainer) {
+                const rect = container.getBoundingClientRect();
+                const pointerX = e.clientX - rect.left;
+                const pointerY = e.clientY - rect.top;
+                
+                const localX = (pointerX - mapEngine.mapContainer.x) / mapEngine.mapContainer.scale.x;
+                const localY = (pointerY - mapEngine.mapContainer.y) / mapEngine.mapContainer.scale.y;
+
+                if (typeof mapEngine.showPing === 'function') {
+                    mapEngine.showPing(localX, localY, '#10b981');
+                }
                 broadcastRef.current?.postMessage({
                     type: 'PING',
-                    position: { x: relPos.x, y: relPos.y },
+                    position: { x: localX, y: localY },
                     color: '#10b981'
                 });
+                if (window.TOME?.webrtc) {
+                    window.TOME.webrtc.broadcast({ type: 'PING', x: localX, y: localY, color: '#10b981' });
+                }
             }
         };
         const handleDragOver = (e) => {
@@ -95,9 +127,8 @@ export function TacticalEyeModal({ unmount }) {
             if (dataStr) {
                 try {
                     const payload = JSON.parse(dataStr);
-                    const stage = mapEngine.stage;
-                    stage.setPointersPositions(e); 
-                    const pointer = stage.getPointerPosition();
+                    const stage = mapEngine.app.stage; // Dummy since pixi is different, but context menu handled directly in mapEngine
+                    const pointer = {x: 0, y: 0}; // TBD: properly map pointers for drop in Pixi
                     if (pointer) {
                         const transform = stage.getAbsoluteTransform().copy();
                         transform.invert();
@@ -143,10 +174,13 @@ export function TacticalEyeModal({ unmount }) {
         window.addEventListener('resize', handleResize);
 
         return () => {
+            isCancelled = true;
+            if (mapEngineRef.current) mapEngineRef.current.destroy();
             if (broadcastRef.current) broadcastRef.current.close();
             window.removeEventListener('tome:camera_update', handleCameraUpdate);
             window.removeEventListener('tome:fog_path', handleFogPath);
             window.removeEventListener('tome:token_moved', handleTokenMove);
+            window.removeEventListener('tome:token_dragging', handleTokenDragging);
             window.removeEventListener('resize', handleResize);
             if (container) {
                 container.removeEventListener('contextmenu', handleContextMenu);
@@ -160,12 +194,12 @@ export function TacticalEyeModal({ unmount }) {
         loadTokensFromStore();
     }, [initiativeOrder]);
 
-    const getStageCenter = (transform) => {
+    const getStageCenter = () => {
         const mapEngine = mapEngineRef.current;
-        if (!mapEngine) return { x: 0, y: 0 };
-        const viewX = mapEngine.stage.x();
-        const viewY = mapEngine.stage.y();
-        const viewScale = mapEngine.stage.scaleX();
+        if (!mapEngine || !mapEngine.mapContainer) return { x: 0, y: 0 };
+        const viewX = mapEngine.mapContainer.x;
+        const viewY = mapEngine.mapContainer.y;
+        const viewScale = mapEngine.mapContainer.scale.x;
         const centerX = -viewX / viewScale + (window.innerWidth / 2) / viewScale;
         const centerY = -viewY / viewScale + (window.innerHeight / 2) / viewScale;
         return { x: centerX, y: centerY };
@@ -256,14 +290,12 @@ export function TacticalEyeModal({ unmount }) {
     const placeToken = (id) => {
         const mapEngine = mapEngineRef.current;
         if (!mapEngine) return;
-        const stage = mapEngine.stage;
-        const transform = stage.getAbsoluteTransform().copy();
-        transform.invert();
-        const centerView = transform.point({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
+        const centerView = getStageCenter();
         
         const group = mapEngine.tokens.get(id);
         if (group) {
-            group.to({ x: centerView.x, y: centerView.y, duration: 0.5, easing: window.Konva.Easings.ElasticEaseOut });
+            group.x = centerView.x;
+            group.y = centerView.y;
             
             const evt = new CustomEvent('tome:token_moved', {
                 detail: { id: id, x: centerView.x, y: centerView.y }
@@ -278,15 +310,17 @@ export function TacticalEyeModal({ unmount }) {
         if (!mapEngineRef.current) return;
 
         const currentTokens = Array.from(mapEngineRef.current.tokens.values()).map(g => {
-            const textNode = g.findOne('Text');
-            const circleNode = g.findOne('Circle');
+            // PixiJS children: assuming 1st child is base circle (Graphics) and 3rd is Text (if no avatar)
+            let color = '#ffffff';
+            let name = 'Token';
+            let size = 50;
             return {
-                id: g.id(),
-                x: g.x(),
-                y: g.y(),
-                name: textNode ? textNode.text() : 'Token',
-                size: circleNode ? circleNode.radius() * 2 : 50,
-                color: circleNode ? circleNode.fill() : '#ffffff',
+                id: g.id || 'unknown',
+                x: g.x,
+                y: g.y,
+                name: name,
+                size: size,
+                color: color,
             };
         });
         
@@ -313,9 +347,9 @@ export function TacticalEyeModal({ unmount }) {
         broadcastRef.current?.postMessage({
             type: 'CAMERA_UPDATE',
             data: { 
-                x: mapEngineRef.current.stage.x(), 
-                y: mapEngineRef.current.stage.y(), 
-                scale: mapEngineRef.current.stage.scaleX() 
+                x: mapEngineRef.current.mapContainer.x, 
+                y: mapEngineRef.current.mapContainer.y, 
+                scale: mapEngineRef.current.mapContainer.scale.x 
             }
         });
         

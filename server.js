@@ -643,7 +643,7 @@ async function start() {
         }
     }
 
-    let port = 4000;
+    let port = 4455;
     const envPort = process.env.PORT || process.env.SERVER_PORT;
     if (envPort) {
         const parsed = parseInt(envPort, 10);
@@ -666,8 +666,8 @@ async function start() {
             }
         }
         console.log(`\n================================================================================`);
-        console.log(`           ✨ Mesa Psigologos V22.0.0 — THE ATOMIC ENGINE ✨           
-=====================================================================================================`);
+        console.log(`           ✨ Mesa Psigologos — THE ATOMIC ENGINE ✨           
+================================================================`);
         console.log(` [MESA DO MESTRE]    http://localhost:${finalPort}/`);
         console.log(` [TELÃO / PROJETOR]  http://localhost:${finalPort}/player-view.html`);
         console.log(` [APP LAN JOGADORES] http://${localIp}:${finalPort}/ (Conecte via Wi-Fi ou QR Code)`);

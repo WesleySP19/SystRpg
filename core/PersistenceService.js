@@ -11,10 +11,16 @@ export class PersistenceService {
      * Uses exponential backoff (2s→4s→8s) with 3 retries before falling back to REST.
      */
     static async saveState(filename, data) {
-        // 1. Sempre salva localmente (Offline-First)
-        await saveLocalState(filename, data);
+        await this.saveLocalOnly(filename, data);
+        return await this.saveNetworkOnly(filename, data);
+    }
 
-        // 2. Tenta sincronizar com o servidor (se conectado)
+    static async saveLocalOnly(filename, data) {
+        await saveLocalState(filename, data);
+    }
+
+    static async saveNetworkOnly(filename, data) {
+        // Tenta sincronizar com o servidor (se conectado)
         if (TOME.socket && TOME.socket.connected) {
             const MAX_RETRIES = 3;
             let attempt = 0;

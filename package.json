@@ -21,6 +21,8 @@
     "express": "^4.19.2",
     "htm": "^3.1.1",
     "jsonwebtoken": "^9.0.2",
+    "pixi.js": "^8.2.0",
+    "@pixi/events": "^8.2.0",
     "konva": "^10.3.0",
     "multer": "^2.2.0",
     "preact": "^10.29.8",

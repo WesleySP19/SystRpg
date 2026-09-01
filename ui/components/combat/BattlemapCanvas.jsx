@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'preact/hooks';
-import { TacticalMapEngine } from '../TacticalMapEngine.js';
+import { TacticalMapEnginePixi } from '../TacticalMapEnginePixi.js';
 import { TOME } from '../../../core/Registry.js';
 import { MonsterArt } from '../../../services/MonsterArt.js';
 import { ImageCacheService } from '../../../services/ImageCacheService.js';
@@ -15,11 +15,23 @@ export function BattlemapCanvas({ isDM = true }) {
             containerRef.current.id = 'battlemap-canvas-root';
         }
 
-        engineRef.current = new TacticalMapEngine(containerRef.current.id, {
-            width: containerRef.current.clientWidth || 800,
-            height: containerRef.current.clientHeight || 600,
-            isDM
-        });
+        let isCancelled = false;
+        const initEngine = async () => {
+            const engine = new TacticalMapEnginePixi(containerRef.current.id, {
+                width: containerRef.current.clientWidth || 800,
+                height: containerRef.current.clientHeight || 600,
+                isDM
+            });
+            await engine.init(containerRef.current.clientWidth || 800, containerRef.current.clientHeight || 600);
+            if (isCancelled) {
+                engine.destroy();
+                return;
+            }
+            engineRef.current = engine;
+            updateMapProps();
+            updateTokens();
+        };
+        initEngine();
 
         const handleTokenMoved = (e) => {
             const { id, x, y } = e.detail;
@@ -32,7 +44,15 @@ export function BattlemapCanvas({ isDM = true }) {
             }
         };
 
+        const handleTokenDragging = (e) => {
+            const { id, x, y } = e.detail;
+            if (TOME.webrtc) {
+                TOME.webrtc.broadcast({ type: 'TOKEN_DRAG', id, x, y });
+            }
+        };
+
         window.addEventListener('tome:token_moved', handleTokenMoved);
+        window.addEventListener('tome:token_dragging', handleTokenDragging);
 
         // V22.2 Isolando o VTT do fluxo reativo principal do Preact
         const updateMapProps = () => {
@@ -89,16 +109,16 @@ export function BattlemapCanvas({ isDM = true }) {
         const unsubTacticalMap = TOME.store.subscribeTo('tacticalMap', updateMapProps);
         const unsubInitiative = TOME.store.subscribeTo('initiativeOrder', updateTokens);
 
-        // Initial sync
-        updateMapProps();
-        updateTokens();
+        // Initial sync handled inside initEngine() after await
 
         return () => {
+            isCancelled = true;
             window.removeEventListener('tome:token_moved', handleTokenMoved);
+            window.removeEventListener('tome:token_dragging', handleTokenDragging);
             if (unsubTacticalMap) unsubTacticalMap();
             if (unsubInitiative) unsubInitiative();
-            if (engineRef.current && engineRef.current.stage) {
-                engineRef.current.stage.destroy();
+            if (engineRef.current) {
+                engineRef.current.destroy();
             }
         };
     }, []);

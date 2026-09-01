@@ -247,7 +247,7 @@ export function Sidebar() {
                         Mesa do Mestre
                     </span>
                     <span class="text-[0.58rem] text-accent uppercase tracking-widest font-bold opacity-90">
-                        V22.0.0
+                        MESA PSIGOLOGOS
                     </span>
                 </div>
             </div>

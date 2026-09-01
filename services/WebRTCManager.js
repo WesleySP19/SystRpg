@@ -92,6 +92,17 @@ export class WebRTCManager {
             try {
                 const data = JSON.parse(event.data);
                 this.handlers.forEach(h => h(data, peerId));
+                
+                // Native high-frequency event dispatching (bypasses Preact store)
+                if (data.type === 'TOKEN_DRAG') {
+                    window.dispatchEvent(new CustomEvent('webrtc:token_sync', {
+                        detail: { id: data.id, x: data.x, y: data.y, peerId }
+                    }));
+                } else if (data.type === 'PING') {
+                    window.dispatchEvent(new CustomEvent('webrtc:ping_sync', {
+                        detail: { x: data.x, y: data.y, color: data.color, peerId }
+                    }));
+                }
             } catch(e) {
                 console.warn('[WebRTC] Error parsing message', e);
             }

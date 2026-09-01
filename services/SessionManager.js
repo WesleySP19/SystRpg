@@ -49,6 +49,23 @@ export class SessionManager {
     }
 
     static async save(filename, store) {
+        await this.saveLocalOnly(filename, store);
+        return await this.saveNetworkOnly(filename, store);
+    }
+
+    static async saveLocalOnly(filename, store) {
+        if (this._isApplyingNetworkState) return false;
+        try {
+            const rawState = store.snapshot();
+            await PersistenceService.saveLocalOnly(filename, rawState);
+            return true;
+        } catch (e) {
+            console.error('[SessionManager] Local Sync Failed:', e);
+            return false;
+        }
+    }
+
+    static async saveNetworkOnly(filename, store) {
         if (this._isSaving || this._isApplyingNetworkState) return false;
         this._isSaving = true;
 
@@ -56,7 +73,7 @@ export class SessionManager {
             const rawState = store.snapshot();
             const cleanState = await MediaService.extractMedia(rawState, filename.split('.')[0]);
             
-            await PersistenceService.saveState(filename, cleanState);
+            await PersistenceService.saveNetworkOnly(filename, cleanState);
             
             this.updateTableStats(filename, cleanState);
             this._isSaving = false;
