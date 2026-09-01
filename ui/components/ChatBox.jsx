@@ -140,9 +140,9 @@ export function ChatBox() {
 
         if (isSystem) {
             return (
-                <div key={entry.id || entry.timestamp} style={{ textAlign: 'center', margin: '6px 0', animation: 'fadeIn 0.3s ease' }}>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--accent)', fontStyle: 'italic', background: 'rgba(197,160,89,0.12)', padding: '4px 12px', borderRadius: '12px', border: '1px solid rgba(197,160,89,0.25)', display: 'inline-block' }}>
-                        <i class="fa-solid fa-sparkles" style={{ marginRight: '4px' }}></i> {message}
+                <div key={entry.id || entry.timestamp} className="text-center my-1.5 animate-fadeIn">
+                    <span className="text-xs text-accent italic bg-accent/10 px-3 py-1 rounded-xl border border-accent/25 inline-block">
+                        <i class="fa-solid fa-sparkles mr-1"></i> {message}
                     </span>
                 </div>
             );
@@ -153,75 +153,56 @@ export function ChatBox() {
             const total = entry.total !== undefined && entry.total !== null ? entry.total : '🎲';
             const details = entry.details || '';
             return (
-                <div key={entry.id || entry.timestamp} style={{ background: 'linear-gradient(145deg, rgba(34, 197, 94, 0.08), rgba(15, 20, 15, 0.9))', border: '1px solid rgba(34, 197, 94, 0.35)', borderRadius: '10px', padding: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.4)', animation: 'scaleUp 0.25s ease' }}>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginBottom: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span><i class="fa-solid fa-dice-d20" style={{ color: 'var(--success)', marginRight: '4px' }}></i> <strong>{sender}</strong> rolou os dados</span>
-                        <span style={{ fontSize: '0.65rem', opacity: 0.7 }}>🎲 Rolagem Arcana</span>
+                <div key={entry.id || entry.timestamp} className="bg-gradient-to-br from-green-500/10 to-black/90 border border-green-500/35 rounded-xl p-3 shadow-lg animate-scaleUp">
+                    <div className="text-xs text-slate-400 mb-1.5 flex justify-between items-center">
+                        <span><i class="fa-solid fa-dice-d20 text-success mr-1"></i> <strong>{sender}</strong> rolou os dados</span>
+                        <span className="text-[0.65rem] opacity-70">🎲 Rolagem Arcana</span>
                     </div>
-                    <div style={{ fontFamily: "'Cinzel'", fontSize: '1.1rem', color: 'var(--success)', textAlign: 'center', background: 'rgba(0,0,0,0.3)', padding: '8px', borderRadius: '6px', border: '1px inset rgba(255,255,255,0.05)' }}>
-                        {formula ? <><span style={{ fontSize: '0.8rem', color: 'var(--text-main)', fontFamily: 'monospace', opacity: 0.85 }}>{formula}</span><br/></> : null}
-                        <strong style={{ fontSize: '1.8rem', color: '#22c55e', textShadow: '0 0 15px rgba(34, 197, 94, 0.6)', display: 'inline-block', marginTop: '2px' }}>{total}</strong>
+                    <div className="font-cinzel text-lg text-success text-center bg-black/30 p-2 rounded-md border border-white/5">
+                        {formula ? <><span className="text-sm text-white font-mono opacity-85">{formula}</span><br/></> : null}
+                        <strong className="text-3xl text-green-500 drop-shadow-[0_0_15px_rgba(34,197,94,0.6)] inline-block mt-0.5">{total}</strong>
                     </div>
-                    {details ? <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', textAlign: 'center', marginTop: '6px', fontFamily: 'monospace' }}>{details}</div> : null}
+                    {details ? <div className="text-xs text-slate-400 text-center mt-1.5 font-mono">{details}</div> : null}
                 </div>
             );
         }
 
         return (
-            <div key={entry.id || entry.timestamp} style={{ background: 'rgba(255,255,255,0.04)', borderLeft: '3px solid var(--accent)', borderRadius: '0 8px 8px 0', padding: '8px 12px', animation: 'fadeInRight 0.2s ease' }}>
-                <span style={{ fontSize: '0.75rem', color: 'var(--accent)', fontWeight: 'bold', display: 'block', marginBottom: '3px', fontFamily: "'Cinzel'" }}>{sender}</span>
-                <span style={{ fontSize: '0.92rem', color: '#f3f4f6', wordBreak: 'break-word', lineHeight: 1.4 }}>{message}</span>
+            <div key={entry.id || entry.timestamp} className="bg-white/5 border-l-4 border-l-accent rounded-r-lg p-2.5 animate-fadeInRight">
+                <span className="text-xs text-accent font-bold block mb-1 font-cinzel">{sender}</span>
+                <span className="text-[0.92rem] text-gray-100 break-words leading-relaxed">{message}</span>
             </div>
         );
     };
 
     return (
-        <div id="chat-container" class="glass-accent" style={{
-            position: 'fixed',
-            bottom: '20px',
-            right: '20px',
-            width: isExpanded ? '350px' : '60px',
-            height: isExpanded ? '460px' : '60px',
-            borderRadius: isExpanded ? '16px' : '50%',
-            boxShadow: '0 12px 35px rgba(0,0,0,0.85), 0 0 15px rgba(197, 160, 89, 0.25)',
-            border: '1px solid rgba(197, 160, 89, 0.5)',
-            transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
-            zIndex: 9999,
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-            background: isExpanded ? 'rgba(15, 12, 18, 0.75)' : 'var(--accent)',
-            backdropFilter: 'blur(12px)'
-        }}>
+        <div id="chat-container" className={`glass-accent fixed bottom-5 right-5 z-[9999] flex flex-col overflow-hidden backdrop-blur-md shadow-[0_12px_35px_rgba(0,0,0,0.85),0_0_15px_rgba(197,160,89,0.25)] border border-accent/50 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] ${isExpanded ? 'w-[350px] h-[460px] rounded-2xl bg-[#0f0c12]/75' : 'w-[60px] h-[60px] rounded-full bg-accent'}`}>
             {!isExpanded ? (
                 <button 
                     id="chat-toggle" 
                     onClick={toggleExpand} 
-                    class="btn btn-ghost" 
-                    style={{ width: '100%', height: '100%', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '1.5rem', padding: 0, border: 'none', background: 'transparent', cursor: 'pointer', transition: 'transform 0.2s' }} 
-                    onMouseOver={e => e.currentTarget.style.transform = 'scale(1.1)'} 
-                    onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
+                    className="btn btn-ghost w-full h-full rounded-full flex items-center justify-center text-white text-2xl p-0 border-none bg-transparent cursor-pointer transition-transform duration-200 hover:scale-110"
                 >
                     <i class="fa-solid fa-comment-dots"></i>
                 </button>
             ) : (
                 <>
-                    <div style={{ background: 'linear-gradient(135deg, rgba(197, 160, 89, 0.2), rgba(0,0,0,0.8))', padding: '12px 16px', borderBottom: '1px solid rgba(197, 160, 89, 0.3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <h4 style={{ fontFamily: "'Cinzel'", margin: 0, color: 'var(--accent)', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <i class="fa-solid fa-dice-d20" style={{ color: 'var(--accent)', filter: 'drop-shadow(0 0 5px rgba(197,160,89,0.5))' }}></i> 
+                    <div className="bg-gradient-to-br from-accent/20 to-black/80 px-4 py-3 border-b border-accent/30 flex justify-between items-center">
+                        <h4 className="font-cinzel m-0 text-accent text-base flex items-center gap-2">
+                            <i class="fa-solid fa-dice-d20 text-accent drop-shadow-[0_0_5px_rgba(197,160,89,0.5)]"></i> 
                             Chat Arcana
                         </h4>
-                        <button onClick={toggleExpand} class="btn btn-ghost btn-sm" style={{ padding: '4px 8px', color: 'var(--text-dim)', background: 'transparent', border: 'none', cursor: 'pointer' }}>
+                        <button onClick={toggleExpand} className="btn btn-ghost btn-sm px-2 py-1 text-slate-400 bg-transparent border-none cursor-pointer">
                             <i class="fa-solid fa-chevron-down"></i>
                         </button>
                     </div>
                     
-                    <div id="chat-history" ref={historyRef} style={{ flex: 1, padding: '15px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px', scrollbarWidth: 'thin', scrollBehavior: 'smooth' }}>
+                    <div id="chat-history" ref={historyRef} className="flex-1 p-4 overflow-y-auto flex flex-col gap-2.5 custom-scrollbar scroll-smooth">
                         {log.map(entry => renderMessage(entry))}
                     </div>
                     
-                    <div style={{ padding: '12px', borderTop: '1px solid rgba(197, 160, 89, 0.3)', background: 'rgba(0,0,0,0.5)' }}>
-                        <form id="chat-form" onSubmit={handleSubmit} style={{ display: 'flex', gap: '8px', margin: 0 }}>
+                    <div className="p-3 border-t border-accent/30 bg-black/50">
+                        <form id="chat-form" onSubmit={handleSubmit} className="flex gap-2 m-0">
                             <input 
                                 type="text" 
                                 name="message" 
@@ -229,16 +210,11 @@ export function ChatBox() {
                                 ref={inputRef}
                                 placeholder="/roll 1d20+FOR..." 
                                 autoComplete="off" 
-                                style={{ flex: 1, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(197, 160, 89, 0.4)', borderRadius: '8px', padding: '8px 12px', color: '#fff', fontSize: '0.95rem', outline: 'none', transition: 'border-color 0.2s, background 0.2s', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5)' }} 
-                                onFocus={e => Object.assign(e.currentTarget.style, {background: 'rgba(255,255,255,0.12)', borderColor: 'var(--accent)'})} 
-                                onBlur={e => Object.assign(e.currentTarget.style, {background: 'rgba(255,255,255,0.08)', borderColor: 'rgba(197, 160, 89, 0.4)'})} 
+                                className="flex-1 bg-white/10 border border-accent/40 rounded-lg py-2 px-3 text-white text-[0.95rem] outline-none transition-all duration-200 shadow-inner focus:bg-white/15 focus:border-accent"
                             />
                             <button 
                                 type="submit" 
-                                class="btn btn-primary btn-sm" 
-                                style={{ padding: '0 16px', borderRadius: '8px', border: 'none', background: 'linear-gradient(135deg, #d4af37, #b38b2d)', color: '#0a0c10', cursor: 'pointer', fontWeight: 800, fontSize: '1.1rem', boxShadow: '0 4px 10px rgba(0,0,0,0.5)', transition: 'transform 0.2s' }} 
-                                onMouseOver={e => e.currentTarget.style.transform = 'scale(1.05)'} 
-                                onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
+                                className="btn btn-primary btn-sm px-4 rounded-lg border-none bg-gradient-to-br from-[#d4af37] to-[#b38b2d] text-[#0a0c10] cursor-pointer font-extrabold text-lg shadow-[0_4px_10px_rgba(0,0,0,0.5)] transition-transform duration-200 hover:scale-105"
                             >
                                 <i class="fa-solid fa-paper-plane"></i>
                             </button>
