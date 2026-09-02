@@ -1,11 +1,11 @@
 import { useStore } from '../../core/hooks.js';
 import { html } from 'htm/preact';
 
-import { HeroHeader } from './HeroHeader.js';
-import { HeroVitals } from './HeroVitals.js';
-import { HeroStats } from './HeroStats.js';
-import { HeroCombat } from './HeroCombat.js';
-import { HeroInventory } from './HeroInventory.js';
+import { HeroHeader } from './HeroHeader.jsx';
+import { HeroVitals } from './HeroVitals.jsx';
+import { HeroStats } from './HeroStats.jsx';
+import { HeroCombat } from './HeroCombat.jsx';
+import { HeroInventory } from './HeroInventory.jsx';
 import { Dice } from '../../../utils/Dice.js';
 import { Toast } from '../Toast.js'; 
 

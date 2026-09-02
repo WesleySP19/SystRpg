@@ -1,15 +1,15 @@
 import { html } from 'htm/preact';
-import { useState, useEffect, useRef } from 'preact/hooks';
+import { useState, useEffect } from 'preact/hooks';
 import { useStore } from '../core/hooks.js';
 import { TOME } from '../../core/Registry.js';
 
 import { CombatTrackerV22 } from './combat/CombatTrackerV22.jsx';
-import { Bestiary } from '../pages/Bestiary.js';
-import { SessionJournal } from './SessionJournal.js';
+import { Bestiary } from '../pages/Bestiary.jsx';
+import { SessionJournal } from './SessionJournal.jsx';
 
-import { TacticalEyeModal } from './TacticalEyeModal.js';
-import { HeroInspectorModal } from './HeroInspectorModal.js';
-import { SoundboardModal } from './SoundboardModal.js';
+import { TacticalEyeModal } from './TacticalEyeModal.jsx';
+import { HeroInspectorModal } from './HeroInspectorModal.jsx';
+import { SoundboardModal } from './SoundboardModal.jsx';
 import { exportCampaignBackup, importCampaignBackup } from '../utils/tomeBackup.js';
 import { render } from 'preact';
 
@@ -17,71 +17,48 @@ export function DMTable() {
     const players = useStore('players') || [];
     const [aiProcessing, setAiProcessing] = useState(false);
     const [showDiceTray, setShowDiceTray] = useState(false);
-
-    const trackerRef = useRef(null);
-    const bestiaryRef = useRef(null);
-    const journalRef = useRef(null);
-
-    const trackerInstance = useRef(null);
-    const bestiaryInstance = useRef(null);
-    const journalInstance = useRef(null);
+    const [inspectedPlayerId, setInspectedPlayerId] = useState(null);
+    const [activeModal, setActiveModal] = useState(null); // 'tacticalEye' | 'soundboard' | 'oracle' | 'loot' | 'spellbook' | 'encounter'
 
     useEffect(() => {
         const handleAiStatus = (e) => setAiProcessing(e.detail?.active || false);
         window.addEventListener('tome:ai_processing', handleAiStatus);
 
-        if (trackerRef.current) {
-            trackerInstance.current = new CombatTrackerV22({ store: TOME.store, root: trackerRef.current, element: trackerRef.current });
-            trackerInstance.current.mount();
-        }
-        if (bestiaryRef.current) {
-            bestiaryInstance.current = new Bestiary({ store: TOME.store, element: bestiaryRef.current });
-            bestiaryInstance.current.mount();
-        }
-        if (journalRef.current) {
-            journalInstance.current = new SessionJournal({ store: TOME.store, element: journalRef.current });
-            journalInstance.current.mount();
-        }
-
         return () => {
             window.removeEventListener('tome:ai_processing', handleAiStatus);
-            if (trackerInstance.current) trackerInstance.current.unmount();
-            if (bestiaryInstance.current) bestiaryInstance.current.unmount();
-            if (journalInstance.current) journalInstance.current.unmount();
         };
     }, []);
 
-    const mountModal = (ComponentClass, props = {}) => {
+    const mountLegacyModal = (ComponentClass, props = {}) => {
         const host = document.createElement('div');
         document.body.appendChild(host);
-        // Tenta renderizar como Preact. Se for Legacy, ele falhará e fazemos fallback.
         try {
-            render(html`<${ComponentClass} store=${TOME.store} ...${props} />`, host);
+            render(html`<${ComponentClass} store=${TOME.store} ...${props} unmount=${() => host.remove()} />`, host);
         } catch (e) {
             const instance = new ComponentClass({ store: TOME.store, element: host, ...props });
-            instance.mount();
+            if (typeof instance.mount === 'function') instance.mount(host);
         }
     };
 
-    const openTacticalEye = () => mountModal(TacticalEyeModal);
-    const openEncounterGenerator = () => import('./EncounterGenerator.js').then(m => mountModal(m.EncounterGenerator));
-    const openSoundboard = () => mountModal(SoundboardModal);
+    const openTacticalEye = () => mountLegacyModal(TacticalEyeModal);
+    const openEncounterGenerator = () => import('./EncounterGenerator.jsx').then(m => mountLegacyModal(m.EncounterGenerator));
+    const openSoundboard = () => mountLegacyModal(SoundboardModal);
     
     const openLootGenerator = () => {
-        import('./LootGenerator.js').then(m => mountModal(m.LootGenerator));
+        import('./LootGenerator.jsx').then(m => mountLegacyModal(m.LootGenerator));
     };
 
     const openSpellBook = () => {
-        import('./SpellBook.jsx').then(m => mountModal(m.SpellBook));
+        import('./SpellBook.jsx').then(m => mountLegacyModal(m.SpellBook));
     };
 
     const openOracle = () => {
-        import('./OracleModal.js').then(m => {
-            if (m.OracleModal) mountModal(m.OracleModal);
+        import('./OracleModal.jsx').then(m => {
+            if (m.OracleModal) mountLegacyModal(m.OracleModal);
         }).catch(err => console.warn('OracleModal module missing', err));
     };
 
-    const inspectHero = (playerId) => mountModal(HeroInspectorModal, { playerId });
+    const inspectHero = (playerId) => setInspectedPlayerId(playerId);
 
     const requestRoll = (sides) => {
         if (window.TOME && window.TOME.events) {
@@ -92,7 +69,7 @@ export function DMTable() {
     return html`
         <div class="animate-fadeIn grid grid-cols-1 lg:grid-cols-[2fr_1.2fr] gap-5 p-5 h-screen max-h-screen overflow-hidden bg-bgbase">
             <!-- HEADER (Controle Rápido) -->
-            <header class="col-span-full card glass-accent flex justify-between items-center py-4 px-6 shadow-md">
+            <header class="col-span-full card glass-accent flex justify-between items-center py-4 px-6 shadow-md flex-wrap gap-3">
                 <div class="flex items-center gap-4">
                     <div class="w-10 h-10 bg-accent rounded-lg flex items-center justify-center text-xl text-black shadow-[0_0_15px_var(--accent)]">
                         <i class="fa-solid fa-crown"></i>
@@ -107,32 +84,32 @@ export function DMTable() {
                         </div>
                     `}
                 </div>
-                <div class="flex gap-3">
-                    <button class="btn btn-primary bg-emerald-600 border-emerald-400 text-white shadow-[0_0_15px_rgba(16,185,129,0.4)] px-4" onClick=${openTacticalEye}>
+                <div class="flex gap-2.5 flex-wrap">
+                    <button class="btn btn-primary bg-emerald-600 border-emerald-400 text-white shadow-[0_0_15px_rgba(16,185,129,0.4)] px-3.5" onClick=${openTacticalEye}>
                         <i class="fa-solid fa-map-location-dot"></i> Olho do Mestre
                     </button>
-                    <button class="btn btn-ghost border-cyan-400 text-cyan-300 bg-cyan-900/10 px-4" onClick=${openSoundboard}>
+                    <button class="btn btn-ghost border-cyan-400 text-cyan-300 bg-cyan-900/10 px-3.5" onClick=${openSoundboard}>
                         <i class="fa-solid fa-headphones-simple"></i> Som & SFX
                     </button>
-                    <button class="btn btn-ghost border-purple-500 text-purple-300 bg-purple-900/20 shadow-[0_0_12px_rgba(168,85,247,0.3)] px-4" onClick=${openOracle}>
+                    <button class="btn btn-ghost border-purple-500 text-purple-300 bg-purple-900/20 shadow-[0_0_12px_rgba(168,85,247,0.3)] px-3.5" onClick=${openOracle}>
                         <i class="fa-solid fa-crystal-ball"></i> Oráculo IA
                     </button>
-                    <button class="btn btn-ghost border-accent text-accent px-4" onClick=${openSpellBook}>
+                    <button class="btn btn-ghost border-accent text-accent px-3.5" onClick=${openSpellBook}>
                         <i class="fa-solid fa-scroll"></i> Grimório
                     </button>
-                    <button class="btn btn-ghost border-accent text-accent px-4" onClick=${openLootGenerator}>
+                    <button class="btn btn-ghost border-accent text-accent px-3.5" onClick=${openLootGenerator}>
                         <i class="fa-solid fa-coins"></i> Gerar Tesouro
                     </button>
-                    <button class="btn btn-magic px-4" onClick=${openEncounterGenerator}>
+                    <button class="btn btn-magic px-3.5" onClick=${openEncounterGenerator}>
                         <i class="fa-solid fa-wand-magic-sparkles"></i> Gerar Encontro
                     </button>
-                    <button class="btn btn-ghost border-blue-500 text-blue-400 bg-blue-900/20 px-4" onClick=${() => exportCampaignBackup(TOME.store)} title="Exportar backup completo (.tome)">
+                    <button class="btn btn-ghost border-blue-500 text-blue-400 bg-blue-900/20 px-3" onClick=${() => exportCampaignBackup(TOME.store)} title="Exportar backup completo (.tome)">
                         <i class="fa-solid fa-file-export"></i> Backup
                     </button>
-                    <button class="btn btn-ghost border-emerald-500 text-emerald-400 bg-emerald-900/20 px-4" onClick=${() => importCampaignBackup(TOME.store, () => window.location.reload())} title="Restaurar campanha (.tome / .json)">
+                    <button class="btn btn-ghost border-emerald-500 text-emerald-400 bg-emerald-900/20 px-3" onClick=${() => importCampaignBackup(TOME.store, () => window.location.reload())} title="Restaurar campanha (.tome / .json)">
                         <i class="fa-solid fa-file-import"></i> Restaurar
                     </button>
-                    <button class="btn btn-primary px-4" onClick=${() => setShowDiceTray(!showDiceTray)}>
+                    <button class="btn btn-primary px-3.5" onClick=${() => setShowDiceTray(!showDiceTray)}>
                         <i class="fa-solid fa-dice-d20"></i> Rolar Dados
                     </button>
                 </div>
@@ -140,12 +117,12 @@ export function DMTable() {
 
             <!-- COLUNA ESQUERDA (Tracker e Notas) -->
             <div class="flex flex-col gap-5 overflow-y-auto pr-2 custom-scrollbar min-w-0">
-                <div ref=${trackerRef} class="card glass-accent min-h-[50vh] relative p-0 overflow-hidden shadow-md">
-                    <!-- Combat Tracker será montado aqui -->
+                <div class="card glass-accent min-h-[50vh] relative p-0 overflow-hidden shadow-md">
+                    <${CombatTrackerV22} />
                 </div>
                 
-                <div ref=${journalRef} class="card glass-accent flex-1 min-h-[30vh] p-0 overflow-hidden shadow-md">
-                    <!-- Session Journal será montado aqui -->
+                <div class="card glass-accent flex-1 min-h-[30vh] p-4 overflow-hidden shadow-md">
+                    <${SessionJournal} />
                 </div>
             </div>
 
@@ -180,15 +157,27 @@ export function DMTable() {
                 </div>
 
                 <!-- BESTIÁRIO RÁPIDO -->
-                <div class="card glass-accent flex-1 flex flex-col p-0 overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.6)] border border-accent/20">
+                <div class="card glass-accent flex-1 flex flex-col p-0 overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.6)] border border-accent/20 min-h-[400px]">
                     <div class="bg-gradient-to-r from-accent/15 to-transparent py-3 px-4 text-accent font-cinzel font-bold text-center border-b border-accent/25 tracking-[0.15em]">
                         <i class="fa-solid fa-dragon mr-2"></i> ACESSO RÁPIDO: BESTIÁRIO
                     </div>
-                    <div ref=${bestiaryRef} class="flex-1 overflow-y-auto p-0 bg-black/40 custom-scrollbar relative">
-                        <!-- Bestiary será montado aqui -->
+                    <div class="flex-1 overflow-y-auto p-2 bg-black/40 custom-scrollbar relative">
+                        <${Bestiary} />
                     </div>
                 </div>
             </div>
+
+            <!-- MODAL DE INSPEÇÃO DE HERÓI -->
+            ${inspectedPlayerId && html`
+                <div class="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+                    <div class="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-obsidian-900 border border-accent/40 rounded-2xl p-6 shadow-2xl">
+                        <button class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl" onClick=${() => setInspectedPlayerId(null)}>
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                        <${HeroInspectorModal} playerId=${inspectedPlayerId} onClose=${() => setInspectedPlayerId(null)} />
+                    </div>
+                </div>
+            `}
 
             <!-- BANDEJA DE DADOS -->
             ${showDiceTray && html`
@@ -205,3 +194,4 @@ export function DMTable() {
         </div>
     `;
 }
+

@@ -186,13 +186,13 @@ export class Engine {
         }
     }
 
-    // Sistema de Polling HTTP (Reduzido drasticamente pois agora o WebSocket empurra atualizações)
+    // Sistema de Sincronização Inicial (Polling removido em favor do WebSocket)
     initFallbackPolling() {
-        if (this.pollingInterval) clearInterval(this.pollingInterval);
-        this.syncHTTPFallback();
-        this.pollingInterval = setInterval(() => {
-            this.syncHTTPFallback();
-        }, 60000); // 1 minuto em vez de 3 segundos
+        if (this.pollingInterval) {
+            clearInterval(this.pollingInterval);
+            this.pollingInterval = null;
+        }
+        this.syncHTTPFallback(); // Sync inicial ao carregar
     }
 
     async syncHTTPFallback() {

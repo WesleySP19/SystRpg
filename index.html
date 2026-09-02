@@ -5,9 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Mesa do Mestre — Plataforma completa de RPG para D&D 5e.">
     <title>Mesa Psigologos</title>
-    <link rel="icon" href="assets/logo.png">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    
+    <!-- Sentry e Web Vitals (Telemetria) -->
+    <script src="https://browser.sentry-cdn.com/8.26.0/bundle.tracing.replay.min.js" crossorigin="anonymous"></script>
+    <script>
+      Sentry.init({
+        dsn: "COLOQUE_SEU_DSN_AQUI",
+        tracesSampleRate: 1.0,
+        replaysSessionSampleRate: 0.1,
+        replaysOnErrorSampleRate: 1.0,
+      });
+    </script>
+    <script type="module">
+      import { onCLS, onLCP, onINP } from 'https://unpkg.com/web-vitals@4?module';
+      function sendToAnalytics({name, delta, id}) {
+        console.log(`[Web Vitals - Mestre] ${name} | ID: ${id} | Value: ${Math.round(delta)}`);
+      }
+      onCLS(sendToAnalytics);
+      onLCP(sendToAnalytics);
+      onINP(sendToAnalytics);
+    </script>
 
-    <!-- Fonts -->
+    <!-- Tailwind -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Outfit:wght@300;400;600;800&family=JetBrains+Mono&display=swap" rel="stylesheet">

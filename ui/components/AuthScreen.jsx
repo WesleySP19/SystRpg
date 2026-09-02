@@ -1,14 +1,14 @@
 import { render } from 'preact';
 import { useState, useEffect, useRef } from 'preact/hooks';
 import { PersistenceService } from '../../services/PersistenceService.js';
-import { injectStyles } from './AuthScreenStyles.js';
+import { injectStyles } from './AuthScreenStyles.jsx';
 
-function AuthScreenComponent({ closeAuthScreen, initialOnLogin }) {
-    const [step, setStep] = useState('phone');
+export function AuthScreenComponent({ closeAuthScreen, initialOnLogin }) {
+    const [step, setStep] = useState('login'); // 'login', 'register', 'tables', 'session_choice'
     const [phone, setPhone] = useState('');
     const [masterName, setMasterName] = useState('');
-    const [code, setCode] = useState('');
-    const [generatedCode, setGeneratedCode] = useState('');
+    const [password, setPassword] = useState('');
+    
     const [tables, setTables] = useState([]);
     const [loading, setLoading] = useState(false);
     const [selectedTableId, setSelectedTableId] = useState(null);
@@ -25,7 +25,7 @@ function AuthScreenComponent({ closeAuthScreen, initialOnLogin }) {
             setPhone(savedPhone);
             setMasterName(savedMasterName);
         } else {
-            setStep('phone');
+            setStep('login');
         }
     }, []);
 
@@ -61,9 +61,50 @@ function AuthScreenComponent({ closeAuthScreen, initialOnLogin }) {
         }
     };
 
-    const handleSendCode = async () => {
+    const handleLogin = async () => {
+        const val = phone.replace(/\D/g, '');
+        if (val.length < 10) {
+            showError('Número inválido — insira um telefone com <strong>DDD + 9 dígitos</strong>.');
+            return;
+        }
+        if (!password) {
+            showError('Por favor, insira sua senha.');
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone: val, password })
+            });
+            const resData = await response.json();
+            
+            if (response.ok && resData.status === 'success') {
+                localStorage.setItem('DM_JWT_TOKEN', resData.token);
+                localStorage.setItem('DM_SESSION_ID', 'DM-' + btoa(phone + Date.now()).substring(0, 16));
+                localStorage.setItem('DM_SESSION_START', Date.now().toString());
+                localStorage.setItem('DM_PHONE', phone);
+                localStorage.setItem('DM_MASTER_NAME', resData.master.name);
+                localStorage.setItem('DM_MASTER_ID', resData.master.masterId);
+                localStorage.setItem('DM_INTERNAL_ID', resData.master.internalId);
+                setMasterName(resData.master.name);
+                setStep('tables');
+            } else {
+                showError(resData.message || 'Erro ao efetuar login.');
+            }
+        } catch (e) {
+            console.error('[AuthScreen] Erro no login:', e);
+            showError('Falha de conexão ao servidor.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleRegister = async () => {
         if (!masterName || !masterName.trim()) {
-            showError('Por favor, insira seu <strong>nome de Mestre</strong> antes de continuar.');
+            showError('Por favor, insira seu <strong>nome de Mestre</strong>.');
             return;
         }
         const val = phone.replace(/\D/g, '');
@@ -71,42 +112,20 @@ function AuthScreenComponent({ closeAuthScreen, initialOnLogin }) {
             showError('Número inválido — insira um telefone com <strong>DDD + 9 dígitos</strong>.');
             return;
         }
-
-        setLoading(true);
-        try {
-            const response = await fetch('/api/auth/send-code', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: masterName, phone: phone })
-            });
-            if (!response.ok) throw new Error(`Server status ${response.status}`);
-            const resData = await response.json();
-            if (response.ok && resData.status === 'success') {
-                setGeneratedCode(resData.simulatedCode || '');
-                setStep('code');
-            } else {
-                showError(resData.message || 'Erro ao enviar código SMS.');
-            }
-        } catch (e) {
-            console.warn('[AuthScreen] Endpoint falhou. Usando fallback simulado.', e);
-            setGeneratedCode(Math.floor(100000 + Math.random() * 900000).toString());
-            setStep('code');
-        } finally {
-            setLoading(false);
+        if (!password || password.length < 6) {
+            showError('A senha deve ter pelo menos 6 caracteres.');
+            return;
         }
-    };
 
-    const handleVerifyCode = async () => {
         setLoading(true);
         try {
-            const response = await fetch('/api/auth/verify-code', {
+            const response = await fetch('/api/auth/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: masterName, phone: phone, code: code })
+                body: JSON.stringify({ name: masterName, phone: val, password })
             });
-            if (!response.ok) throw new Error(`Server status ${response.status}`);
             const resData = await response.json();
-
+            
             if (response.ok && resData.status === 'success') {
                 localStorage.setItem('DM_JWT_TOKEN', resData.token);
                 localStorage.setItem('DM_SESSION_ID', 'DM-' + btoa(phone + Date.now()).substring(0, 16));
@@ -117,28 +136,11 @@ function AuthScreenComponent({ closeAuthScreen, initialOnLogin }) {
                 localStorage.setItem('DM_INTERNAL_ID', resData.master.internalId);
                 setStep('tables');
             } else {
-                throw new Error(resData.message || 'Código inválido.');
+                showError(resData.message || 'Erro ao efetuar cadastro.');
             }
-        } catch (s) {
-            console.warn('[AuthScreen] Endpoint falhou. Usando fallback offline.', s);
-            if (code === generatedCode) {
-                try {
-                    const t = await PersistenceService.getOrCreateMaster(masterName, phone);
-                    const r = 'DM-' + btoa(phone + Date.now()).substring(0, 16);
-                    localStorage.setItem('DM_SESSION_ID', r);
-                    localStorage.setItem('DM_SESSION_START', Date.now().toString());
-                    localStorage.setItem('DM_PHONE', phone);
-                    localStorage.setItem('DM_MASTER_NAME', t.name);
-                    localStorage.setItem('DM_MASTER_ID', t.masterId);
-                    localStorage.setItem('DM_INTERNAL_ID', t.internalId);
-                    localStorage.setItem('DM_JWT_TOKEN', 'offline_mode');
-                    setStep('tables');
-                } catch (err) {
-                    showError('Erro ao registrar localmente: ' + err.message);
-                }
-            } else {
-                showError('Código incorreto — verifique o código e tente novamente.');
-            }
+        } catch (e) {
+            console.error('[AuthScreen] Erro no registro:', e);
+            showError('Falha de conexão ao servidor.');
         } finally {
             setLoading(false);
         }
@@ -209,8 +211,10 @@ function AuthScreenComponent({ closeAuthScreen, initialOnLogin }) {
         localStorage.removeItem('DM_MASTER_ID');
         localStorage.removeItem('DM_INTERNAL_ID');
         localStorage.removeItem('TOME_ACTIVE_SESSION');
-        setStep('phone');
+        localStorage.removeItem('DM_JWT_TOKEN');
+        setStep('login');
         setPhone('');
+        setPassword('');
         setMasterName('');
     };
 
@@ -247,36 +251,45 @@ function AuthScreenComponent({ closeAuthScreen, initialOnLogin }) {
     };
 
     // Render components
-    const renderPhoneStep = () => (
+    const renderLoginStep = () => (
         <>
-            <p className="auth-description">Digite seu nome de Mestre e número de telefone (com DDD) para confirmar sua identidade arcanamente.</p>
-            <input type="text" className="auth-input mb-3 font-outfit" placeholder="Nome do Mestre" value={masterName} onInput={(e) => setMasterName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && document.getElementById("auth-phone")?.focus()} />
-            <input type="tel" id="auth-phone" className="auth-input" placeholder="(11) 99999-9999" value={phone} onInput={(e) => {
+            <p className="auth-description">Entre com seu telefone e senha para acessar o Grimório.</p>
+            <input type="tel" id="auth-phone-login" className="auth-input mb-3" placeholder="(11) 99999-9999" value={phone} onInput={(e) => {
                 let v = e.target.value.replace(/\D/g, '');
                 if (v.length > 11) v = v.slice(0, 11);
                 if (v.length > 2) v = `(${v.slice(0, 2)}) ${v.slice(2)}`;
                 if (v.length > 10) v = `${v.slice(0, 10)}-${v.slice(10)}`;
                 setPhone(v);
-            }} onKeyDown={(e) => e.key === "Enter" && handleSendCode()} />
-            <button className="auth-btn" onClick={handleSendCode} disabled={loading}>
-                {loading ? <><i className="fa-solid fa-spinner fa-spin"></i> Enviando...</> : "Enviar Código SMS"}
+            }} onKeyDown={(e) => e.key === "Enter" && document.getElementById("auth-pass-login")?.focus()} />
+            
+            <input type="password" id="auth-pass-login" className="auth-input" placeholder="Sua Senha" value={password} onInput={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleLogin()} />
+            
+            <button className="auth-btn mt-4" onClick={handleLogin} disabled={loading}>
+                {loading ? <><i className="fa-solid fa-spinner fa-spin"></i> Entrando...</> : "Entrar"}
             </button>
+            <button className="auth-back-link mt-4" onClick={() => { setStep('register'); setPassword(''); }}>Novo Mestre? Criar Conta</button>
         </>
     );
 
-    const renderCodeStep = () => (
+    const renderRegisterStep = () => (
         <>
-            <p className="auth-description">Enviamos um SMS para <strong className="text-tomeGold">{phone}</strong>. Digite o código de 6 dígitos abaixo.</p>
-            <div className="auth-sim-box">
-                <i className="fa-solid fa-tower-broadcast"></i>
-                <span>SIMULAÇÃO: Seu código é:</span>
-                <span className="auth-sim-code">{generatedCode}</span>
-            </div>
-            <input type="text" className="auth-input text-[1.4rem] tracking-[8px]" placeholder="000000" maxLength="6" value={code} onInput={(e) => setCode(e.target.value.replace(/\D/g, ''))} onKeyDown={(e) => e.key === "Enter" && handleVerifyCode()} />
-            <button className="auth-btn" onClick={handleVerifyCode} disabled={loading}>
-                {loading ? <><i className="fa-solid fa-spinner fa-spin"></i> Autenticando...</> : "Confirmar e Logar"}
+            <p className="auth-description">Crie sua conta para salvar suas aventuras na nuvem.</p>
+            <input type="text" className="auth-input mb-3 font-outfit" placeholder="Nome do Mestre" value={masterName} onInput={(e) => setMasterName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && document.getElementById("auth-phone-reg")?.focus()} />
+            
+            <input type="tel" id="auth-phone-reg" className="auth-input mb-3" placeholder="(11) 99999-9999" value={phone} onInput={(e) => {
+                let v = e.target.value.replace(/\D/g, '');
+                if (v.length > 11) v = v.slice(0, 11);
+                if (v.length > 2) v = `(${v.slice(0, 2)}) ${v.slice(2)}`;
+                if (v.length > 10) v = `${v.slice(0, 10)}-${v.slice(10)}`;
+                setPhone(v);
+            }} onKeyDown={(e) => e.key === "Enter" && document.getElementById("auth-pass-reg")?.focus()} />
+            
+            <input type="password" id="auth-pass-reg" className="auth-input" placeholder="Crie uma Senha (mín. 6 chars)" value={password} onInput={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleRegister()} />
+
+            <button className="auth-btn mt-4 bg-gradient-to-br from-green-600 to-green-800" onClick={handleRegister} disabled={loading}>
+                {loading ? <><i className="fa-solid fa-spinner fa-spin"></i> Cadastrando...</> : "Criar Conta"}
             </button>
-            <button className="auth-back-link" onClick={() => setStep('phone')}>Voltar</button>
+            <button className="auth-back-link mt-4" onClick={() => { setStep('login'); setPassword(''); }}>Já tem conta? Entrar</button>
         </>
     );
 
@@ -418,8 +431,8 @@ function AuthScreenComponent({ closeAuthScreen, initialOnLogin }) {
                 </div>
             )}
 
-            {step === 'phone' && renderPhoneStep()}
-            {step === 'code' && renderCodeStep()}
+            {step === 'login' && renderLoginStep()}
+            {step === 'register' && renderRegisterStep()}
             {step === 'tables' && renderTablesStep()}
             {step === 'session_choice' && renderSessionChoiceStep()}
         </div>

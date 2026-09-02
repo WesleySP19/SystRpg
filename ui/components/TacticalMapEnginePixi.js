@@ -1,4 +1,4 @@
-import { Application, Container, Graphics, Text, Assets, Sprite, Texture } from '/public/vendor/pixi.min.mjs';
+import * as PIXI from '../../public/vendor/pixi.min.mjs';
 import { Raycaster } from '../../utils/Raycaster.js';
 
 export class TacticalMapEnginePixi {
@@ -36,6 +36,7 @@ export class TacticalMapEnginePixi {
         this.wallLayer = new PIXI.Container();
         this.fogLayer = new PIXI.Container();
         this.tokenLayer = new PIXI.Container();
+        this.measureLayer = new PIXI.Container();
         this.uiLayer = new PIXI.Container();
 
         this.mapContainer.addChild(this.bgLayer);
@@ -43,6 +44,7 @@ export class TacticalMapEnginePixi {
         this.mapContainer.addChild(this.wallLayer);
         this.mapContainer.addChild(this.fogLayer);
         this.mapContainer.addChild(this.tokenLayer);
+        this.mapContainer.addChild(this.measureLayer);
         this.mapContainer.addChild(this.uiLayer);
 
         this.mapSprite = new PIXI.Sprite();
@@ -51,6 +53,9 @@ export class TacticalMapEnginePixi {
         this._setupInteractions();
         this._setupLazyRendering();
         this._setupWebRTCSync();
+        
+        // Setup Ticker for Lerp and Culling
+        this.app.ticker.add((delta) => this._updateLoop(delta));
         
         return this;
     }
@@ -84,17 +89,42 @@ export class TacticalMapEnginePixi {
 
         let isDragging = false;
         let lastPos = null;
+        let measureStart = null;
+        let measureGraphics = new PIXI.Graphics();
+        let measureText = new PIXI.Text({ text: '', style: { fontFamily: 'Cinzel', fontSize: 24, fill: 0xffffff, stroke: 0x000000, strokeThickness: 4 } });
+        measureText.anchor.set(0.5);
+        this.measureLayer.addChild(measureGraphics);
+        this.measureLayer.addChild(measureText);
 
         this.app.canvas.addEventListener('pointerdown', (e) => {
             if (e.button === 2) return; // Right click
+            const rect = this.app.canvas.getBoundingClientRect();
+            const pointerX = e.clientX - rect.left;
+            const pointerY = e.clientY - rect.top;
+            const localX = (pointerX - this.mapContainer.x) / this.mapContainer.scale.x;
+            const localY = (pointerY - this.mapContainer.y) / this.mapContainer.scale.y;
+
             if (this.activeTool === 'pan' && this.isDM) {
                 isDragging = true;
                 lastPos = { x: e.clientX, y: e.clientY };
+            } else if (this.activeTool === 'ruler') {
+                isDragging = true;
+                measureStart = { x: localX, y: localY };
+            } else if (this.activeTool === 'fog' && this.isDM) {
+                isDragging = true;
+                this._paintFog(localX, localY);
             }
         });
 
         window.addEventListener('pointermove', (e) => {
-            if (isDragging) {
+            if (!isDragging) return;
+            const rect = this.app.canvas.getBoundingClientRect();
+            const pointerX = e.clientX - rect.left;
+            const pointerY = e.clientY - rect.top;
+            const localX = (pointerX - this.mapContainer.x) / this.mapContainer.scale.x;
+            const localY = (pointerY - this.mapContainer.y) / this.mapContainer.scale.y;
+
+            if (this.activeTool === 'pan' && this.isDM) {
                 const dx = e.clientX - lastPos.x;
                 const dy = e.clientY - lastPos.y;
                 this.mapContainer.x += dx;
@@ -102,23 +132,62 @@ export class TacticalMapEnginePixi {
                 lastPos = { x: e.clientX, y: e.clientY };
                 if (this.isDM) {
                     this._dispatchCameraUpdate();
-                    // Optional: Broadcast DM pan to others via WebRTC
-                    window.dispatchEvent(new CustomEvent('tome:camera_dragging', {
-                        detail: { x: this.mapContainer.x, y: this.mapContainer.y, scale: this.mapContainer.scale.x }
-                    }));
                 }
+            } else if (this.activeTool === 'ruler') {
+                measureGraphics.clear();
+                measureGraphics.lineStyle(4, 0xeab308, 0.8);
+                measureGraphics.moveTo(measureStart.x, measureStart.y);
+                measureGraphics.lineTo(localX, localY);
+                measureGraphics.beginFill(0xeab308);
+                measureGraphics.drawCircle(measureStart.x, measureStart.y, 6);
+                measureGraphics.drawCircle(localX, localY, 6);
+                measureGraphics.endFill();
+
+                const dx = localX - measureStart.x;
+                const dy = localY - measureStart.y;
+                const distPx = Math.sqrt(dx*dx + dy*dy);
+                const distMeters = ((distPx / 50) * 1.5).toFixed(1);
+                const distFeet = ((distPx / 50) * 5).toFixed(0);
+
+                measureText.text = `${distMeters}m / ${distFeet}ft`;
+                measureText.x = measureStart.x + dx/2;
+                measureText.y = measureStart.y + dy/2 - 30;
+                
+                // Broadcast measure
+                window.dispatchEvent(new CustomEvent('tome:measure', {
+                    detail: { sx: measureStart.x, sy: measureStart.y, ex: localX, ey: localY, text: measureText.text }
+                }));
+            } else if (this.activeTool === 'fog' && this.isDM) {
+                this._paintFog(localX, localY);
             }
         });
 
         window.addEventListener('pointerup', () => {
             isDragging = false;
             lastPos = null;
+            if (this.activeTool === 'ruler') {
+                measureGraphics.clear();
+                measureText.text = '';
+                window.dispatchEvent(new CustomEvent('tome:measure_end'));
+            }
         });
+    }
+
+    _paintFog(x, y) {
+        if (!this.fogLayer.children.length) return;
+        const hole = new PIXI.Graphics();
+        hole.beginFill(0xffffff, 1);
+        hole.drawCircle(x, y, 150); // Brush size
+        hole.endFill();
+        hole.blendMode = 'erase';
+        this.fogLayer.addChild(hole);
     }
 
     setTool(tool) {
         this.activeTool = tool;
-        if (tool === 'eraser' || tool === 'wall') {
+        if (tool === 'fog') {
+            this.container.style.cursor = 'crosshair';
+        } else if (tool === 'ruler') {
             this.container.style.cursor = 'crosshair';
         } else {
             this.container.style.cursor = 'grab';
@@ -210,13 +279,23 @@ export class TacticalMapEnginePixi {
         const group = new PIXI.Container();
         group.x = data.x || 0;
         group.y = data.y || 0;
+        group.targetX = group.x;
+        group.targetY = group.y;
         
         const size = data.size || 25;
         
-        // Base Circle
+        // Faction Colors: Verde (Aliado), Vermelho (Inimigo), Roxo (Boss), Amarelo (Neutro)
+        let ringColor = 0x0000ff;
+        if (data.faction === 'ally') ringColor = 0x22c55e; // Green
+        else if (data.faction === 'enemy') ringColor = 0xef4444; // Red
+        else if (data.faction === 'boss') ringColor = 0xa855f7; // Purple
+        else if (data.faction === 'neutral') ringColor = 0xeab308; // Yellow
+        else if (data.color) ringColor = parseInt(data.color.replace('#', '0x'));
+
+        // Base Circle Ring
         const graphics = new PIXI.Graphics();
-        graphics.lineStyle(2, 0xffffff, 1);
-        graphics.beginFill(data.color ? parseInt(data.color.replace('#', '0x')) : 0x0000ff);
+        graphics.lineStyle(3, ringColor, 1);
+        graphics.beginFill(0x1a1a1a);
         graphics.drawCircle(0, 0, size);
         graphics.endFill();
         group.addChild(graphics);
@@ -226,13 +305,13 @@ export class TacticalMapEnginePixi {
                 const texture = await PIXI.Assets.load(data.avatar);
                 const sprite = new PIXI.Sprite(texture);
                 sprite.anchor.set(0.5);
-                sprite.width = size * 2;
-                sprite.height = size * 2;
+                // Cover the circle
+                const scale = Math.max((size * 2) / sprite.width, (size * 2) / sprite.height);
+                sprite.scale.set(scale);
                 
-                // Mask the sprite as a circle
                 const mask = new PIXI.Graphics();
                 mask.beginFill(0xffffff);
-                mask.drawCircle(0, 0, size);
+                mask.drawCircle(0, 0, size - 2);
                 mask.endFill();
                 
                 group.addChild(mask);
@@ -240,15 +319,39 @@ export class TacticalMapEnginePixi {
                 group.addChild(sprite);
             } catch(e) {}
         } else {
-            const text = new PIXI.Text(data.name ? data.name.substring(0, 1).toUpperCase() : '', {
+            const text = new PIXI.Text(data.name ? data.name.substring(0, 2).toUpperCase() : '', {
                 fontFamily: 'Cinzel',
-                fontSize: size,
+                fontSize: size * 0.8,
                 fill: 0xffffff,
                 align: 'center'
             });
             text.anchor.set(0.5);
             group.addChild(text);
         }
+
+        // HP Bar
+        const hpContainer = new PIXI.Container();
+        hpContainer.y = size + 5;
+        const hpBg = new PIXI.Graphics();
+        hpBg.beginFill(0x000000, 0.7);
+        hpBg.drawRect(-size, 0, size * 2, 6);
+        hpBg.endFill();
+        const hpFill = new PIXI.Graphics();
+        hpFill.beginFill(0x22c55e); // green
+        const hpPct = (data.hp !== undefined && data.maxHp) ? Math.max(0, Math.min(1, data.hp / data.maxHp)) : 1;
+        hpFill.drawRect(-size, 0, (size * 2) * hpPct, 6);
+        hpFill.endFill();
+        hpContainer.addChild(hpBg);
+        hpContainer.addChild(hpFill);
+        group.addChild(hpContainer);
+        group.hpFill = hpFill; // Store ref for updates
+
+        // Conditions Icons Placeholder (Simplification for now: colored dots)
+        const conditionsContainer = new PIXI.Container();
+        conditionsContainer.y = -size - 10;
+        group.addChild(conditionsContainer);
+        group.conditionsContainer = conditionsContainer;
+        this._updateConditions(group, data.conditions || []);
 
         if (this.isDM) {
             group.eventMode = 'dynamic';
@@ -296,10 +399,76 @@ export class TacticalMapEnginePixi {
         return group;
     }
 
+    _updateConditions(group, conditions) {
+        group.conditionsContainer.removeChildren();
+        let currentX = 0;
+        conditions.forEach((cond) => {
+            const dot = new PIXI.Graphics();
+            // Colors based on condition
+            let color = 0xffffff;
+            if (cond === 'stunned') color = 0xeab308; // yellow
+            else if (cond === 'prone') color = 0x94a3b8; // gray
+            else if (cond === 'blinded') color = 0x333333; // dark
+            else if (cond === 'concentrating') color = 0x3b82f6; // blue
+            
+            dot.beginFill(color);
+            dot.drawCircle(currentX, 0, 4);
+            dot.endFill();
+            dot.lineStyle(1, 0x000000, 1);
+            group.conditionsContainer.addChild(dot);
+            currentX += 10;
+        });
+        group.conditionsContainer.x = - (conditions.length * 10) / 2 + 5;
+    }
+
     _updateToken(group, data) {
-        if (Math.abs(group.x - data.x) > 2 || Math.abs(group.y - data.y) > 2) {
-            group.x = data.x;
-            group.y = data.y;
+        group.targetX = data.x;
+        group.targetY = data.y;
+        
+        if (group.hpFill && data.maxHp) {
+            const size = data.size || 25;
+            const hpPct = Math.max(0, Math.min(1, data.hp / data.maxHp));
+            group.hpFill.clear();
+            group.hpFill.beginFill(hpPct > 0.5 ? 0x22c55e : (hpPct > 0.2 ? 0xeab308 : 0xef4444));
+            group.hpFill.drawRect(-size, 0, (size * 2) * hpPct, 6);
+            group.hpFill.endFill();
+        }
+        
+        if (group.conditionsContainer && data.conditions) {
+            this._updateConditions(group, data.conditions);
+        }
+    }
+
+    _updateLoop(delta) {
+        const lerpFactor = 0.2 * delta; // Smooth movement
+        
+        // Viewport rect for culling
+        const viewRect = {
+            x: -this.mapContainer.x / this.mapContainer.scale.x,
+            y: -this.mapContainer.y / this.mapContainer.scale.y,
+            w: this.app.screen.width / this.mapContainer.scale.x,
+            h: this.app.screen.height / this.mapContainer.scale.y
+        };
+        const padding = 200; // Extra padding to avoid pop-in
+
+        for (const [id, group] of this.tokens.entries()) {
+            // Lerp Position
+            if (group.targetX !== undefined && group.targetY !== undefined) {
+                if (Math.abs(group.targetX - group.x) > 0.5) group.x += (group.targetX - group.x) * lerpFactor;
+                else group.x = group.targetX;
+                
+                if (Math.abs(group.targetY - group.y) > 0.5) group.y += (group.targetY - group.y) * lerpFactor;
+                else group.y = group.targetY;
+            }
+
+            // Culling logic
+            const isVisible = (
+                group.x >= viewRect.x - padding &&
+                group.x <= viewRect.x + viewRect.w + padding &&
+                group.y >= viewRect.y - padding &&
+                group.y <= viewRect.y + viewRect.h + padding
+            );
+            group.visible = isVisible;
         }
     }
 
@@ -308,9 +477,8 @@ export class TacticalMapEnginePixi {
             const { id, x, y } = e.detail;
             const group = this.tokens.get(id);
             if (group) {
-                // Instantly update visual position for P2P sync, bypassing React render
-                group.x = x;
-                group.y = y;
+                group.targetX = x;
+                group.targetY = y;
             }
         };
         window.addEventListener('webrtc:token_sync', this._webrtcSyncHandler);

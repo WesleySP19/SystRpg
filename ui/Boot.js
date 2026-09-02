@@ -1,6 +1,5 @@
 import { TOME } from '../core/Registry.js';
-import { Sidebar } from './components/Sidebar.js';
-import { Dashboard } from './pages/Dashboard.jsx';
+import { App } from './App.jsx';
 import { Dice } from '../utils/Dice.js';
 import { PersistenceService } from '../services/PersistenceService.js';
 import { AudioService } from '../services/AudioService.js';
@@ -9,7 +8,6 @@ import { IndexedDBService } from '../services/IndexedDBService.js';
 import { TelemetryService } from '../services/TelemetryService.js';
 import { RulesEngine } from '../core/RulesEngine.js';
 import { WebRTCManager } from '../services/WebRTCManager.js';
-import { io } from "https://cdn.socket.io/4.7.4/socket.io.esm.min.js";
 import { render } from 'preact';
 import { html } from 'htm/preact';
 
@@ -55,8 +53,9 @@ export async function startApp() {
 
     try {
         const activeTable = localStorage.getItem('DM_ACTIVE_TABLE');
-        if (activeTable) {
-            const socket = io('/', {
+        const ioClient = window.io || (typeof io !== 'undefined' ? io : null);
+        if (activeTable && ioClient) {
+            const socket = ioClient('/', {
                 reconnectionDelayMax: 10000,
                 reconnectionAttempts: 10,
                 autoConnect: true,
@@ -166,9 +165,8 @@ export async function startApp() {
         console.warn('[Boot] Failed to load ruleset', e);
     }
 
-    // Render UI directly using Preact
-    render(html`<${Sidebar} />`, document.getElementById('sidebar-target'));
-    render(html`<${Dashboard} />`, document.getElementById('view-target'));
+    // Render unified UI single-tree using Preact
+    render(html`<${App} />`, document.getElementById('app-root'));
 
     // Lazy load DiceBoxService only when requested
     TOME.events.on('DICE_ROLL_REQUESTED', async (sides) => {

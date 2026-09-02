@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "preact/hooks";
-import { useStore } from "../../../core/hooks.js";
+import { useStore } from "../core/hooks.js";
 import { html } from "htm/preact";
 import { TOME } from '../../core/Registry.js';
 import { MonsterData } from '../../data/MonsterData.js';
@@ -23,7 +23,31 @@ export function Bestiary(opts) {
     const [showForgeModal, setShowForgeModal] = useState(false);
     const [activeRoll, setActiveRoll] = useState(null);
     const [rollMod, setRollMod] = useState("normal");
+    const [, setTick] = useState(0);
+    const forceUpdate = () => setTick(t => t + 1);
+    const render = forceUpdate;
     const containerRef = useRef(null);
+
+    const handleGlobalClick = (e) => {
+        const btn = e.target.closest("[data-action]");
+        if (btn) {
+            const action = btn.dataset.action;
+            if (action === "selectLevel") selectLevel(e, btn);
+            if (action === "viewCreature") viewCreature(e, btn);
+            if (action === "spawnCreature") spawnCreature(e, btn);
+            if (action === "spawnFromDetail") spawnFromDetail(e, btn);
+            if (action === "deleteCustomMonster") deleteCustomMonster(e, btn);
+            if (action === "addCustomMonster") addCustomMonster(e, btn);
+            if (action === "triggerImportJSON") triggerImportJSON(e, btn);
+            if (action === "rollBestiaryAttack") rollBestiaryAttack(e, btn);
+            if (action === "proceedToDamage") proceedToDamage(e, btn);
+            if (action === "applyVisualRollResult") applyVisualRollResult(e, btn);
+            if (action === "closeVisualRoll") closeVisualRoll(e, btn);
+            if (action === "closeForgeModal") closeForgeModal(e, btn);
+            if (action === "forgeCustomMonster") forgeCustomMonster(e, btn);
+            if (action === "backToGrid") backToGrid(e, btn);
+        }
+    };
 
     const narrativeQuotes = {
         hit: [
@@ -55,12 +79,12 @@ export function Bestiary(opts) {
     function _getCombinedCreatures() {
         const staticCreatures = MonsterData[selectedLevel] || [];
         const customCreatures = (store.state.customMonsters || [])
-            .filter(m => m.level === selectedLevel || m.cr === selectedLevel || (!m.level && setSelectedLevel(== 'Nível 1')));
+            .filter(m => m.level === selectedLevel || m.cr === selectedLevel || (!m.level && selectedLevel === 'Nível 1'));
         return [...customCreatures, ...staticCreatures];
     }
 
     function _getNarrative(type, targetName, damage = 0) {
-        const base = _narrativeQuotes[type][Math.floor(Math.random() * _narrativeQuotes[type].length)];
+        const base = narrativeQuotes[type][Math.floor(Math.random() * narrativeQuotes[type].length)];
         if (type === 'hit' || type === 'crit') {
             return `${base} <br> ⚔️ <strong>${targetName}</strong> sofre <strong>${damage}</strong> de dano!`;
         }
@@ -69,17 +93,15 @@ export function Bestiary(opts) {
 
     function _getCreatureActions(m) {
         if (m.actions && m.actions.length > 0) {
-            return m.actions;
+            return m.actions.map(act => ({
+                name: act.name || 'Ataque',
+                bonus: act.bonus !== undefined ? act.bonus : (act.hit !== undefined ? act.hit : 4),
+                damage: act.damage || act.dmg || '1d8+2',
+                desc: act.desc || act.description || `Ataque especial causando ${act.damage || act.dmg || '1d8+2'} de dano.`
+            }));
         }
         
-        // Generate default actions based on monster name/type/stats
         const nameLower = (m.name || '').toLowerCase();
-        const stats = m.stats || { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 };
-        const strMod = Math.floor(((stats.str || 10) - 10) / 2);
-        const dexMod = Math.floor(((stats.dex || 10) - 10) / 2);
-        const primaryMod = Math.max(strMod, dexMod);
-        
-        // Proficiency bonus based on level/CR
         let prof = 2;
         const levelStr = String(m.level || m.cr || 'Nível 1');
         if (levelStr.includes('BOSS')) prof = 6;
@@ -130,40 +152,19 @@ export function Bestiary(opts) {
             { name: attackName2, bonus: bonus, damage: damageDice, desc: `Ataque rápido com bônus de +${bonus} e dano de ${damageDice}.` }
         ];
     }
-
-    function template() {
-
-    const handleGlobalClick = (e) => {
-        const btn = e.target.closest("[data-action]");
-        if (btn) {
-            const action = btn.dataset.action;
-            if (action === "triggerImportJSON") triggerImportJSON(e, btn);
-            if (action === "addCustomMonster") addCustomMonster(e, btn);
-            if (action === "selectLevel") selectLevel(e, btn);
-            if (action === "viewCreature") viewCreature(e, btn);
-            if (action === "spawnCreature") spawnCreature(e, btn);
-            if (action === "deleteCustomMonster") deleteCustomMonster(e, btn);
-            if (action === "backToGrid") backToGrid(e, btn);
-            if (action === "spawnFromDetail") spawnFromDetail(e, btn);
-            if (action === "rollBestiaryAttack") rollBestiaryAttack(e, btn);
-            if (action === "proceedToDamage") proceedToDamage(e, btn);
-            if (action === "applyVisualRollResult") applyVisualRollResult(e, btn);
-            if (action === "closeVisualRoll") closeVisualRoll(e, btn);
-        }
-    };
     
     useEffect(() => {
         if (onMount) onMount();
         return () => { if (onUnmount) onUnmount(); };
     }, []);
 
-    return (function() {
+    function template() {
         const levels = Object.keys(MonsterData);
         const allCreatures = _getCombinedCreatures();
         const filtered = allCreatures.filter(m =>
             m.name.toLowerCase().includes(searchQuery.toLowerCase())
         );
-        const isBoss = setSelectedLevel(== 'BOSS');
+        const isBoss = selectedLevel === 'BOSS';
 
         const customStyle = `
             <style>
@@ -240,7 +241,7 @@ export function Bestiary(opts) {
                 <!-- LEVEL FILTER BAR -->
                 <div style="display:flex; overflow-x:auto; gap:10px; padding-bottom:15px; margin-bottom:20px; scrollbar-width:thin;">
                     ${levels.map(lvl => {
-                        const isActive = setSelectedLevel(== lvl);
+                        const isActive = selectedLevel === lvl;
                         const isBossTab = lvl === 'BOSS';
                         return `
                             <button class="btn ${isActive ? (isBossTab ? 'btn-danger' : 'btn-primary') : 'btn-ghost'}"
@@ -601,7 +602,7 @@ export function Bestiary(opts) {
     }
 
     function startVisualRoll(attacker, target, action) {
-        activeRoll = {
+        const newRoll = {
             stage: 'd20',
             rolling: true,
             attacker,
@@ -616,52 +617,55 @@ export function Bestiary(opts) {
             damageTotal: null,
             narrativeText: ''
         };
-        render();
+        setActiveRoll(newRoll);
 
         TOME.audio.playSFX('https://assets.mixkit.co/active_storage/sfx/2771/2771-preview.mp3');
 
         setTimeout(() => {
             const hitRes = RulesEngine.checkHit(action.bonus || 0, target.ac || 10, rollMod);
-            
-            activeRoll.rolling = false;
-            activeRoll.d20Roll = hitRes.roll;
-            activeRoll.d20Total = hitRes.total;
-            activeRoll.isCrit = hitRes.isCrit;
-            activeRoll.isHit = hitRes.success;
-
+            let narrative = '';
             if (hitRes.success) {
                 TOME.audio.playSFX('https://assets.mixkit.co/active_storage/sfx/2770/2770-preview.mp3');
             } else {
                 TOME.audio.playSFX('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
-                const text = _getNarrative('miss', target.name);
-                activeRoll.narrativeText = text;
+                narrative = _getNarrative('miss', target.name);
             }
 
-            render();
+            setActiveRoll(prev => prev ? ({
+                ...prev,
+                rolling: false,
+                d20Roll: hitRes.roll,
+                d20Total: hitRes.total,
+                isCrit: hitRes.isCrit,
+                isHit: hitRes.success,
+                narrativeText: narrative
+            }) : null);
         }, 1100);
     }
 
     function proceedToDamage() {
-        activeRoll.stage = 'damage';
-        render();
+        setActiveRoll(prev => prev ? ({ ...prev, stage: 'damage' }) : null);
 
         TOME.audio.playSFX('https://assets.mixkit.co/active_storage/sfx/2770/2770-preview.mp3');
 
         setTimeout(() => {
-            const dmgNotation = activeRoll.action.damage || '1d6';
-            const dmgRoll = Dice.roll(dmgNotation);
-            
-            let totalDmg = activeRoll.isCrit ? (dmgRoll.total * 2) : dmgRoll.total;
-            if (isNaN(totalDmg)) totalDmg = 4;
+            setActiveRoll(prev => {
+                if (!prev) return null;
+                const dmgNotation = prev.action?.damage || '1d6';
+                const dmgRoll = Dice.roll(dmgNotation);
+                
+                let totalDmg = prev.isCrit ? (dmgRoll.total * 2) : dmgRoll.total;
+                if (isNaN(totalDmg)) totalDmg = 4;
 
-            activeRoll.stage = 'complete';
-            activeRoll.damageRolls = dmgRoll.rolls || [totalDmg];
-            activeRoll.damageTotal = totalDmg;
-
-            const text = _getNarrative(activeRoll.isCrit ? 'crit' : 'hit', activeRoll.target.name, totalDmg);
-            activeRoll.narrativeText = text;
-
-            render();
+                const text = _getNarrative(prev.isCrit ? 'crit' : 'hit', prev.target?.name || 'Alvo', totalDmg);
+                return {
+                    ...prev,
+                    stage: 'complete',
+                    damageRolls: dmgRoll.rolls || [totalDmg],
+                    damageTotal: totalDmg,
+                    narrativeText: text
+                };
+            });
         }, 1100);
     }
 
@@ -871,7 +875,7 @@ export function Bestiary(opts) {
 
     function onMount() {
         // Set __component reference for inline event handlers
-        const el = element?.querySelector('.bestiary');
+        const el = containerRef.current?.querySelector('.bestiary');
         if (el) el.__component = this;
 
         // Mass JSON Import logic
@@ -930,5 +934,7 @@ export function Bestiary(opts) {
                 }
             };
         }
+    }
+
     return html`<div ref=${containerRef} onClick=${handleGlobalClick} dangerouslySetInnerHTML=${{__html: template()}}></div>`;
 }

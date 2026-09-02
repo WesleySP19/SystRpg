@@ -59,8 +59,12 @@ export function MainPanel() {
     }
 
     return () => {
-      if (particleEngineRef.current) {
-        particleEngineRef.current.stop();
+      if (particleEngineRef.current && typeof particleEngineRef.current.stop === 'function') {
+        try {
+          particleEngineRef.current.stop();
+        } catch (err) {
+          console.warn('[MainPanel] Particle engine stop warning:', err);
+        }
         particleEngineRef.current = null;
       }
       if (window.TOME?.events) {

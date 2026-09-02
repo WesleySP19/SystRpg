@@ -5,10 +5,10 @@ import { TOME } from '../../core/Registry.js';
 import { Toast } from '../components/core/Toast.jsx';
 
 /**
- * DM SHIELD v1.0
+ * WORLD BUILDER v2.0
  * AI-assisted tools for scene description and worldbuilding.
  */
-export function DMShield(opts) {
+export function WorldBuilder(opts) {
     const storeState = useStore();
     const [lastDescription, setLastDescription] = useState("");
     const [tone, setTone] = useState('mysterious');

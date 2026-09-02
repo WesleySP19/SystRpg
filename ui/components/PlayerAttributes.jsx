@@ -1,4 +1,5 @@
 import { RulesEngine } from '../../core/RulesEngine.js';
+import { html } from 'htm/preact';
 
 export function renderCoreTab(p, context) {
     const rules = RulesEngine.getActiveRuleset();

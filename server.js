@@ -8,6 +8,8 @@ import { Server } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import os from 'os';
+import * as Sentry from '@sentry/node';
+import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import { initDb, getDocument, saveDocument, getDbType, getPrisma } from './utils/db.js';
 import { battleManager } from './services/BattleManager.js';
 import { WebSocketServer } from 'ws';
@@ -21,6 +23,16 @@ import { setupSyncEngine, cleanupSession } from './sockets/SyncEngine.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// ── SENTRY INIT ──
+Sentry.init({
+  dsn: process.env.SENTRY_DSN || "COLOQUE_SEU_DSN_AQUI",
+  integrations: [
+    nodeProfilingIntegration(),
+  ],
+  tracesSampleRate: 1.0, 
+  profilesSampleRate: 1.0,
+});
 
 const app = express();
 const server = http.createServer(app);
@@ -65,7 +77,7 @@ if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(32).toString('hex');
+const JWT_SECRET = process.env.JWT_SECRET || 'tome_secret_jwt_key_v23_local_lan_dev';
 const smsCodes = new Map(); // phone -> { code, name, expires }
 
 // Limpeza periódica de memória e códigos SMS expirados
@@ -95,8 +107,13 @@ const authenticateToken = createAuthMiddleware(JWT_SECRET);
 registerSystemRoutes(app); 
 registerMediaRoutes(app, { authenticateToken, uploadDir });
 
-// ── ROTAS DE AUTENTICAÇÃO (JWT & SMS Simulado) ──
-registerAuthRoutes(app, { smsCodes, JWT_SECRET, getOrCreateMasterInDb: (name, phone) => getOrCreateMasterInDb(name, phone, dataDir) });
+app.locals.dataDir = dataDir;
+
+// ── ROTAS DE AUTENTICAÇÃO (JWT & Senha) ──
+registerAuthRoutes(app, { JWT_SECRET });
+
+// ── HANDLER DE ERRO DO SENTRY ──
+Sentry.setupExpressErrorHandler(app);
 
 // ── ELO ARCANO (MENSAGERIA MOBILE SSE) PREMIUM ──
 const playerConnections = new Map(); // characterId -> { res, tableId, nome, sessionToken }
@@ -110,7 +127,7 @@ let activeTables = new Map(); // tableId -> Set of sessionTokens
 
 async function loadSessions() {
     const prisma = getPrisma();
-    if (getDbType() === 'sqlite' && prisma) {
+    if (getDbType() === 'postgresql' && prisma) {
         try {
             const tableSessions = await prisma.tableSession.findMany();
             const playerSessions = await prisma.playerSession.findMany();
@@ -137,7 +154,7 @@ async function loadSessions() {
                     classe: p.classe
                 });
             }
-            console.log(`[NodeServer] Carregado ${sessionTokens.size} sessões do banco de dados (SQLite).`);
+            console.log(`[NodeServer] Carregado ${sessionTokens.size} sessões do banco de dados (PostgreSQL).`);
         } catch (err) {
              console.error(`[NodeServer] Erro ao carregar sessões do Prisma:`, err);
         }

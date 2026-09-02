@@ -62,7 +62,7 @@ async function getTableChatHistory(tableId, dataDir) {
     const cleanId = tableId.replace(/^table-/, '');
     if (!messageHistory.has(cleanId)) {
         const prisma = getPrisma();
-        if (getDbType() === 'sqlite' && prisma) {
+        if (getDbType() === 'postgresql' && prisma) {
             try {
                 const messages = await prisma.chatMessage.findMany({
                     where: { tableId: cleanId },
@@ -102,7 +102,7 @@ async function getTableChatHistory(tableId, dataDir) {
 async function saveTableChatHistory(tableId, history, dataDir) {
     const cleanId = tableId.replace(/^table-/, '');
     const prisma = getPrisma();
-    if (getDbType() === 'sqlite' && prisma) {
+    if (getDbType() === 'postgresql' && prisma) {
         try {
             for (const msg of history) {
                 await prisma.chatMessage.upsert({
@@ -118,7 +118,7 @@ async function saveTableChatHistory(tableId, history, dataDir) {
                 });
             }
         } catch (err) {
-            console.warn(`[Sync-Mesh] Erro ao salvar histórico no SQLite:`, err.message);
+            console.warn(`[Sync-Mesh] Erro ao salvar histórico no PostgreSQL:`, err.message);
         }
     } else {
         try {
@@ -348,7 +348,7 @@ export function setupSyncEngine(server, io, dataDir, app) {
             try {
                 let encodedState;
                 const prisma = getPrisma();
-                if (getDbType() === 'sqlite' && prisma) {
+                if (getDbType() === 'postgresql' && prisma) {
                     const blob = await prisma.yjsBlob.findUnique({ where: { id: cleanDocName } });
                     if (blob && blob.data) {
                         encodedState = blob.data;
@@ -408,7 +408,7 @@ export function setupSyncEngine(server, io, dataDir, app) {
                 const encodedState = Y.encodeStateAsUpdate(ydoc);
                 
                 const prisma = getPrisma();
-                if (getDbType() === 'sqlite' && prisma) {
+                if (getDbType() === 'postgresql' && prisma) {
                     await prisma.yjsBlob.upsert({
                         where: { id: cleanDocName },
                         update: { data: Buffer.from(encodedState) },
@@ -418,7 +418,7 @@ export function setupSyncEngine(server, io, dataDir, app) {
                 
                 // Fallback de segurança: escreve no disco local também
                 await fs.promises.writeFile(docPath, encodedState);
-                console.log(`[Yjs] Estado salvo (SQLite + Disco) para: ${docName}`);
+                console.log(`[Yjs] Estado salvo (PostgreSQL + Disco) para: ${docName}`);
             } catch (err) {
                 console.error(`[Yjs] Erro ao salvar o documento ${docName}:`, err);
             }

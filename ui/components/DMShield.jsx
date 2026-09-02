@@ -1,13 +1,17 @@
 import { h, Fragment } from 'preact';
 import { useState, useRef } from 'preact/hooks';
+import { useStore } from '../core/hooks.js';
 import { TOME } from '../../core/Registry.js';
 import { Toast } from '../components/core/Toast.jsx';
 import { Dice } from '../../utils/Dice.js';
 import { CoreTables } from './CoreTables.jsx';
 import { EncounterCalculator } from './EncounterCalculator.jsx';
 
-export function DMShield({ store }) {
-    const { resources, players, monsters, initiativeOrder, concentration } = store.state;
+export function DMShield(props) {
+    const store = props?.store || window.TOME?.store || { state: {} };
+    const storeState = useStore();
+    const state = storeState || store.state || {};
+    const { resources = {}, players = [], monsters = [], initiativeOrder = [], concentration = [] } = state;
     const [selectedTable, setSelectedTable] = useState('dc');
     const [xpInput, setXpInput] = useState('0');
 

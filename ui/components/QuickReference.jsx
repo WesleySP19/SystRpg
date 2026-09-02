@@ -22,108 +22,37 @@ export function QuickReference(opts) {
     const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
     const containerRef = useRef(null);
 
-    const legacyCtx = {
-        store: window.TOME?.store || { state: storeState },
-        activeSection: activeSection,
-        glossarySearch: glossarySearch,
-        glossaryFilter: glossaryFilter,
-        magicSearch: magicSearch,
-        magicFilterLevel: magicFilterLevel,
-        magicFilterClass: magicFilterClass,
-        activeMagicTab: activeMagicTab,
-        _hoverTimer: hoverTimerRef.current,
-        activePopupSpell: activePopupSpell,
-        popupMode: popupMode,
-        popupPosition: popupPosition,
-        render: () => {},
-        listen: (el, evt, cb) => {
-            if (!el) return;
-            el.addEventListener(evt, cb);
-            return () => el.removeEventListener(evt, cb);
-        },
-        $: (sel) => containerRef.current ? containerRef.current.querySelector(sel) : null,
-        $$: (sel) => containerRef.current ? containerRef.current.querySelectorAll(sel) : []
+    const [, setTick] = useState(0);
+    const forceUpdate = () => setTick(t => t + 1);
+    const render = forceUpdate;
+    const store = window.TOME?.store || { state: storeState };
+    const $ = (sel) => containerRef.current ? containerRef.current.querySelector(sel) : null;
+    const $$ = (sel) => containerRef.current ? containerRef.current.querySelectorAll(sel) : [];
+    const listen = (el, evt, cb) => {
+        if (!el) return;
+        el.addEventListener(evt, cb);
+        return () => el.removeEventListener(evt, cb);
     };
 
-    const self = new Proxy(legacyCtx, {
-        get: (target, prop) => {
-            if (prop in target) return target[prop];
-            // If it's a method defined later in the function, it will be found in the closure!
-            return eval(prop);
-        },
-        set: (target, prop, value) => {
-            if (prop === 'activeSection') setActiveSection(value);
-            else if (prop === 'glossarySearch') setGlossarySearch(value);
-            else if (prop === 'glossaryFilter') setGlossaryFilter(value);
-            else if (prop === 'magicSearch') setMagicSearch(value);
-            else if (prop === 'magicFilterLevel') setMagicFilterLevel(value);
-            else if (prop === 'magicFilterClass') setMagicFilterClass(value);
-            else if (prop === 'activeMagicTab') setActiveMagicTab(value);
-            else if (prop === 'activePopupSpell') setActivePopupSpell(value);
-            else if (prop === 'popupMode') setPopupMode(value);
-            else if (prop === 'popupPosition') setPopupPosition(value);
-            else if (prop === '_hoverTimer') hoverTimerRef.current = value;
-            target[prop] = value;
-            return true;
-        }
-    });
-
-
     function template() {
-        let popupHTML = '';
-        if (activePopupSpell) {
-            const spell = activePopupSpell;
-            const isCantrip = spell.level === 0;
-            const isAttack = spell.type === 'dano' || spell.baseDamage;
-            
-            let glowClass = 'circle-glow';
-            if (isCantrip) glowClass = 'cantrip-glow';
-            else if (isAttack) glowClass = 'attack-glow';
-
-            const pinnedClass = setPopupMode(== 'click' ? 'pinned' : '');
-            
-            popupHTML = html`
-                <div class="magic-popup ${glowClass} ${pinnedClass}" 
-                     style="left: ${popupPosition.x}px; top: ${popupPosition.y}px; pointer-events: ${setPopupMode(== 'click' ? 'auto' : 'none'});">
-                    ${_getSpellPopupHTML(spell)}
-                </div>
-            `;
-        }
-
         return html`
-            <style>
-            .tome-nav-btn:not(.active):hover { background: rgba(255,255,255,0.05) !important; color: #fff !important; }
-            .tome-nav-btn:not(.active):hover i { transform: scale(1.1); }
-            .ref-card-red { transition: all 0.3s ease; }
-            .ref-card-red:hover { background: rgba(239, 68, 68, 0.06) !important; border-color: rgba(239, 68, 68, 0.3) !important; transform: translateY(-2px); }
-            .ref-card-blue { transition: all 0.3s ease; }
-            .ref-card-blue:hover { background: rgba(59, 130, 246, 0.06) !important; border-color: rgba(59, 130, 246, 0.3) !important; transform: translateY(-2px); }
-            .ref-card-gold { transition: all 0.3s ease; }
-            .ref-card-gold:hover { background: rgba(197, 160, 89, 0.06) !important; border-color: rgba(197, 160, 89, 0.3) !important; transform: translateX(4px); }
-            .ref-card-glow { transition: all 0.3s ease; }
-            .ref-card-glow:hover { transform: translateY(-5px); border-color: rgba(197, 160, 89, 0.4) !important; box-shadow: 0 15px 35px rgba(0,0,0,0.5), inset 0 0 20px rgba(197,160,89,0.05); }
-            </style>
-            <div class="page" style="max-width: 1400px; padding: 20px; animation: fadeIn 0.5s ease-out;">
+            <div class="page p-5 max-w-7xl mx-auto animate-fadeIn">
                 <!-- Header Premium -->
-                <div class="section-header" style="border-bottom: 2px solid rgba(197,160,89,0.15); padding-bottom:25px; margin-bottom:30px; display: flex; justify-content: space-between; align-items: flex-end; position: relative;">
-                    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at 10% 50%, rgba(197,160,89,0.08), transparent 50%); pointer-events: none;"></div>
-                    <div style="position: relative; z-index: 1;">
-                        <h2 class="section-title" style="font-family:'Cinzel', serif; color:var(--accent); text-shadow:0 0 20px rgba(197,160,89,0.5); font-size: 2.2rem; margin-bottom: 8px;">
-                            <i class="fa-solid fa-book-sparkles" style="margin-right:12px; color:#ffaa00;"></i> Tomo do Mestre V17
+                <div class="border-b-2 border-accent/20 pb-5 mb-6 flex justify-between items-end relative">
+                    <div>
+                        <h2 class="font-cinzel text-accent text-3xl mb-2 flex items-center gap-3">
+                            <i class="fa-solid fa-book-sparkles text-amber-500"></i> Tomo de Regras D&D 5e
                         </h2>
-                        <p class="section-subtitle" style="color:var(--text-dim); font-size: 0.95rem; letter-spacing: 0.5px; max-width: 600px;">Toda a sabedoria e mecânicas das eras compiladas em grimórios de acesso imediato.</p>
+                        <p class="text-slate-400 text-sm">Compilação de regras de referência rápida, ações, condições e glossário do mestre.</p>
                     </div>
                 </div>
 
-                <div style="display:grid; grid-template-columns: 280px 1fr; gap:35px; align-items:start;">
+                <div class="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6 items-start">
                     <!-- NAVIGATION MENU PREMIUM -->
-                    <div class="card glass-accent" style="padding:20px 15px; display:flex; flex-direction:column; gap:6px; border-radius:16px; background: rgba(10, 12, 16, 0.65); border: 1px solid rgba(255,255,255,0.05); box-shadow: inset 0 0 20px rgba(0,0,0,0.5), 0 8px 32px rgba(0,0,0,0.4);">
-                        <div style="font-family:'Cinzel', serif; font-size:0.7rem; color:var(--text-dim); letter-spacing:3px; padding-left:15px; margin-bottom:12px; font-weight:800; display:flex; align-items:center; gap:8px;">
-                            <div style="height:1px; flex:1; background:linear-gradient(to right, transparent, rgba(197,160,89,0.3));"></div>
+                    <div class="card glass-accent p-4 flex flex-col gap-2 rounded-2xl">
+                        <div class="font-cinzel text-xs text-slate-400 tracking-widest font-bold px-2 py-1">
                             TOMOS DE SABEDORIA
-                            <div style="height:1px; flex:1; background:linear-gradient(to left, transparent, rgba(197,160,89,0.3));"></div>
                         </div>
-                        
                         ${_renderNavButton('quickref', 'fa-compass', 'Guia Rápido D&D 5e', '255, 170, 0')}
                         ${_renderNavButton('glossary2024', 'fa-book-sparkles', 'Glossário D&D 2024', '197, 160, 89')}
                         ${_renderNavButton('magicglossary', 'fa-wand-magic-sparkles', 'Glossário Mágico', '168, 85, 247')}
@@ -137,21 +66,17 @@ export function QuickReference(opts) {
                     </div>
 
                     <!-- CONTENT AREA PREMIUM -->
-                    <div class="card glass-accent animate-fadeIn" style="min-height:75vh; padding:40px; border-radius:16px; background: rgba(12, 14, 20, 0.9); border: 1px solid rgba(197,160,89,0.15); border-top: 3px solid var(--accent); box-shadow: 0 25px 50px rgba(0,0,0,0.8), inset 0 0 50px rgba(197,160,89,0.05); position: relative; overflow: hidden;">
-                        <div style="position: absolute; top: -100px; right: -100px; width: 300px; height: 300px; background: radial-gradient(circle, rgba(197,160,89,0.08) 0%, transparent 70%); border-radius: 50%; pointer-events: none;"></div>
-                        <div style="position: relative; z-index: 1;">
-                            ${_renderActiveContent()}
-                        </div>
+                    <div class="card glass-accent min-h-[75vh] p-6 rounded-2xl relative overflow-hidden">
+                        ${_renderActiveContent()}
                     </div>
                 </div>
             </div>
-            ${popupHTML}
         `;
     }
 
     function _renderNavButton(sectionId, iconClass, text, rgbColor) {
-        const isActive = setActiveSection(== sectionId);
-        const bg = isActive ? `rgba(${rgbColor}, 0.2)` : 'transparent';
+        const isActive = activeSection === sectionId;
+        const bg = isActive ? `rgba(${rgbColor}, 0.15)` : 'rgba(0, 0, 0, 0.4)';
         const border = isActive ? `1px solid rgba(${rgbColor}, 0.5)` : '1px solid transparent';
         const textColor = isActive ? '#fff' : 'var(--text-dim)';
         const shadow = isActive ? `0 0 20px rgba(${rgbColor}, 0.3)` : 'none';
@@ -832,7 +757,7 @@ export function QuickReference(opts) {
         }
     }
 
-    function setGlossaryFilter(e, el) {
+    function handleGlossaryFilter(e, el) {
         setGlossaryFilter(el.dataset.category);
         
         const filterContainer = $('#glossary-filter-container');
@@ -959,6 +884,56 @@ export function QuickReference(opts) {
                 </div>
             </div>
         `;
+        return html`
+            <div style="display:flex; flex-direction:column; gap:20px; height:100%; animation: fadeIn 0.4s ease-out;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2px solid rgba(197,160,89,0.15); padding-bottom:15px; margin-bottom:5px;">
+                    <div>
+                        <h3 style="font-family:'Cinzel', serif; color:var(--accent); margin:0 0 8px 0; font-size:1.8rem; text-shadow:0 0 15px rgba(197,160,89,0.4);">
+                            <i class="fa-solid fa-book-sparkles" style="margin-right:10px;"></i> Glossário de Regras D&D 2024
+                        </h3>
+                        <p style="font-size:0.9rem; color:var(--text-dim); margin:0; line-height:1.6; max-width:700px;">
+                            Mecânicas, ações de combate, maestrias de armas e condições atualizadas na revisão de 2024.
+                        </p>
+                    </div>
+                    <a href="https://www.dndbeyond.com/sources/dnd/br-2024/rules-glossary" target="_blank" class="btn btn-ghost btn-sm" style="font-size:0.75rem; border:1px solid rgba(197,160,89,0.3); color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:6px; border-radius:8px; padding:6px 12px; background:rgba(197,160,89,0.05);">
+                        <i class="fa-solid fa-up-right-from-square"></i> D&D Beyond Oficial
+                    </a>
+                </div>
+
+                <!-- Search and Filters -->
+                <div class="glass-accent" style="padding: 20px; border-radius: 16px; background: rgba(0,0,0,0.3); border: 1px solid rgba(197,160,89,0.2); box-shadow:0 10px 25px rgba(0,0,0,0.3);">
+                    <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+                        <!-- Search Input -->
+                        <div style="position: relative; flex: 1; min-width: 280px;">
+                            <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--accent); font-size: 1rem;"></i>
+                            <input type="text" id="glossary-search-input" placeholder="Buscar regras e termos (ex: Agarrado, Vantagem...)" 
+                                   value="${glossarySearch}"
+                                   class="tome-input-focus"
+                                   style="width: 100%; padding: 14px 14px 14px 45px; border-radius: 10px; border: 1.5px solid rgba(197,160,89,0.3); background: rgba(8, 8, 10, 0.7); color: #fff; font-size: 0.9rem; outline: none; transition: all 0.3s;" />
+                        </div>
+                        <!-- Category Filters -->
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="glossary-filter-container">
+                            ${_renderGlossaryFilterBtn('all', '✨ Tudo', glossaryFilter === 'all')}
+                            ${_renderGlossaryFilterBtn('actions', '⚔️ Ações', glossaryFilter === 'actions')}
+                            ${_renderGlossaryFilterBtn('conditions', '🩸 Condições', glossaryFilter === 'conditions')}
+                            ${_renderGlossaryFilterBtn('masteries', '🛡️ Maestrias', glossaryFilter === 'masteries')}
+                            ${_renderGlossaryFilterBtn('rules', '📜 Regras', glossaryFilter === 'rules')}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Match stats -->
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: var(--text-dim); padding: 0 5px;">
+                    <span>Exibindo <strong id="glossary-count" style="color: var(--accent); font-size: 1rem;">0</strong> termos catalogados.</span>
+                    <span style="display: inline-flex; align-items: center; gap: 6px; color: var(--success); font-weight: 700; text-shadow: 0 0 10px rgba(16,185,129,0.3);"><i class="fa-solid fa-circle-check"></i> 100% Sincronizado</span>
+                </div>
+
+                <!-- Terms grid -->
+                <div id="glossary-terms-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 25px; max-height: 50vh; overflow-y: auto; padding-right: 15px; scrollbar-width: thin; margin-top: 5px;">
+                    <!-- Rendered dynamically by _updateGlossaryList() -->
+                </div>
+            </div>
+        `;
     }
 
     function _renderGlossaryFilterBtn(category, text, isActive) {
@@ -1014,7 +989,7 @@ export function QuickReference(opts) {
     function _renderMagicGlossary() {
         const allSpells = _buildSpellIndex();
         const classes = [...new Set(allSpells.flatMap(s => s.classes || []))].sort();
-        const displayTabTitle = setActiveMagicTab(== 'cantrips' ? 'Glossário de Truques' : 'Glossário de Magias');
+        const displayTabTitle = activeMagicTab === 'cantrips' ? 'Glossário de Truques' : 'Glossário de Magias';
         const displayTabSubtitle = activeMagicTab === 'cantrips' 
             ? 'Consulta rápida e completa de truques (nível 0) D&D 5e.' 
             : 'Consulta de magias arcanas, divinas e naturais de 1º a 5º círculo.';
@@ -1034,12 +1009,12 @@ export function QuickReference(opts) {
                     <div style="display: flex; gap: 8px; background: rgba(0,0,0,0.35); padding: 4px; border-radius: 10px; border: 1.5px solid rgba(168,85,247,0.25); box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);">
                         <button class="btn magic-tab-btn ${activeMagicTab === 'cantrips' ? 'btn-primary' : 'btn-ghost'}" 
                                 data-tab="cantrips" 
-                                style="font-family: 'Cinzel'; font-size: 0.75rem; padding: 6px 12px; border: none; border-radius: 6px; display: flex; align-items: center; gap: 6px; color: ${setActiveMagicTab(== 'cantrips' ? '#fff' : 'var(--text-dim)'}); background: ${setActiveMagicTab(== 'cantrips' ? '#a855f7' : 'transparent'}); border-color: ${setActiveMagicTab(== 'cantrips' ? '#a855f7' : 'transparent'});">
+                                style="font-family: 'Cinzel'; font-size: 0.75rem; padding: 6px 12px; border: none; border-radius: 6px; display: flex; align-items: center; gap: 6px; color: ${activeMagicTab === 'cantrips' ? '#fff' : 'var(--text-dim)'}; background: ${activeMagicTab === 'cantrips' ? '#a855f7' : 'transparent'}; border-color: ${activeMagicTab === 'cantrips' ? '#a855f7' : 'transparent'};">
                             <i class="fa-solid fa-wand-magic-sparkles"></i> TRUQUES
                         </button>
                         <button class="btn magic-tab-btn ${activeMagicTab === 'spells' ? 'btn-primary' : 'btn-ghost'}" 
                                 data-tab="spells" 
-                                style="font-family: 'Cinzel'; font-size: 0.75rem; padding: 6px 12px; border: none; border-radius: 6px; display: flex; align-items: center; gap: 6px; color: ${setActiveMagicTab(== 'spells' ? '#fff' : 'var(--text-dim)'}); background: ${setActiveMagicTab(== 'spells' ? '#a855f7' : 'transparent'}); border-color: ${setActiveMagicTab(== 'spells' ? '#a855f7' : 'transparent'});">
+                                style="font-family: 'Cinzel'; font-size: 0.75rem; padding: 6px 12px; border: none; border-radius: 6px; display: flex; align-items: center; gap: 6px; color: ${activeMagicTab === 'spells' ? '#fff' : 'var(--text-dim)'}; background: ${activeMagicTab === 'spells' ? '#a855f7' : 'transparent'}; border-color: ${activeMagicTab === 'spells' ? '#a855f7' : 'transparent'};">
                             <i class="fa-solid fa-scroll"></i> MAGIAS
                         </button>
                     </div>
@@ -1103,16 +1078,15 @@ export function QuickReference(opts) {
         `;
     }
 
-    function _updateMagicGlossaryList() {
+        function _updateMagicGlossaryList() {
         const listEl = $('#magic-glossary-list');
         const countEl = $('#magic-count');
         if (!listEl) return;
 
         const allSpells = _buildSpellIndex();
         const filtered = allSpells.filter(s => {
-            // Separação rígida de Truques e Magias
-            if (setActiveMagicTab(== 'cantrips' && s.level !== 0) return false);
-            if (setActiveMagicTab(== 'spells' && s.level === 0) return false);
+            if (activeMagicTab === 'cantrips' && s.level !== 0) return false;
+            if (activeMagicTab === 'spells' && s.level === 0) return false;
 
             const q = magicSearch.toLowerCase().trim();
             const matchesSearch = !q || 
@@ -1295,7 +1269,7 @@ export function QuickReference(opts) {
             if (!spell) return;
 
             listen(card, 'mouseenter', () => {
-                if (setPopupMode(== 'click') return);
+                if (popupMode === 'click') return;
 
                 _hoverTimer = setTimeout(() => {
                     _playMagicWhisperSound();
@@ -1464,7 +1438,6 @@ export function QuickReference(opts) {
         const componentsLabel = spell.components ? spell.components.join('/') : 'V/S';
         const concentrationLabel = spell.concentration ? 'Sim' : 'Não';
         
-        // Dynamic icons & colors based on type
         const typeIcons = { 'dano': 'fa-fire-flame-curved', 'controle': 'fa-hands-bound', 'utilidade': 'fa-wand-magic-sparkles', 'cura': 'fa-heart-pulse' };
         const typeColors = { 'dano': '#ef4444', 'controle': '#3b82f6', 'utilidade': '#a855f7', 'cura': '#22c55e' };
         
@@ -1613,6 +1586,7 @@ export function QuickReference(opts) {
                 </div>
             ` : ''}
         `;
+    }
+
     return template();
 }
-

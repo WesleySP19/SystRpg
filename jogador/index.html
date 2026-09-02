@@ -29,6 +29,26 @@
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@300;400;600&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <!-- Sentry e Web Vitals (Telemetria) -->
+    <script src="https://browser.sentry-cdn.com/8.26.0/bundle.tracing.replay.min.js" crossorigin="anonymous"></script>
+    <script>
+      Sentry.init({
+        dsn: "COLOQUE_SEU_DSN_AQUI",
+        tracesSampleRate: 1.0,
+        replaysSessionSampleRate: 0.1,
+        replaysOnErrorSampleRate: 1.0,
+      });
+    </script>
+    <script type="module">
+      import { onCLS, onLCP, onINP } from 'https://unpkg.com/web-vitals@4?module';
+      function sendToAnalytics({name, delta, id}) {
+        console.log(`[Web Vitals] ${name} | ID: ${id} | Value: ${Math.round(delta)}`);
+      }
+      onCLS(sendToAnalytics);
+      onLCP(sendToAnalytics);
+      onINP(sendToAnalytics);
+    </script>
+
     <!-- V22.0.0 NATIVE TAILWIND -->
     <link rel="stylesheet" href="/assets/tailwind.css">
     <style>

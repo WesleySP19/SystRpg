@@ -7,17 +7,17 @@ let dbType = 'file';
 export async function initDb() {
     try {
         const { PrismaClient } = await import('@prisma/client');
-        console.log('[DB] Inicializando conexão SQLite (Prisma)...');
+        console.log('[DB] Inicializando conexão PostgreSQL (Prisma)...');
         prisma = new PrismaClient();
         await prisma.$connect();
         
-        // Testa se a query realmente funciona (pode falhar silenciosamente no windows sem binarios)
+        // Testa se a query realmente funciona
         await prisma.master.count().catch(() => {}); 
         
-        dbType = 'sqlite';
-        console.log('[DB] Conectado ao SQLite local com sucesso.');
+        dbType = 'postgresql';
+        console.log('[DB] Conectado ao PostgreSQL local/remoto com sucesso.');
     } catch (err) {
-        console.log('[DB] Operando no modo nativo de arquivos locais (/data) - Rápido & Zero-Config.');
+        console.log('[DB] Operando no modo nativo de arquivos locais (/data) - Fallback.');
         dbType = 'file';
         prisma = null;
     }
@@ -33,7 +33,7 @@ export function getPrisma() {
 
 // Persistência legada / Arquivos estáticos estruturais (ex: rule_system.json)
 export async function getDocument(filename, dataDir) {
-    if (dbType === 'sqlite' && prisma) {
+    if (dbType === 'postgresql' && prisma) {
         try {
             const docId = filename.replace('.json', '');
             const doc = await prisma.stateDocument.findUnique({ where: { id: docId } });
@@ -55,7 +55,7 @@ export async function getDocument(filename, dataDir) {
 }
 
 export async function saveDocument(filename, data, dataDir) {
-    if (dbType === 'sqlite' && prisma) {
+    if (dbType === 'postgresql' && prisma) {
         try {
             const docId = filename.replace('.json', '');
             const content = JSON.stringify(data);

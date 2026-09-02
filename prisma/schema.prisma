@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:../dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // --- Entidades de Domínio ---
@@ -14,6 +14,7 @@ model Master {
   masterId   String   @unique
   name       String
   phone      String   @unique
+  password   String
   tables     String   @default("[]") // JSON string of table IDs they own
   createdAt  DateTime @default(now())
 }

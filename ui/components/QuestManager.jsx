@@ -1,5 +1,6 @@
 import { h, Fragment } from 'preact';
 import { useState, useRef, useEffect } from 'preact/hooks';
+import { useStore } from '../core/hooks.js';
 import { TOME } from '../../core/Registry.js';
 import { Toast } from '../components/core/Toast.jsx';
 
@@ -429,14 +430,16 @@ function LootModal({ quest, players, onClose, onConfirm }) {
 
 // ======================= MAIN EXPORT =======================
 
-export function QuestManager({ store }) {
+export function QuestManager(props) {
+    const store = props?.store || window.TOME?.store || { state: {} };
+    const storeState = useStore();
+    const state = storeState || store.state || {};
     const [showForm, setShowForm] = useState(false);
     const [activeTab, setActiveTab] = useState('active'); // 'active' | 'completed' | 'failed' | 'factions' | 'chronicles'
     const [searchQuery, setSearchQuery] = useState('');
     const [filterType, setFilterType] = useState('all');
     const [showLootModalId, setShowLootModalId] = useState(null);
 
-    const state = store.state;
     const quests = state.quests || [];
     const players = state.players || [];
     const renown = state.factionRenown || { Harpers: 0, Alliance: 0, Gauntlet: 0, Enclave: 0, Zhentarim: 0 };

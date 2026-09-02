@@ -22,33 +22,7 @@ export function SessionJournal(opts) {
     const $$ = (sel) => containerRef.current ? containerRef.current.querySelectorAll(sel) : [];
 
 
-    function render() {
-        let activeId = null;
-        let selectionStart = null;
-        let selectionEnd = null;
-
-        // Store active focus and selection bounds to avoid input resets during rendering
-        if (_mounted && document.activeElement) {
-            const el = document.activeElement;
-            if (el.id && (el.id === 'session-title-input' || el.id === 'session-notes-textarea' || el.id === 'session-loot-textarea')) {
-                activeId = el.id;
-                selectionStart = el.selectionStart;
-                selectionEnd = el.selectionEnd;
-            }
-        }
-
-        // Update inputs logic was removed from render() to prevent infinite cycles.
-        // The store is updated via event listeners attached in onMount() instead.
-
-        if (activeId) {
-            setFocusedElement({ id: activeId, start: selectionStart, end: selectionEnd });
-        }
-
-        super.render();
-    }
-
     function onMount() {
-        // Restore focus and text range selections after DOM updates
         if (focusedElement) {
             const { id, start, end } = focusedElement;
             const el = $('#' + id);
@@ -97,8 +71,6 @@ export function SessionJournal(opts) {
         });
     }
 
-    function template() {
-
     const handleGlobalClick = (e) => {
         const btn = e.target.closest("[data-action]");
         if (btn) {
@@ -119,10 +91,11 @@ export function SessionJournal(opts) {
         return () => onUnmount();
     }, []);
 
-    return (function() {
+
+    function template() {
         const { players, combatRound, sessionNumber } = store.state;
 
-        return html`<div ref=${containerRef} onClick=${handleGlobalClick}>` + html`
+        return `
             <style>
                 @keyframes journalFadeIn {
                     from { opacity: 0; transform: scale(0.98) translateY(12px); }
@@ -720,7 +693,7 @@ export function SessionJournal(opts) {
         `;
     }
 
-    async generateAICronicle() {
+    async function generateAICronicle() {
         const title = $('#session-title-input')?.value || '';
         const notes = $('#session-notes-textarea')?.value || '';
         const loot = $('#session-loot-textarea')?.value || '';
@@ -873,7 +846,7 @@ export function SessionJournal(opts) {
         setTimeout(() => document.body.classList.remove('print-report-mode'), 500);
     }
 
-    async exportSummaryPNG() {
+    async function exportSummaryPNG() {
         const title = $('#session-title-input')?.value || storeState.sessionTitle;
         const notes = $('#session-notes-textarea')?.value || storeState.sessionNotes;
         const loot = $('#session-loot-textarea')?.value || storeState.sessionLoot;
@@ -964,8 +937,7 @@ export function SessionJournal(opts) {
                                     ${new Date(e.timestamp || Date.now()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - ${e.title || 'Evento'}
                                 </div>
                                 <div style="color:#222; margin-top:2px;">${e.content}</div>
-                            </div>
-                        `).join('') || html`<div style="font-size:11px; color:#555; font-style:italic;">Nenhum evento registrado nesta linha do tempo...</div>`}
+                                `).join('') || html`<div style="font-size:11px; color:#555; font-style:italic;">Nenhum evento registrado nesta linha do tempo...</div>`}
                     </div>
                 </div>
 
@@ -976,5 +948,6 @@ export function SessionJournal(opts) {
             </div>
         `;
     }
-}
 
+    return html`<div ref=${containerRef} onClick=${handleGlobalClick} dangerouslySetInnerHTML=${{__html: template()}}></div>`;
+}
