@@ -8,8 +8,6 @@ import { Server } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import os from 'os';
-import * as Sentry from '@sentry/node';
-import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import { initDb, getDocument, saveDocument, getDbType, getPrisma } from './utils/db.js';
 import { battleManager } from './services/BattleManager.js';
 import { WebSocketServer } from 'ws';
@@ -18,21 +16,11 @@ import compression from 'compression';
 import registerAuthRoutes from './routes/auth.js';
 import registerSystemRoutes from './routes/system.js';
 import registerMediaRoutes from './routes/media.js';
-import { getOrCreateMasterInDb, createAuthMiddleware } from './controllers/AuthController.js';
+import { createAuthMiddleware } from './controllers/AuthController.js';
 import { setupSyncEngine, cleanupSession } from './sockets/SyncEngine.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-// ── SENTRY INIT ──
-Sentry.init({
-  dsn: process.env.SENTRY_DSN || "COLOQUE_SEU_DSN_AQUI",
-  integrations: [
-    nodeProfilingIntegration(),
-  ],
-  tracesSampleRate: 1.0, 
-  profilesSampleRate: 1.0,
-});
 
 const app = express();
 const server = http.createServer(app);
@@ -111,9 +99,6 @@ app.locals.dataDir = dataDir;
 
 // ── ROTAS DE AUTENTICAÇÃO (JWT & Senha) ──
 registerAuthRoutes(app, { JWT_SECRET });
-
-// ── HANDLER DE ERRO DO SENTRY ──
-Sentry.setupExpressErrorHandler(app);
 
 // ── ELO ARCANO (MENSAGERIA MOBILE SSE) PREMIUM ──
 const playerConnections = new Map(); // characterId -> { res, tableId, nome, sessionToken }
