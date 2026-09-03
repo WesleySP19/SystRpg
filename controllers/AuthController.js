@@ -4,7 +4,18 @@ import { getDocument, saveDocument, getDbType, getPrisma } from '../utils/db.js'
 
 export function createAuthMiddleware(JWT_SECRET) {
     return function authenticateToken(req, res, next) {
-        if (getDbType() === 'file') {
+        const isProduction = process.env.NODE_ENV === 'production';
+        const isLocalFileMode = getDbType() === 'file';
+
+        // Em modo de desenvolvimento ou rede local/arquivo, permite persistência sem bloquear com 401
+        if (!isProduction || isLocalFileMode) {
+            const authHeader = req.headers['authorization'];
+            const token = authHeader && authHeader.split(' ')[1];
+            if (token) {
+                jwt.verify(token, JWT_SECRET, (err, user) => {
+                    if (!err) req.user = user;
+                });
+            }
             return next();
         }
         

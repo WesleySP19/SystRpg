@@ -15,7 +15,7 @@ export class FrontendDirectoryService {
     }
 
     static forceLogout() {
-        console.warn('[DirectoryService] Sessão inválida ou expirada. Forçando logout...');
+        console.warn('[DirectoryService] Sessão inválida ou expirada. Requisitando reautenticação...');
         localStorage.removeItem('DM_JWT_TOKEN');
         localStorage.removeItem('DM_SESSION_ID');
         localStorage.removeItem('DM_SESSION_START');
@@ -25,7 +25,9 @@ export class FrontendDirectoryService {
         localStorage.removeItem('DM_MASTER_ID');
         localStorage.removeItem('DM_INTERNAL_ID');
         localStorage.removeItem('TOME_ACTIVE_SESSION');
-        window.location.reload();
+        if (typeof window !== 'undefined' && window.TOME && window.TOME.events) {
+            window.TOME.events.emit('AUTH_REQUIRED');
+        }
     }
 
     static async getMastersDirectory() {

@@ -44,7 +44,11 @@ export class PersistenceService {
             // Network: Debounce longo (3s) para agrupar uploads pro servidor/WebSocket
             if (this._networkSaveTimeout) clearTimeout(this._networkSaveTimeout);
             this._networkSaveTimeout = setTimeout(() => {
-                this.saveNetworkOnly();
+                const activeSession = localStorage.getItem('TOME_ACTIVE_SESSION');
+                const activeTable = localStorage.getItem('DM_ACTIVE_TABLE');
+                if (activeSession || activeTable) {
+                    this.saveNetworkOnly();
+                }
             }, 3000);
         });
     }

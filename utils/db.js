@@ -7,15 +7,15 @@ let dbType = 'file';
 export async function initDb() {
     try {
         const { PrismaClient } = await import('@prisma/client');
-        console.log('[DB] Inicializando conexão PostgreSQL (Prisma)...');
+        console.log('[DB] Inicializando conexão com banco de dados (Prisma)...');
         prisma = new PrismaClient();
         await prisma.$connect();
         
         // Testa se a query realmente funciona
-        await prisma.master.count().catch(() => {}); 
+        await prisma.master.count(); 
         
-        dbType = 'postgresql';
-        console.log('[DB] Conectado ao PostgreSQL local/remoto com sucesso.');
+        dbType = 'database';
+        console.log('[DB] Conectado ao banco de dados (Prisma) com sucesso.');
     } catch (err) {
         console.log('[DB] Operando no modo nativo de arquivos locais (/data) - Fallback.');
         dbType = 'file';
@@ -33,7 +33,7 @@ export function getPrisma() {
 
 // Persistência legada / Arquivos estáticos estruturais (ex: rule_system.json)
 export async function getDocument(filename, dataDir) {
-    if (dbType === 'postgresql' && prisma) {
+    if (prisma) {
         try {
             const docId = filename.replace('.json', '');
             const doc = await prisma.stateDocument.findUnique({ where: { id: docId } });
@@ -55,7 +55,7 @@ export async function getDocument(filename, dataDir) {
 }
 
 export async function saveDocument(filename, data, dataDir) {
-    if (dbType === 'postgresql' && prisma) {
+    if (prisma) {
         try {
             const docId = filename.replace('.json', '');
             const content = JSON.stringify(data);

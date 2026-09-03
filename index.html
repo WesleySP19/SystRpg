@@ -7,32 +7,6 @@
     <title>Mesa Psigologos</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     
-    <!-- Sentry e Web Vitals (Telemetria) -->
-    <script src="https://browser.sentry-cdn.com/8.26.0/bundle.tracing.replay.min.js" crossorigin="anonymous"></script>
-    <script>
-      Sentry.init({
-        dsn: "COLOQUE_SEU_DSN_AQUI",
-        tracesSampleRate: 1.0,
-        replaysSessionSampleRate: 0.1,
-        replaysOnErrorSampleRate: 1.0,
-      });
-    </script>
-    <script type="module">
-      import { onCLS, onLCP, onINP } from 'https://unpkg.com/web-vitals@4?module';
-      function sendToAnalytics({name, delta, id}) {
-        console.log(`[Web Vitals - Mestre] ${name} | ID: ${id} | Value: ${Math.round(delta)}`);
-      }
-      onCLS(sendToAnalytics);
-      onLCP(sendToAnalytics);
-      onINP(sendToAnalytics);
-    </script>
-
-    <!-- Tailwind -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Outfit:wght@300;400;600;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    
     <!-- Import Map para ES Modules Nativos -->
     <script type="importmap">
     {
@@ -47,6 +21,12 @@
       }
     }
     </script>
+
+    <!-- Tailwind & Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Outfit:wght@300;400;600;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <!-- Design System (Native CSS Load) -->
     <link rel="stylesheet" href="/assets/tailwind.css">

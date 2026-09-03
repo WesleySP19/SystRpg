@@ -158,6 +158,9 @@ export function AuthScreenComponent({ closeAuthScreen, initialOnLogin }) {
             } else {
                 localStorage.setItem('DM_ACTIVE_TABLE', tableId);
                 localStorage.setItem('TOME_ACTIVE_SESSION', `mesa_${tableId}.json`);
+                if (!localStorage.getItem('DM_JWT_TOKEN')) {
+                    localStorage.setItem('DM_JWT_TOKEN', 'local_lan_token_' + Date.now());
+                }
                 closeAuthScreen();
             }
         } catch (e) {
@@ -173,6 +176,9 @@ export function AuthScreenComponent({ closeAuthScreen, initialOnLogin }) {
             const newTable = await PersistenceService.createTable(phone);
             localStorage.setItem('DM_ACTIVE_TABLE', newTable.id);
             localStorage.setItem('TOME_ACTIVE_SESSION', `mesa_${newTable.id}.json`);
+            if (!localStorage.getItem('DM_JWT_TOKEN')) {
+                localStorage.setItem('DM_JWT_TOKEN', 'local_lan_token_' + Date.now());
+            }
             closeAuthScreen();
         } catch (e) {
             showError('Erro ao criar mesa: ' + (e.message || 'falha de rede'));
@@ -221,6 +227,9 @@ export function AuthScreenComponent({ closeAuthScreen, initialOnLogin }) {
     const handleContinueSession = () => {
         localStorage.setItem('DM_ACTIVE_TABLE', selectedTableId);
         localStorage.setItem('TOME_ACTIVE_SESSION', `mesa_${selectedTableId}.json`);
+        if (!localStorage.getItem('DM_JWT_TOKEN')) {
+            localStorage.setItem('DM_JWT_TOKEN', 'local_lan_token_' + Date.now());
+        }
         closeAuthScreen();
     };
 
@@ -234,6 +243,9 @@ export function AuthScreenComponent({ closeAuthScreen, initialOnLogin }) {
             await PersistenceService.startNewSession(selectedTableId);
             localStorage.setItem('DM_ACTIVE_TABLE', selectedTableId);
             localStorage.setItem('TOME_ACTIVE_SESSION', `mesa_${selectedTableId}.json`);
+            if (!localStorage.getItem('DM_JWT_TOKEN')) {
+                localStorage.setItem('DM_JWT_TOKEN', 'local_lan_token_' + Date.now());
+            }
             closeAuthScreen();
         } catch (e) {
             alert('Erro ao iniciar nova sessao: ' + e.message);

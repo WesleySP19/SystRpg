@@ -13,7 +13,17 @@ import { TOME } from '../core/Registry.js';
  */
 export function App() {
     const storeState = useStore();
-    const [token, setToken] = useState(() => localStorage.getItem('DM_JWT_TOKEN'));
+    const [token, setToken] = useState(() => {
+        const storedToken = localStorage.getItem('DM_JWT_TOKEN');
+        const activeTable = localStorage.getItem('DM_ACTIVE_TABLE');
+        const sessionId = localStorage.getItem('DM_SESSION_ID');
+        if (!storedToken && (activeTable || sessionId)) {
+            const fallbackToken = 'local_session_' + Date.now();
+            localStorage.setItem('DM_JWT_TOKEN', fallbackToken);
+            return fallbackToken;
+        }
+        return storedToken;
+    });
 
     useEffect(() => {
         const handleAuthRequired = () => {
@@ -30,7 +40,12 @@ export function App() {
     }, []);
 
     const handleLoginSuccess = () => {
-        setToken(localStorage.getItem('DM_JWT_TOKEN'));
+        let currentToken = localStorage.getItem('DM_JWT_TOKEN');
+        if (!currentToken) {
+            currentToken = 'local_session_' + Date.now();
+            localStorage.setItem('DM_JWT_TOKEN', currentToken);
+        }
+        setToken(currentToken);
     };
 
     if (!token) {

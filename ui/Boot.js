@@ -18,9 +18,8 @@ export async function startApp() {
     }
 
     TOME.events.on('AUTH_REQUIRED', () => {
-        console.error('[Boot] AUTH_REQUIRED recebido. Limpando token e recarregando...');
+        console.warn('[Boot] AUTH_REQUIRED recebido. Sessão requer autenticação.');
         localStorage.removeItem('DM_JWT_TOKEN');
-        window.location.reload();
     });
 
     try {
