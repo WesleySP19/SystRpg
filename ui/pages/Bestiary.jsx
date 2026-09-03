@@ -172,8 +172,8 @@ export function Bestiary(opts) {
     }
     
     useEffect(() => {
-        if (onMount) onMount();
-        return () => { if (onUnmount) onUnmount(); };
+        if (opts.onMount) opts.onMount();
+        return () => { if (opts.onUnmount) opts.onUnmount(); };
     }, []);
 
     function template() {

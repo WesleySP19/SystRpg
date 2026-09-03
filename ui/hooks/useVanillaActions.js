@@ -11,6 +11,12 @@ export function useVanillaActions(actionsMap) {
         const container = containerRef.current;
         if (!container) return;
 
+        // Inject helper methods for legacy vanilla components
+        if (!actionsMap.$) {
+            actionsMap.$ = (sel) => container.querySelector(sel);
+            actionsMap.$$ = (sel) => container.querySelectorAll(sel);
+        }
+
         const handleClick = (e) => {
             const actionBtn = e.target.closest('[data-action]');
             if (actionBtn) {

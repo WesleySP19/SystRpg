@@ -730,8 +730,13 @@ export class TacticalMapEnginePixi {
     }
 
     destroy() {
+        if (this.observer) {
+            this.observer.disconnect();
+            this.observer = null;
+        }
         if (this.app) {
             this.app.destroy(true, true);
+            this.app = null;
         }
         if (this._webrtcSyncHandler) {
             window.removeEventListener('webrtc:token_sync', this._webrtcSyncHandler);

@@ -140,7 +140,7 @@ class StoreComponentRef {
 }
 
 export function CampaignManager() {
-    const [state, updateState] = useStore('campaign');
+    const [state, updateState] = useStore();
     const [selectedHeroId, setSelectedHeroId] = useState(null);
     const [printing, setPrinting] = useState(null); // 'sheet' | 'card' | null
 
