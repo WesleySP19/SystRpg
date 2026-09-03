@@ -4,10 +4,12 @@ import { PersistenceService } from '../../services/PersistenceService.js';
 import { injectStyles } from './AuthScreenStyles.jsx';
 
 export function AuthScreenComponent({ closeAuthScreen, initialOnLogin }) {
-    const [step, setStep] = useState('login'); // 'login', 'register', 'tables', 'session_choice'
+    const [step, setStep] = useState('login'); // 'login', 'register', 'tables', 'session_choice', 'forgot_password'
     const [phone, setPhone] = useState('');
     const [masterName, setMasterName] = useState('');
     const [password, setPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     
     const [tables, setTables] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -96,6 +98,89 @@ export function AuthScreenComponent({ closeAuthScreen, initialOnLogin }) {
             }
         } catch (e) {
             console.error('[AuthScreen] Erro no login:', e);
+            showError('Falha de conexão ao servidor.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleQuickLogin = async () => {
+        const val = phone.replace(/\D/g, '');
+        if (val.length < 10) {
+            showError('Insira seu telefone com <strong>DDD + 9 dígitos</strong> para acesso direto.');
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const response = await fetch('/api/auth/quick-login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone: val })
+            });
+            const resData = await response.json();
+            
+            if (response.ok && resData.status === 'success') {
+                localStorage.setItem('DM_JWT_TOKEN', resData.token);
+                localStorage.setItem('DM_SESSION_ID', 'DM-' + btoa(val + Date.now()).substring(0, 16));
+                localStorage.setItem('DM_SESSION_START', Date.now().toString());
+                localStorage.setItem('DM_PHONE', phone);
+                localStorage.setItem('DM_MASTER_NAME', resData.master.name);
+                localStorage.setItem('DM_MASTER_ID', resData.master.masterId);
+                localStorage.setItem('DM_INTERNAL_ID', resData.master.internalId);
+                setMasterName(resData.master.name);
+                setStep('tables');
+            } else {
+                showError(resData.message || 'Mestre não encontrado. Crie sua conta de Mestre abaixo.');
+            }
+        } catch (e) {
+            console.error('[AuthScreen] Erro no acesso rápido:', e);
+            showError('Falha de conexão ao servidor.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleResetPassword = async () => {
+        const val = phone.replace(/\D/g, '');
+        if (val.length < 10) {
+            showError('Número inválido — insira um telefone com <strong>DDD + 9 dígitos</strong>.');
+            return;
+        }
+        if (!newPassword || newPassword.length < 6) {
+            showError('A nova senha deve ter pelo menos 6 caracteres.');
+            return;
+        }
+        if (newPassword !== confirmPassword) {
+            showError('As senhas digitadas não coincidem.');
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const response = await fetch('/api/auth/reset-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone: val, newPassword })
+            });
+            const resData = await response.json();
+
+            if (response.ok && resData.status === 'success') {
+                localStorage.setItem('DM_JWT_TOKEN', resData.token);
+                localStorage.setItem('DM_SESSION_ID', 'DM-' + btoa(val + Date.now()).substring(0, 16));
+                localStorage.setItem('DM_SESSION_START', Date.now().toString());
+                localStorage.setItem('DM_PHONE', phone);
+                localStorage.setItem('DM_MASTER_NAME', resData.master.name);
+                localStorage.setItem('DM_MASTER_ID', resData.master.masterId);
+                localStorage.setItem('DM_INTERNAL_ID', resData.master.internalId);
+                setMasterName(resData.master.name);
+                showError('Senha redefinida com sucesso! Entrando...', true);
+                setTimeout(() => setStep('tables'), 1000);
+            } else {
+                showError(resData.message || 'Erro ao redefinir senha.');
+            }
+        } catch (e) {
+            console.error('[AuthScreen] Erro no reset de senha:', e);
             showError('Falha de conexão ao servidor.');
         } finally {
             setLoading(false);
@@ -277,9 +362,45 @@ export function AuthScreenComponent({ closeAuthScreen, initialOnLogin }) {
             <input type="password" id="auth-pass-login" className="auth-input" placeholder="Sua Senha" value={password} onInput={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleLogin()} />
             
             <button className="auth-btn mt-4" onClick={handleLogin} disabled={loading}>
-                {loading ? <><i className="fa-solid fa-spinner fa-spin"></i> Entrando...</> : "Entrar"}
+                {loading ? <><i className="fa-solid fa-spinner fa-spin"></i> Entrando...</> : "Entrar com Senha"}
             </button>
-            <button className="auth-back-link mt-4" onClick={() => { setStep('register'); setPassword(''); }}>Novo Mestre? Criar Conta</button>
+
+            <button className="auth-btn mt-2.5 bg-gradient-to-r from-amber-700/80 to-amber-900/80 hover:from-amber-600 hover:to-amber-800 border border-amber-500/40 text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer" onClick={handleQuickLogin} disabled={loading} title="Acessar diretamente apenas com seu telefone (Modo Clássico)">
+                <i className="fa-solid fa-bolt text-yellow-400"></i> Acesso Rápido com Telefone
+            </button>
+
+            <div className="flex justify-between items-center w-full mt-4 text-xs px-1">
+                <button className="auth-back-link text-slate-400 hover:text-amber-400 cursor-pointer bg-transparent border-none p-0" onClick={() => { setStep('forgot_password'); setInlineError(null); }}>
+                    <i className="fa-solid fa-key mr-1"></i> Esqueci a Senha
+                </button>
+                <button className="auth-back-link text-amber-400 hover:underline cursor-pointer bg-transparent border-none p-0" onClick={() => { setStep('register'); setPassword(''); setInlineError(null); }}>
+                    Novo Mestre? Criar Conta
+                </button>
+            </div>
+        </>
+    );
+
+    const renderForgotPasswordStep = () => (
+        <>
+            <p className="auth-description">Redefina sua senha informando seu telefone cadastrado.</p>
+            <input type="tel" id="auth-phone-reset" className="auth-input mb-3" placeholder="(11) 99999-9999" value={phone} onInput={(e) => {
+                let v = e.target.value.replace(/\D/g, '');
+                if (v.length > 11) v = v.slice(0, 11);
+                if (v.length > 2) v = `(${v.slice(0, 2)}) ${v.slice(2)}`;
+                if (v.length > 10) v = `${v.slice(0, 10)}-${v.slice(10)}`;
+                setPhone(v);
+            }} onKeyDown={(e) => e.key === "Enter" && document.getElementById("auth-pass-new")?.focus()} />
+            
+            <input type="password" id="auth-pass-new" className="auth-input mb-3" placeholder="Nova Senha (mín. 6 caracteres)" value={newPassword} onInput={(e) => setNewPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && document.getElementById("auth-pass-confirm")?.focus()} />
+            
+            <input type="password" id="auth-pass-confirm" className="auth-input" placeholder="Confirmar Nova Senha" value={confirmPassword} onInput={(e) => setConfirmPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleResetPassword()} />
+            
+            <button className="auth-btn mt-4 bg-gradient-to-r from-amber-600 to-amber-800 cursor-pointer" onClick={handleResetPassword} disabled={loading}>
+                {loading ? <><i className="fa-solid fa-spinner fa-spin"></i> Redefinindo...</> : <><i className="fa-solid fa-unlock mr-1.5"></i> Redefinir Senha & Entrar</>}
+            </button>
+            <button className="auth-back-link mt-4 bg-transparent border-none text-slate-400 hover:text-white cursor-pointer" onClick={() => { setStep('login'); setInlineError(null); }}>
+                <i className="fa-solid fa-arrow-left mr-1"></i> Voltar para o Login
+            </button>
         </>
     );
 
@@ -391,6 +512,13 @@ export function AuthScreenComponent({ closeAuthScreen, initialOnLogin }) {
                 <p className="auth-subtitle mb-6">Sessão de Hoje: <span className="text-[0.9rem]">{new Date().toLocaleDateString('pt-BR')}</span></p>
             </>
         );
+    } else if (step === 'forgot_password') {
+        titleHtml = (
+            <>
+                <h2 className="auth-title">Recuperação de Acesso</h2>
+                <p className="auth-subtitle">Redefina sua Senha de <span className="text-amber-500 font-extrabold">Mestre</span></p>
+            </>
+        );
     } else {
         titleHtml = (
             <>
@@ -445,6 +573,7 @@ export function AuthScreenComponent({ closeAuthScreen, initialOnLogin }) {
 
             {step === 'login' && renderLoginStep()}
             {step === 'register' && renderRegisterStep()}
+            {step === 'forgot_password' && renderForgotPasswordStep()}
             {step === 'tables' && renderTablesStep()}
             {step === 'session_choice' && renderSessionChoiceStep()}
         </div>
