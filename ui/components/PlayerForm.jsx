@@ -31,25 +31,79 @@ export function PlayerForm({ store }) {
     
     const actions = {};
     const _renderInventoryRows = () => {
-            return inventoryRows.map((item, i) => (
-                <div className="grid grid-cols-[1fr_60px_60px_25px] gap-1.5 mb-0.5">
-                    <input className="legacy-input inv-name text-[0.7rem] p-1" type="text" value={item.name || ''} placeholder="Nome do Item" />
-                    <input className="legacy-input inv-qty text-[0.7rem] p-1 text-center" type="number" value={item.qty || 1} placeholder="Qtd" />
-                    <input className="legacy-input inv-weight text-[0.7rem] p-1 text-center" type="number" value={item.weight || 0} step="0.1" placeholder="Peso" />
-                    <button type="button" className="btn btn-danger btn-sm p-0 flex items-center justify-center" data-action="removeInventoryRow" data-index={i}>✕</button>
-                </div>
-            ));
-        };
+        return inventoryRows.map((item, i) => (
+            <div key={i} className="grid grid-cols-[1fr_65px_65px_30px] gap-2 mb-1.5 items-center">
+                <input 
+                    className="legacy-input inv-name text-xs p-1.5 bg-black/40 border border-slate-700/50 rounded text-slate-100 focus:border-amber-400 focus:outline-none" 
+                    type="text" 
+                    defaultValue={item.name || ''} 
+                    placeholder="Nome do Item" 
+                    onInput={(e) => { inventoryRows[i].name = e.target.value; }}
+                />
+                <input 
+                    className="legacy-input inv-qty text-xs p-1.5 text-center bg-black/40 border border-slate-700/50 rounded text-slate-100 focus:border-amber-400 focus:outline-none" 
+                    type="number" 
+                    defaultValue={item.qty || 1} 
+                    placeholder="Qtd" 
+                    onInput={(e) => { inventoryRows[i].qty = parseInt(e.target.value) || 1; }}
+                />
+                <input 
+                    className="legacy-input inv-weight text-xs p-1.5 text-center bg-black/40 border border-slate-700/50 rounded text-slate-100 focus:border-amber-400 focus:outline-none" 
+                    type="number" 
+                    defaultValue={item.weight || 0} 
+                    step="0.1" 
+                    placeholder="Peso" 
+                    onInput={(e) => { inventoryRows[i].weight = parseFloat(e.target.value) || 0; }}
+                />
+                <button 
+                    type="button" 
+                    className="btn btn-danger btn-sm p-1 flex items-center justify-center text-xs h-7 rounded hover:bg-red-700/80 cursor-pointer text-white" 
+                    data-action="removeInventoryRow" 
+                    data-index={i}
+                    title="Remover item"
+                >
+                    ✕
+                </button>
+            </div>
+        ));
+    };
+
     const _renderAttackRows = () => {
-            return attackRows.map((atk, i) => (
-                <div class="grid grid-cols-[1fr_50px_80px_25px] gap-1.5 mb-1.5">
-                    <input className="legacy-input atk-name" type="text" value={atk.name || ''} placeholder="Nome" />
-                    <input className="legacy-input atk-bonus" type="text" value={atk.bonus || ''} placeholder="+5" />
-                    <input className="legacy-input atk-damage" type="text" value={atk.damage || ''} placeholder="1d8" />
-                    <button type="button" className="btn btn-danger btn-sm flex items-center justify-center" data-action="removeAttackRow" data-index={i}>✕</button>
-                </div>
-            ));
-        };
+        return attackRows.map((atk, i) => (
+            <div key={i} className="grid grid-cols-[1fr_60px_90px_30px] gap-2 mb-1.5 items-center">
+                <input 
+                    className="legacy-input atk-name text-xs p-1.5 bg-black/40 border border-slate-700/50 rounded text-slate-100 focus:border-amber-400 focus:outline-none" 
+                    type="text" 
+                    defaultValue={atk.name || ''} 
+                    placeholder="Nome da Arma / Feitiço" 
+                    onInput={(e) => { attackRows[i].name = e.target.value; }}
+                />
+                <input 
+                    className="legacy-input atk-bonus text-xs p-1.5 text-center bg-black/40 border border-slate-700/50 rounded text-amber-300 font-bold focus:border-amber-400 focus:outline-none" 
+                    type="text" 
+                    defaultValue={atk.bonus || ''} 
+                    placeholder="+5" 
+                    onInput={(e) => { attackRows[i].bonus = e.target.value; }}
+                />
+                <input 
+                    className="legacy-input atk-damage text-xs p-1.5 text-center bg-black/40 border border-slate-700/50 rounded text-slate-100 focus:border-amber-400 focus:outline-none" 
+                    type="text" 
+                    defaultValue={atk.damage || ''} 
+                    placeholder="1d8+3" 
+                    onInput={(e) => { attackRows[i].damage = e.target.value; }}
+                />
+                <button 
+                    type="button" 
+                    className="btn btn-danger btn-sm p-1 flex items-center justify-center text-xs h-7 rounded hover:bg-red-700/80 cursor-pointer text-white" 
+                    data-action="removeAttackRow" 
+                    data-index={i}
+                    title="Remover ataque"
+                >
+                    ✕
+                </button>
+            </div>
+        ));
+    };
     const _renderPlayerList = () => {
             const { players } = TOME.store.state;
             if (!players?.length) return '';
@@ -728,51 +782,88 @@ export function PlayerForm({ store }) {
                     </div>
 
                     <div className="flex flex-col gap-4">
-                        <div className="border-b-2 border-tomeGold/30 pb-1.5 flex justify-between items-center gap-2.5">
-                            <input className="legacy-input text-5xl flex-1 font-header font-black" type="text" id="input-hero-name" name="name" value={p.name || ''} placeholder="NOME DO PERSONAGEM" />
-                            <div className="flex gap-1.5">
-                                <button type="button" className="btn btn-ghost border border-tomeGold/30 text-[0.6rem]" data-action="openImporter" title="Importar PDF/Texto">📥 PDF/Texto</button>
-                                <button type="button" className="btn btn-ghost border border-tomeGold/30 text-[0.6rem]" data-action="importHeroJSON" title="Importar JSON">📂 JSON</button>
-                                <button type="button" className="btn btn-ghost border border-tomeGold/30 text-[0.6rem]" data-action="downloadHeroJSON" title="Exportar JSON">💾 JSON</button>
-                                <button type="button" className="btn btn-ghost border border-tomeGold/30 text-[0.6rem]" data-action="printOfficialSheet" title="Imprimir PDF Oficial D&D 5e">🖨️ Imprimir</button>
-                                <button type="button" className="btn btn-ghost border border-tomeGold/30 text-[0.6rem] text-red-500" data-action="cloneToBestiary" title="Clonar para Bestiário">😈 NPC</button>
+                        <div className="border-b-2 border-tomeGold/30 pb-2 flex justify-between items-center gap-3">
+                            <input 
+                                className="legacy-input text-4xl md:text-5xl flex-1 font-cinzel font-black tracking-wider text-tomeGold border-b-2 border-tomeGold/40 bg-transparent focus:border-amber-400 focus:outline-none" 
+                                type="text" 
+                                id="input-hero-name" 
+                                name="name" 
+                                defaultValue={p.name || ''} 
+                                placeholder="NOME DO PERSONAGEM" 
+                            />
+                            <div className="flex gap-1.5 flex-wrap justify-end">
+                                <button type="button" className="btn btn-ghost border border-tomeGold/30 text-xs px-2.5 py-1 text-slate-300 hover:text-amber-400 hover:border-amber-400/60 rounded cursor-pointer" data-action="openImporter" title="Importar PDF/Texto">📥 PDF/Texto</button>
+                                <button type="button" className="btn btn-ghost border border-tomeGold/30 text-xs px-2.5 py-1 text-slate-300 hover:text-amber-400 hover:border-amber-400/60 rounded cursor-pointer" data-action="importHeroJSON" title="Importar JSON">📂 JSON</button>
+                                <button type="button" className="btn btn-ghost border border-tomeGold/30 text-xs px-2.5 py-1 text-slate-300 hover:text-amber-400 hover:border-amber-400/60 rounded cursor-pointer" data-action="downloadHeroJSON" title="Exportar JSON">💾 JSON</button>
+                                <button type="button" className="btn btn-ghost border border-tomeGold/30 text-xs px-2.5 py-1 text-slate-300 hover:text-amber-400 hover:border-amber-400/60 rounded cursor-pointer" data-action="printOfficialSheet" title="Imprimir PDF Oficial D&D 5e">🖨️ Imprimir</button>
+                                <button type="button" className="btn btn-ghost border border-red-500/40 text-xs px-2.5 py-1 text-red-400 hover:bg-red-500/10 rounded cursor-pointer" data-action="cloneToBestiary" title="Clonar para Bestiário">😈 NPC</button>
                             </div>
                         </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-5 bg-black/20 p-5 border-2 border-tomeGold/30 rounded-xl">
-                            <div className="form-group"><label className="attr-label">CLASSE</label><input className="legacy-input" name="class" value={p.class || ''} placeholder="Bardo" /></div>
-                            <div className="form-group"><label className="attr-label">NÍVEL</label><input className="legacy-input" type="number" name="level" min="1" max="20" value={p.level || 1} /></div>
-                            <div className="form-group"><label className="attr-label">ANTECEDENTE</label><input className="legacy-input" name="background" value={p.background || ''} placeholder="Charlatão" /></div>
-                            <div className="form-group"><label className="attr-label">NOME DO JOGADOR</label><input className="legacy-input" name="playerName" value={p.playerName || ''} /></div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-slate-950/60 p-4 border border-tomeGold/30 rounded-xl shadow-lg">
+                            <div className="form-group"><label className="attr-label text-[0.65rem] font-bold text-tomeGold block mb-1">CLASSE</label><input className="legacy-input w-full text-sm bg-black/40 border border-slate-700/60 rounded p-1.5 text-white focus:border-amber-400 focus:outline-none" name="class" defaultValue={p.class || ''} placeholder="Ex: Bardo, Mago..." /></div>
+                            <div className="form-group"><label className="attr-label text-[0.65rem] font-bold text-tomeGold block mb-1">NÍVEL</label><input className="legacy-input w-full text-sm bg-black/40 border border-slate-700/60 rounded p-1.5 text-white focus:border-amber-400 focus:outline-none" type="number" name="level" min="1" max="20" defaultValue={p.level || 1} /></div>
+                            <div className="form-group"><label className="attr-label text-[0.65rem] font-bold text-tomeGold block mb-1">ANTECEDENTE</label><input className="legacy-input w-full text-sm bg-black/40 border border-slate-700/60 rounded p-1.5 text-white focus:border-amber-400 focus:outline-none" name="background" defaultValue={p.background || ''} placeholder="Ex: Charlatão, Nobre..." /></div>
+                            <div className="form-group"><label className="attr-label text-[0.65rem] font-bold text-tomeGold block mb-1">NOME DO JOGADOR</label><input className="legacy-input w-full text-sm bg-black/40 border border-slate-700/60 rounded p-1.5 text-white focus:border-amber-400 focus:outline-none" name="playerName" defaultValue={p.playerName || ''} /></div>
                             
-                            <div className="form-group"><label className="attr-label">RAÇA</label><input className="legacy-input" name="race" value={p.race || ''} placeholder="Draconato" /></div>
-                            <div className="form-group"><label className="attr-label">TENDÊNCIA</label><input className="legacy-input" name="alignment" value={p.alignment || ''} placeholder="Caótico e Bom" /></div>
-                            <div className="form-group"><label className="attr-label">PONTOS DE EXPERIÊNCIA</label><input className="legacy-input" type="number" name="xp" value={p.xp || 0} /></div>
-                            <div className="form-group flex items-end justify-center text-[0.75rem] font-extrabold font-outfit tracking-wider uppercase">DOMÍNIO RPG 5E</div>
+                            <div className="form-group"><label className="attr-label text-[0.65rem] font-bold text-tomeGold block mb-1">RAÇA</label><input className="legacy-input w-full text-sm bg-black/40 border border-slate-700/60 rounded p-1.5 text-white focus:border-amber-400 focus:outline-none" name="race" defaultValue={p.race || ''} placeholder="Ex: Draconato, Elfo..." /></div>
+                            <div className="form-group"><label className="attr-label text-[0.65rem] font-bold text-tomeGold block mb-1">TENDÊNCIA</label><input className="legacy-input w-full text-sm bg-black/40 border border-slate-700/60 rounded p-1.5 text-white focus:border-amber-400 focus:outline-none" name="alignment" defaultValue={p.alignment || ''} placeholder="Ex: Caótico e Bom..." /></div>
+                            <div className="form-group"><label className="attr-label text-[0.65rem] font-bold text-tomeGold block mb-1">PONTOS DE EXPERIÊNCIA</label><input className="legacy-input w-full text-sm bg-black/40 border border-slate-700/60 rounded p-1.5 text-white focus:border-amber-400 focus:outline-none" type="number" name="xp" defaultValue={p.xp || 0} /></div>
+                            <div className="form-group flex items-end justify-center text-[0.7rem] font-black font-cinzel tracking-widest text-amber-500/80 pb-2">DOMÍNIO RPG 5E</div>
                         </div>
                     </div>
                 </header>
 
                 {/* ════ TAB NAVIGATION ════ */}
-                <nav className="sheet-tabs flex justify-center gap-5 border-b-[3px] border-[var(--sheet-border-color)] mb-10">
-                    <button type="button" className="sheet-tab-btn {currentTab === 'core' ? 'active' : ''}" data-action="switchTab" data-tab="core">ESSÊNCIA & COMBATE</button>
-                    <button type="button" className="sheet-tab-btn {currentTab === 'bio' ? 'active' : ''}" data-action="switchTab" data-tab="bio">HISTÓRIA & POSSES</button>
-                    <button type="button" className="sheet-tab-btn {currentTab === 'spells' ? 'active' : ''}" data-action="switchTab" data-tab="spells">GRIMÓRIO ARCANO</button>
-                    <button type="button" className="sheet-tab-btn {currentTab === 'card' ? 'active' : ''}" data-action="switchTab" data-tab="card">VI. CARD AVATAR</button>
+                <nav className="sheet-tabs flex justify-center gap-3 border-b-2 border-tomeGold/30 mb-8 pb-1">
+                    <button 
+                        type="button" 
+                        className={`sheet-tab-btn px-4 py-2 text-xs md:text-sm font-cinzel font-bold transition-all duration-200 cursor-pointer ${currentTab === 'core' ? 'text-tomeGold border-b-2 border-tomeGold drop-shadow-[0_0_8px_rgba(197,160,89,0.5)]' : 'text-slate-400 hover:text-slate-200'}`} 
+                        onClick={() => { setCurrentTab('core'); actions._currentTab = 'core'; }}
+                    >
+                        <i className="fa-solid fa-shield-halved mr-1.5"></i> ESSÊNCIA & COMBATE
+                    </button>
+                    <button 
+                        type="button" 
+                        className={`sheet-tab-btn px-4 py-2 text-xs md:text-sm font-cinzel font-bold transition-all duration-200 cursor-pointer ${currentTab === 'bio' ? 'text-tomeGold border-b-2 border-tomeGold drop-shadow-[0_0_8px_rgba(197,160,89,0.5)]' : 'text-slate-400 hover:text-slate-200'}`} 
+                        onClick={() => { setCurrentTab('bio'); actions._currentTab = 'bio'; }}
+                    >
+                        <i className="fa-solid fa-book-open mr-1.5"></i> HISTÓRIA & POSSES
+                    </button>
+                    <button 
+                        type="button" 
+                        className={`sheet-tab-btn px-4 py-2 text-xs md:text-sm font-cinzel font-bold transition-all duration-200 cursor-pointer ${currentTab === 'spells' ? 'text-tomeGold border-b-2 border-tomeGold drop-shadow-[0_0_8px_rgba(197,160,89,0.5)]' : 'text-slate-400 hover:text-slate-200'}`} 
+                        onClick={() => { setCurrentTab('spells'); actions._currentTab = 'spells'; }}
+                    >
+                        <i className="fa-solid fa-wand-sparkles mr-1.5"></i> GRIMÓRIO ARCANO
+                    </button>
+                    <button 
+                        type="button" 
+                        className={`sheet-tab-btn px-4 py-2 text-xs md:text-sm font-cinzel font-bold transition-all duration-200 cursor-pointer ${currentTab === 'card' ? 'text-tomeGold border-b-2 border-tomeGold drop-shadow-[0_0_8px_rgba(197,160,89,0.5)]' : 'text-slate-400 hover:text-slate-200'}`} 
+                        onClick={() => { 
+                            setCurrentTab('card'); 
+                            actions._currentTab = 'card';
+                            setTimeout(() => actions.previewCards?.(), 100); 
+                        }}
+                    >
+                        <i className="fa-solid fa-id-card mr-1.5"></i> VI. CARD AVATAR
+                    </button>
                 </nav>
 
                 {/* ════ TAB I: CORE ════ */}
-                {renderCoreTab(p, actions)}
+                {currentTab === 'core' && renderCoreTab(p, actions)}
 
                 {/* ════ TAB II: BIO & INVENTORY ════ */}
-                {renderBioInventoryTab(p, actions)}
+                {currentTab === 'bio' && renderBioInventoryTab(p, actions)}
 
                 {/* ════ TAB III: GRIMÓRIO ARCANO ════ */}
-                {renderSpellsTab(p, actions)}
+                {currentTab === 'spells' && renderSpellsTab(p, actions)}
 
                 {/* ════ TAB IV: CARD AVATAR ════ */}
-                <div className="tab-content {currentTab === 'card' ? 'active' : ''}">
-                    {actions._renderCardTab()}
-                </div>
+                {currentTab === 'card' && (
+                    <div className="tab-content active animate-fadeIn">
+                        {actions._renderCardTab()}
+                    </div>
+                )}
 
                 <footer class="mt-[60px] text-center pb-[60px]">
                     <button type="button" className="btn btn-primary px-20 py-5 text-[1.5rem] font-header tracking-widest shadow-[0_0_15px_rgba(197,160,89,1)]" data-action="submitForm">

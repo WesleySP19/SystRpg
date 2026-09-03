@@ -21,6 +21,8 @@ export function Bestiary(opts) {
     const [viewMode, setViewMode] = useState("grid");
     const [selectedCreature, setSelectedCreature] = useState(null);
     const [showForgeModal, setShowForgeModal] = useState(false);
+    const [showArtModal, setShowArtModal] = useState(false);
+    const [artEditingCreature, setArtEditingCreature] = useState(null);
     const [activeRoll, setActiveRoll] = useState(null);
     const [rollMod, setRollMod] = useState("normal");
     const [, setTick] = useState(0);
@@ -46,6 +48,10 @@ export function Bestiary(opts) {
             if (action === "closeForgeModal") closeForgeModal(e, btn);
             if (action === "forgeCustomMonster") forgeCustomMonster(e, btn);
             if (action === "backToGrid") backToGrid(e, btn);
+            if (action === "openArtModal") openArtModal(e, btn);
+            if (action === "closeArtModal") closeArtModal(e, btn);
+            if (action === "saveArtModal") handleSaveArt(e, btn);
+            if (action === "resetArtToDefault") resetArtToDefault(e, btn);
         }
     };
 
@@ -77,9 +83,21 @@ export function Bestiary(opts) {
     const $$ = (sel) => containerRef.current ? containerRef.current.querySelectorAll(sel) : [];
 
     function _getCombinedCreatures() {
-        const staticCreatures = MonsterData[selectedLevel] || [];
+        const overrides = store.state.monsterOverrides || {};
+        const staticCreatures = (MonsterData[selectedLevel] || []).map(m => {
+            if (overrides[m.name]) {
+                return { ...m, ...overrides[m.name] };
+            }
+            return m;
+        });
         const customCreatures = (store.state.customMonsters || [])
-            .filter(m => m.level === selectedLevel || m.cr === selectedLevel || (!m.level && selectedLevel === 'Nível 1'));
+            .filter(m => m.level === selectedLevel || m.cr === selectedLevel || (!m.level && selectedLevel === 'Nível 1'))
+            .map(m => {
+                if (overrides[m.name]) {
+                    return { ...m, ...overrides[m.name] };
+                }
+                return m;
+            });
         return [...customCreatures, ...staticCreatures];
     }
 
@@ -262,6 +280,9 @@ export function Bestiary(opts) {
 
                 <!-- VISUAL DYNAMIC DICE ROLLER OVERLAY -->
                 ${activeRoll ? _renderVisualDiceRoller() : ''}
+
+                <!-- CUSTOM ART MODAL -->
+                ${showArtModal ? _renderArtModal() : ''}
             </div>
         `;
     }
@@ -286,51 +307,47 @@ export function Bestiary(opts) {
     }
 
     function _renderCreatureCard(m, index, isBoss) {
-        const img = MonsterArt.getImage(m);
         const delay = index * 0.04;
         const isCustom = m.id && String(m.id).startsWith('custom_');
-        const portraitImg = img
-            ? `<img src="${img}" alt="${m.name}" loading="lazy" onerror="style.display='none';nextElementSibling.style.display='flex';">`
-            : '';
+        const tokenHtml = MonsterArt.renderToken(m, 'w-24 h-24');
 
         const levelStr = String(m.level || m.cr || 1);
         const levelNum = levelStr.replace(/\D/g, '') || 1;
 
         return `
-            <div class="card bestiary-card-premium"
+            <div class="card bestiary-card-premium group hover:border-amber-400/80 transition-all duration-300 cursor-pointer"
                  style="animation: fadeIn 0.4s ease-out ${delay}s both;"
                  data-action="viewCreature" data-name="${m.name}">
                 
-                <div class="bc-inner">
+                <div class="bc-inner relative overflow-hidden rounded-xl bg-slate-900/95 border border-tomeGold/30 hover:shadow-[0_10px_25px_rgba(0,0,0,0.8),0_0_15px_rgba(197,160,89,0.2)] transition-all">
                     <!-- Badges -->
                     <span class="bc-badge level">Nível ${levelNum}</span>
                     ${isBoss ? '<span class="bc-badge boss">Boss</span>' : ''}
                     ${isCustom ? '<span class="bc-badge forged">Forjado</span>' : ''}
 
                     <!-- Top Banner -->
-                    <div class="bc-top-banner">
-                        <h4 class="bc-name">${m.name}</h4>
+                    <div class="bc-top-banner text-center py-2 px-3 border-b border-tomeGold/20 bg-slate-950/60">
+                        <h4 class="bc-name text-amber-300 font-cinzel font-bold text-sm truncate m-0 drop-shadow">${m.name}</h4>
                     </div>
                     
-                    <!-- Full Bleed Image (Inside Inner) -->
-                    <div class="bc-portrait">
-                        ${portraitImg}
-                        <span class="bc-emoji" style="${img ? 'display:none;' : ''}">${m.emoji || '🐾'}</span>
+                    <!-- Token Image Container with Metallic Frame -->
+                    <div class="bc-portrait flex items-center justify-center p-4 min-h-[140px] bg-gradient-to-b from-black/40 via-slate-950/60 to-black/40">
+                        <div class="w-24 h-24 relative flex items-center justify-center">
+                            ${tokenHtml}
+                        </div>
                     </div>
 
                     <!-- Bottom Banner (Type & Actions) -->
-                    <div class="bc-bottom-banner creature-action-btn">
-                        <div class="bc-type">${m.type || 'Monstro'}</div>
-                        <div class="bc-actions-bar">
-                            <button class="btn btn-sm" style="border: 2px solid #1a1a1a; font-weight: 900; color: #1a1a1a; background: #fff; box-shadow: 2px 2px 0 #1a1a1a; font-family: 'Outfit', sans-serif;" onclick="event.stopPropagation(); closest('.bestiary-card-premium').click();">
-                                VER FICHA
+                    <div class="bc-bottom-banner creature-action-btn flex justify-between items-center px-3 py-2 bg-slate-950/80 border-t border-tomeGold/20">
+                        <div class="bc-type text-slate-400 text-[0.7rem] font-bold uppercase truncate max-w-[110px]">${m.type || 'Monstro'}</div>
+                        <div class="bc-actions-bar flex items-center gap-1.5">
+                            <button class="btn btn-sm text-[0.7rem] font-cinzel font-bold px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-tomeGold/40 rounded shadow cursor-pointer" onclick="event.stopPropagation(); closest('.bestiary-card-premium').click();">
+                                FICHA
                             </button>
-                            <div style="display:flex; gap:6px;">
-                                <button class="btn btn-sm" style="background:#1a1a1a; color:#fff; border: 2px solid #1a1a1a; box-shadow: 2px 2px 0 #1a1a1a;" data-action="spawnCreature" data-name="${m.name}" title="Invocar no Mapa">
-                                    <i class="fa-solid fa-swords"></i>
-                                </button>
-                                ${isCustom ? `<button class="btn btn-sm" style="background:#cc1111; color:#fff; border: 2px solid #1a1a1a; box-shadow: 2px 2px 0 #1a1a1a;" data-action="deleteCustomMonster" data-id="${m.id}"><i class="fa-solid fa-trash-can"></i></button>` : ''}
-                            </div>
+                            <button class="btn btn-sm px-2 py-1 bg-red-900/80 hover:bg-red-800 text-white rounded border border-red-500/40 cursor-pointer shadow" data-action="spawnCreature" data-name="${m.name}" title="Invocar no Mapa">
+                                <i class="fa-solid fa-swords text-xs"></i>
+                            </button>
+                            ${isCustom ? `<button class="btn btn-sm px-2 py-1 bg-red-950 hover:bg-red-900 text-red-300 rounded border border-red-700/50 cursor-pointer" data-action="deleteCustomMonster" data-id="${m.id}" title="Excluir"><i class="fa-solid fa-trash-can text-xs"></i></button>` : ''}
                         </div>
                     </div>
 
@@ -363,86 +380,112 @@ export function Bestiary(opts) {
             const melee = MonsterArt.isMeleeAction(a);
             const icon = melee ? 'fa-swords' : 'fa-wand-sparkles';
             return `
-                <div class="sb-action-card">
-                    <h4><i class="fa-solid ${icon}"></i> ${a.name}</h4>
-                    <div class="sb-action-stat">
-                        <strong>+${a.bonus || 0}</strong> para atingir ·
-                        <strong>${(a.damage || '1d6').toUpperCase()}</strong> ${dmgType(a)} DMG
+                <div class="sb-action-card p-3 rounded-xl bg-slate-900/90 border border-tomeGold/30 flex flex-col justify-between shadow-md">
+                    <h4 class="m-0 text-sm font-cinzel font-bold text-amber-300 flex items-center gap-2 mb-1.5">
+                        <i class="fa-solid ${icon} text-red-400"></i> ${a.name}
+                    </h4>
+                    <div class="sb-action-stat text-xs text-slate-300 mb-2 leading-relaxed">
+                        <strong class="text-amber-400">+${a.bonus || 0}</strong> para atingir ·
+                        <strong class="text-red-400">${(a.damage || '1d6').toUpperCase()}</strong> ${dmgType(a)} DMG
                     </div>
-                    <button type="button" class="sb-action-roll" data-action="rollBestiaryAttack" data-index="${idx}">Rolar ataque</button>
+                    <button type="button" class="sb-action-roll w-full py-1.5 px-3 text-xs font-bold font-outfit uppercase tracking-wider bg-red-900/80 hover:bg-red-800 text-white rounded-lg border border-red-500/50 cursor-pointer transition-colors shadow" data-action="rollBestiaryAttack" data-index="${idx}">
+                        <i class="fa-solid fa-dice-d20 mr-1"></i> Rolar Ataque
+                    </button>
                 </div>`;
         }).join('');
 
         const abilityBoxes = Object.entries(stats).map(([k, v]) => {
             const mod = getMod(v);
             return `
-                <div class="sb-ability">
-                    <div class="sb-ability-mod">${mod >= 0 ? '+' : ''}${mod}</div>
-                    <div class="sb-ability-score">${v}</div>
-                    <div class="sb-ability-name">${statNames[k] || k.toUpperCase()}</div>
+                <div class="sb-ability p-3 rounded-xl bg-slate-900/90 border border-tomeGold/30 text-center shadow-md">
+                    <div class="sb-ability-mod text-xl font-black text-amber-400 leading-none">${mod >= 0 ? '+' : ''}${mod}</div>
+                    <div class="sb-ability-score text-xs font-bold text-slate-400 mt-1 mb-1">${v}</div>
+                    <div class="sb-ability-name text-[0.7rem] font-bold text-tomeGold uppercase tracking-wider">${statNames[k] || k.toUpperCase()}</div>
                 </div>`;
         }).join('');
 
         const notes = m.notes || m.traits || '';
         const traitsBlock = notes
-            ? `<div class="sb-trait-title">${notes.split(/[.!]/)[0]}</div><p>${notes}</p>`
-            : `<p><strong>Percepção Passiva</strong> ${10 + getMod(stats.wis)} · <strong>Idiomas</strong> Comum</p>`;
+            ? `<div class="sb-trait-title font-cinzel font-bold text-amber-300 text-sm mb-1">${notes.split(/[.!]/)[0]}</div><p class="text-xs text-slate-300 leading-relaxed">${notes}</p>`
+            : `<p class="text-xs text-slate-300 leading-relaxed"><strong>Percepção Passiva</strong> ${10 + getMod(stats.wis)} · <strong>Idiomas</strong> Comum</p>`;
 
         const descriptionBlock = (m.description || m.lore) ? `
-            <div style="padding: 15px 25px 0; font-family: 'Cinzel', serif; font-style: italic; font-size: 0.95rem; color: #444; text-align: center; line-height: 1.5; border-bottom: 2px dashed rgba(26,26,26,0.2); padding-bottom: 15px; margin-bottom: 10px;">
+            <div style="padding: 15px 25px; font-family: 'Cinzel', serif; font-style: italic; font-size: 0.95rem; color: #cbd5e1; text-align: center; line-height: 1.6; border-bottom: 1px dashed rgba(197,160,89,0.3); margin-bottom: 15px; background: rgba(0,0,0,0.2);">
                 "${m.description || m.lore}"
             </div>
         ` : '';
 
         return `
-            <div class="animate-fadeIn" style="max-width:960px; margin:0 auto; padding-bottom:40px;">
-                <button class="btn" style="background:#fff; border:3px solid #1a1a1a; box-shadow:4px 4px 0 #1a1a1a; color:#1a1a1a; font-weight:900; font-family:'Outfit',sans-serif; text-transform:uppercase; margin-bottom:20px; transition:transform 0.1s, box-shadow 0.1s;" onmousedown="style.transform='translate(2px,2px)';style.boxShadow='0 0 0 #1a1a1a'" onmouseup="style.transform='';style.boxShadow='4px 4px 0 #1a1a1a'" data-action="backToGrid">
+            <div class="animate-fadeIn max-w-[960px] mx-auto pb-10">
+                <button class="btn inline-flex items-center gap-2 mb-5 px-5 py-2.5 rounded-xl bg-slate-900 border border-tomeGold/40 hover:border-amber-400 text-slate-200 hover:text-white font-cinzel font-bold text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer shadow-lg hover:shadow-amber-500/10" data-action="backToGrid">
                     <i class="fa-solid fa-arrow-left"></i> Voltar ao Bestiário
                 </button>
 
-                <div class="bestiary-statblock ${isBoss ? 'is-boss' : ''}">
-                    <header class="sb-header">
-                        <h1 class="sb-name">${m.name}</h1>
-                        <p class="sb-subtitle">${MonsterArt.getSubtitle(m, selectedLevel)}</p>
+                <div class="bestiary-statblock ${isBoss ? 'is-boss border-red-600 shadow-[0_0_40px_rgba(220,38,38,0.3)]' : 'border-tomeGold/40 shadow-[0_20px_50px_rgba(0,0,0,0.9),0_0_30px_rgba(197,160,89,0.15)]'} bg-slate-950/95 border-2 rounded-2xl overflow-hidden backdrop-blur-md">
+                    <header class="sb-header bg-gradient-to-b from-slate-900 to-slate-950 border-b border-tomeGold/30 p-6 text-center">
+                        <h1 class="sb-name font-cinzel text-3xl md:text-4xl font-black text-amber-300 uppercase tracking-widest m-0 drop-shadow-[0_2px_10px_rgba(251,191,36,0.3)]">${m.name}</h1>
+                        <p class="sb-subtitle font-outfit text-xs md:text-sm font-bold text-slate-400 uppercase tracking-wider mt-2">${MonsterArt.getSubtitle(m, selectedLevel)}</p>
                     </header>
                     ${descriptionBlock}
 
-                    <div class="sb-class-bar">
-                        <span>${MonsterArt.getClassification(m)}</span>
-                        <span class="sb-cr">${MonsterArt.getCrDisplay(selectedLevel)}</span>
+                    <div class="sb-class-bar mx-5 my-4 px-4 py-2 rounded-lg bg-gradient-to-r from-red-950 via-slate-900 to-red-950 border border-tomeGold/40 flex justify-between items-center text-xs font-bold uppercase tracking-wider text-slate-200 shadow">
+                        <span class="text-amber-200">${MonsterArt.getClassification(m)}</span>
+                        <span class="sb-cr px-3 py-1 rounded bg-black/60 border border-tomeGold/40 text-amber-400 font-extrabold">${MonsterArt.getCrDisplay(selectedLevel)}</span>
                     </div>
 
-                    <div class="sb-hero">
-                        <div class="sb-side-left">
-                            <div class="sb-vital-box ac"><i class="fa-solid fa-shield-halved"></i><div class="sb-vital-value">${m.ac}</div><div class="sb-vital-label">Armor Class</div></div>
-                            <div class="sb-vital-box hp"><i class="fa-solid fa-heart"></i><div class="sb-vital-value">${m.hp}</div><div class="sb-vital-label">Health</div></div>
-                            <div class="sb-vital-box spd"><i class="fa-solid fa-person-running"></i><div class="sb-vital-value">${MonsterArt.getSpeed(m).replace(' ft.', '')}</div><div class="sb-vital-label">Speed</div></div>
+                    <div class="sb-hero grid grid-cols-1 md:grid-cols-[130px_1fr_260px] gap-5 p-5 min-h-[300px]">
+                        <div class="sb-side-left flex flex-col gap-3">
+                            <div class="sb-vital-box ac p-4 rounded-xl bg-slate-900/90 border border-slate-700/60 text-center shadow-md">
+                                <i class="fa-solid fa-shield-halved text-xl text-slate-400 mb-1 block"></i>
+                                <div class="sb-vital-value text-3xl font-black text-white leading-none">${m.ac}</div>
+                                <div class="sb-vital-label text-[0.65rem] font-bold text-slate-400 uppercase mt-1">Classe de Armadura</div>
+                            </div>
+                            <div class="sb-vital-box hp p-4 rounded-xl bg-slate-900/90 border border-red-900/60 text-center shadow-md">
+                                <i class="fa-solid fa-heart text-xl text-red-500 mb-1 block"></i>
+                                <div class="sb-vital-value text-3xl font-black text-red-400 leading-none">${m.hp}</div>
+                                <div class="sb-vital-label text-[0.65rem] font-bold text-red-300 uppercase mt-1">Pontos de Vida</div>
+                            </div>
+                            <div class="sb-vital-box spd p-4 rounded-xl bg-slate-900/90 border border-emerald-900/60 text-center shadow-md">
+                                <i class="fa-solid fa-person-running text-xl text-emerald-400 mb-1 block"></i>
+                                <div class="sb-vital-value text-2xl font-black text-emerald-300 leading-none">${MonsterArt.getSpeed(m).replace(' ft.', '')} ft</div>
+                                <div class="sb-vital-label text-[0.65rem] font-bold text-emerald-400 uppercase mt-1">Deslocamento</div>
+                            </div>
                         </div>
 
-                        ${MonsterArt.renderPortrait(m)}
+                        <div class="flex flex-col gap-2">
+                            ${MonsterArt.renderPortrait(m, 'sb-portrait-wrap border-2 border-tomeGold/40 rounded-xl overflow-hidden bg-black/40 min-h-[260px] flex items-center justify-center relative shadow-lg')}
+                            <button type="button" class="btn btn-ghost btn-sm text-xs font-bold text-amber-300 hover:text-amber-200 border border-tomeGold/40 hover:border-amber-400 bg-slate-900/90 hover:bg-slate-800 py-1.5 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow" data-action="openArtModal" data-name="${m.name}">
+                                <i class="fa-solid fa-palette text-amber-400"></i> Trocar Arte do Monstro
+                            </button>
+                        </div>
 
-                        <div class="sb-side-right">
-                            <div class="sb-multi-box">Multi-Atk<br>${MonsterArt.getMultiattackSummary(actions)}</div>
+                        <div class="sb-side-right flex flex-col gap-3">
+                            <div class="sb-multi-box p-3 rounded-xl bg-amber-950/60 border border-amber-500/40 text-xs font-bold text-amber-300 uppercase text-center shadow">
+                                Multi-Atk<br><span class="text-[0.7rem] text-slate-300">${MonsterArt.getMultiattackSummary(actions)}</span>
+                            </div>
                             ${actionCards}
                         </div>
                     </div>
 
-                    <div class="sb-abilities">${abilityBoxes}</div>
+                    <div class="sb-abilities grid grid-cols-3 sm:grid-cols-6 gap-3 px-5 pb-5">${abilityBoxes}</div>
 
-                    <div class="sb-traits">
-                        <p><strong>ND</strong> ${selectedLevel.replace('Nível ', '')} · <strong>Tipo</strong> ${m.type || 'Monstro'}</p>
+                    <div class="sb-traits mx-5 mb-5 p-4 rounded-xl bg-slate-900/80 border border-tomeGold/30">
+                        <p class="text-xs text-slate-300 mb-2 font-medium">
+                            <strong class="text-amber-400">ND:</strong> ${selectedLevel.replace('Nível ', '')} · 
+                            <strong class="text-amber-400">Tipo:</strong> ${m.type || 'Monstro'}
+                        </p>
                         ${traitsBlock}
                     </div>
 
-                    ${isBoss ? '<div class="sb-boss-banner">Criatura Lendária</div>' : ''}
+                    ${isBoss ? '<div class="sb-boss-banner mx-5 mb-5 p-3 rounded-xl bg-red-950/80 border border-red-500/50 text-red-300 text-center font-cinzel font-bold text-sm uppercase tracking-widest shadow">👑 Criatura Lendária</div>' : ''}
 
-                    <footer class="sb-footer">
-                        <div class="sb-test-ac">
+                    <footer class="sb-footer border-t border-tomeGold/30 p-5 bg-slate-900/60 flex flex-wrap justify-between items-center gap-4">
+                        <div class="sb-test-ac flex items-center gap-2 text-xs font-bold text-slate-300">
                             <span>CA de teste:</span>
-                            <input type="number" id="bestiary-test-ac" value="13" min="1" max="30">
+                            <input type="number" id="bestiary-test-ac" value="13" min="1" max="30" class="w-14 text-center bg-black/50 border border-slate-700 rounded p-1 text-white font-bold">
                         </div>
-                        <button class="btn" style="background:${isBoss ? '#cc1111' : '#eb5e28'}; color:#fff; border:3px solid #1a1a1a; box-shadow:4px 4px 0 #1a1a1a; font-weight:900; font-family:'Outfit',sans-serif; text-transform:uppercase; transition:transform 0.1s, box-shadow 0.1s;" onmousedown="style.transform='translate(2px,2px)';style.boxShadow='0 0 0 #1a1a1a'" onmouseup="style.transform='';style.boxShadow='4px 4px 0 #1a1a1a'" data-action="spawnFromDetail">
-                            <i class="fa-solid fa-swords"></i> Invocação Direta
+                        <button class="btn inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-red-800 to-red-950 hover:from-red-700 hover:to-red-900 text-white font-cinzel font-bold text-xs uppercase tracking-wider border border-amber-400/50 cursor-pointer shadow-lg hover:shadow-red-500/20 transition-all" data-action="spawnFromDetail">
+                            <i class="fa-solid fa-swords text-amber-400"></i> Invocação Direta
                         </button>
                     </footer>
                 </div>
@@ -572,6 +615,189 @@ export function Bestiary(opts) {
     function closeForgeModal() {
         setShowForgeModal(false);
         render();
+    }
+
+    /* ── Monster Art Customization ────────────────────────────── */
+    function openArtModal(e, el) {
+        const name = el.dataset.name || selectedCreature?.name;
+        const all = _getCombinedCreatures();
+        const c = all.find(m => m.name === name) || selectedCreature;
+        if (c) {
+            setArtEditingCreature(c);
+            setShowArtModal(true);
+            render();
+        }
+    }
+
+    function closeArtModal() {
+        setShowArtModal(false);
+        setArtEditingCreature(null);
+        render();
+    }
+
+    async function handleSaveArt(e, el) {
+        if (!artEditingCreature) return;
+        const name = artEditingCreature.name;
+        
+        // 1. Verificar se usuário enviou arquivo do computador
+        const fileInput = document.getElementById('art-modal-file-input');
+        if (fileInput && fileInput.files && fileInput.files[0]) {
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('imageFile', file);
+            Toast.show('Enviando arte da criatura...', 'info');
+            try {
+                const token = localStorage.getItem('token') || '';
+                const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+                const res = await fetch('/api/upload', {
+                    method: 'POST',
+                    headers,
+                    body: formData
+                });
+                const data = await res.json();
+                if (data && data.url) {
+                    _applyMonsterArtOverride(name, data.url);
+                    return;
+                }
+            } catch (err) {
+                console.error('Falha no upload:', err);
+                Toast.show('Erro ao enviar imagem. Verifique o arquivo.', 'danger');
+                return;
+            }
+        }
+
+        // 2. Verificar se usuário digitou URL direta
+        const urlInput = document.getElementById('art-modal-url-input');
+        if (urlInput && urlInput.value.trim()) {
+            _applyMonsterArtOverride(name, urlInput.value.trim());
+            return;
+        }
+
+        Toast.show('Escolha um arquivo ou insira uma URL de imagem.', 'warning');
+    }
+
+    function _applyMonsterArtOverride(name, newUrl) {
+        TOME.store.update(s => {
+            if (!s.monsterOverrides) s.monsterOverrides = {};
+            s.monsterOverrides[name] = {
+                ...(s.monsterOverrides[name] || {}),
+                customImg: newUrl,
+                img: newUrl
+            };
+        });
+
+        if (selectedCreature && selectedCreature.name === name) {
+            setSelectedCreature({
+                ...selectedCreature,
+                customImg: newUrl,
+                img: newUrl
+            });
+        }
+
+        Toast.show(`🎨 Ilustração de <strong>${name}</strong> atualizada com sucesso!`, 'success');
+        setShowArtModal(false);
+        setArtEditingCreature(null);
+        render();
+    }
+
+    function resetArtToDefault() {
+        if (!artEditingCreature) return;
+        const name = artEditingCreature.name;
+        TOME.store.update(s => {
+            if (s.monsterOverrides?.[name]) {
+                delete s.monsterOverrides[name].customImg;
+                delete s.monsterOverrides[name].img;
+            }
+        });
+
+        if (selectedCreature && selectedCreature.name === name) {
+            const copy = { ...selectedCreature };
+            delete copy.customImg;
+            delete copy.img;
+            setSelectedCreature(copy);
+        }
+
+        Toast.show(`✨ Arte de <strong>${name}</strong> restaurada para o padrão oficial 5e!`, 'info');
+        setShowArtModal(false);
+        setArtEditingCreature(null);
+        render();
+    }
+
+    function _renderArtModal() {
+        if (!artEditingCreature) return '';
+        const currentArt = MonsterArt.getImage(artEditingCreature, false);
+        const currentToken = MonsterArt.getImage(artEditingCreature, true);
+        const canonicalFallback = MonsterArt.getCdnFallback(artEditingCreature, false);
+        const isCustomized = !!(artEditingCreature.customImg || (artEditingCreature.img && !artEditingCreature.img.includes('/assets/sprites/')));
+
+        return `
+            <div class="modal-overlay animate-fadeIn" style="position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:4500; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(8px); padding:20px;">
+                <div class="card glass-accent animate-scaleIn bg-slate-900 border-2 border-tomeGold/50 rounded-2xl p-6 max-w-[520px] w-full shadow-2xl text-left" style="background:#0f172a;">
+                    <div class="flex justify-between items-center border-b border-tomeGold/30 pb-3 mb-4">
+                        <h3 class="font-cinzel text-lg font-bold text-amber-300 m-0 flex items-center gap-2">
+                            <i class="fa-solid fa-palette text-amber-400"></i> Trocar Arte: ${artEditingCreature.name}
+                        </h3>
+                        <button type="button" class="btn btn-ghost text-slate-400 hover:text-white p-1 text-lg leading-none cursor-pointer" data-action="closeArtModal">✕</button>
+                    </div>
+
+                    <!-- Visualização Atual -->
+                    <div class="flex items-center gap-4 bg-slate-950/80 p-3 rounded-xl border border-slate-700/60 mb-5">
+                        <div class="w-16 h-16 rounded-xl overflow-hidden border border-tomeGold/40 bg-black flex items-center justify-center shrink-0">
+                            <img src="${currentArt || currentToken || canonicalFallback}" alt="${artEditingCreature.name}" class="w-full h-full object-cover object-top" id="art-preview-img" onerror="this.style.display='none';">
+                        </div>
+                        <div class="flex-1 text-xs">
+                            <div class="text-amber-200 font-bold uppercase tracking-wider">${artEditingCreature.name}</div>
+                            <div class="text-slate-400 mt-0.5">${artEditingCreature.type || 'Monstro'} · ${selectedLevel}</div>
+                            <div class="mt-1 text-[0.7rem] ${isCustomized ? 'text-amber-400 font-bold' : 'text-emerald-400 font-bold'}">
+                                <i class="fa-solid ${isCustomized ? 'fa-pen-to-square' : 'fa-certificate'} mr-1"></i>
+                                ${isCustomized ? 'Arte personalizada ativa' : 'Arte oficial Monster Manual 5e'}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Opção 1: Enviar Arquivo do Computador -->
+                    <div class="mb-4">
+                        <label class="text-xs font-bold font-cinzel text-slate-300 block mb-1.5">
+                            <i class="fa-solid fa-cloud-arrow-up mr-1 text-amber-400"></i> 1. Enviar Arquivo do Computador
+                        </label>
+                        <div class="border-2 border-dashed border-tomeGold/40 hover:border-amber-400 rounded-xl p-4 text-center cursor-pointer bg-slate-950/50 hover:bg-slate-950 transition-colors" onclick="document.getElementById('art-modal-file-input').click();">
+                            <i class="fa-solid fa-file-image text-2xl text-slate-400 mb-1 block"></i>
+                            <span class="text-xs text-slate-300 font-medium block">Clique para escolher imagem do computador</span>
+                            <span class="text-[0.65rem] text-slate-500 block mt-0.5" id="art-modal-file-name">Suporta PNG, JPG, WebP (tokens ou retratos)</span>
+                            <input type="file" id="art-modal-file-input" style="display:none;" accept="image/*" onchange="
+                                if (this.files && this.files[0]) {
+                                    document.getElementById('art-modal-file-name').innerText = 'Selecionado: ' + this.files[0].name;
+                                    var preview = document.getElementById('art-preview-img');
+                                    if (preview) { preview.src = URL.createObjectURL(this.files[0]); preview.style.display = 'block'; }
+                                }
+                            ">
+                        </div>
+                    </div>
+
+                    <!-- Opção 2: URL Direta -->
+                    <div class="mb-6">
+                        <label class="text-xs font-bold font-cinzel text-slate-300 block mb-1.5">
+                            <i class="fa-solid fa-link mr-1 text-amber-400"></i> 2. Ou cole um link de imagem (URL)
+                        </label>
+                        <input type="url" id="art-modal-url-input" class="legacy-input w-full bg-slate-950 border border-slate-700/60 rounded-lg p-2.5 text-xs text-white focus:border-amber-400 focus:outline-none" placeholder="https://exemplo.com/minha-arte.png" value="${isCustomized ? (artEditingCreature.customImg || artEditingCreature.img) : ''}" oninput="
+                            var preview = document.getElementById('art-preview-img');
+                            if (preview && this.value.trim()) { preview.src = this.value.trim(); preview.style.display = 'block'; }
+                        ">
+                    </div>
+
+                    <!-- Botões de Ação -->
+                    <div class="flex justify-between items-center gap-3 border-t border-tomeGold/20 pt-4">
+                        <button type="button" class="btn btn-ghost text-xs text-red-400 hover:bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2 cursor-pointer" data-action="resetArtToDefault">
+                            <i class="fa-solid fa-rotate-left mr-1"></i> Restaurar Oficial 5e
+                        </button>
+                        <div class="flex gap-2">
+                            <button type="button" class="btn btn-ghost text-xs text-slate-400 hover:text-white rounded-lg px-4 py-2 cursor-pointer" data-action="closeArtModal">CANCELAR</button>
+                            <button type="button" class="btn btn-primary text-xs font-bold px-5 py-2 rounded-lg bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white shadow-lg cursor-pointer" data-action="saveArtModal">SALVAR ARTE</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
     }
 
     /* ── Actions ───────────────────────────────────────────────── */

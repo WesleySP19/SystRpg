@@ -1,3 +1,4 @@
 /* --- TOME CSS MODULE AGGREGATOR V18.5 --- */
 @import url('./modules/theme.css');
 @import url('./modules/layout.css');
+@import url('./modules/legacy.css');
