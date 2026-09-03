@@ -1,5 +1,6 @@
 import * as PIXI from '../../public/vendor/pixi.min.mjs';
 import { Raycaster } from '../../utils/Raycaster.js';
+import { MonsterArt } from '../../services/MonsterArt.js';
 
 export class TacticalMapEnginePixi {
     constructor(containerId, options = {}) {
@@ -9,8 +10,11 @@ export class TacticalMapEnginePixi {
         
         this.tokens = new Map();
         this.isGridActive = false;
+        this.snapToGrid = true;
+        this.gridStep = 50;
         this.activeTool = 'pan'; 
         this.walls = [];
+        this.fogPaths = [];
         this.isDynamicLightingEnabled = false;
         this.isVisible = true;
     }
@@ -33,6 +37,7 @@ export class TacticalMapEnginePixi {
 
         this.bgLayer = new PIXI.Container();
         this.gridLayer = new PIXI.Container();
+        this.aoeLayer = new PIXI.Container();
         this.wallLayer = new PIXI.Container();
         this.fogLayer = new PIXI.Container();
         this.tokenLayer = new PIXI.Container();
@@ -41,6 +46,7 @@ export class TacticalMapEnginePixi {
 
         this.mapContainer.addChild(this.bgLayer);
         this.mapContainer.addChild(this.gridLayer);
+        this.mapContainer.addChild(this.aoeLayer);
         this.mapContainer.addChild(this.wallLayer);
         this.mapContainer.addChild(this.fogLayer);
         this.mapContainer.addChild(this.tokenLayer);
@@ -51,6 +57,7 @@ export class TacticalMapEnginePixi {
         this.bgLayer.addChild(this.mapSprite);
 
         this._setupInteractions();
+        this._setupTouchGestures();
         this._setupLazyRendering();
         this._setupWebRTCSync();
         
@@ -173,25 +180,82 @@ export class TacticalMapEnginePixi {
         });
     }
 
-    _paintFog(x, y) {
+    _setupTouchGestures() {
+        let touchStartDist = 0;
+        let startScale = 1;
+        let lastTouchPos = null;
+
+        this.app.canvas.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                lastTouchPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            } else if (e.touches.length === 2) {
+                const dx = e.touches[0].clientX - e.touches[1].clientX;
+                const dy = e.touches[0].clientY - e.touches[1].clientY;
+                touchStartDist = Math.sqrt(dx * dx + dy * dy);
+                startScale = this.mapContainer.scale.x;
+            }
+        }, { passive: false });
+
+        this.app.canvas.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 1 && lastTouchPos) {
+                e.preventDefault();
+                const dx = e.touches[0].clientX - lastTouchPos.x;
+                const dy = e.touches[0].clientY - lastTouchPos.y;
+                this.mapContainer.x += dx;
+                this.mapContainer.y += dy;
+                lastTouchPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                if (this.isDM) this._dispatchCameraUpdate();
+            } else if (e.touches.length === 2 && touchStartDist > 0) {
+                e.preventDefault();
+                const dx = e.touches[0].clientX - e.touches[1].clientX;
+                const dy = e.touches[0].clientY - e.touches[1].clientY;
+                const currentDist = Math.sqrt(dx * dx + dy * dy);
+                const factor = currentDist / touchStartDist;
+                const newScale = Math.max(0.1, Math.min(10, startScale * factor));
+                this.mapContainer.scale.set(newScale);
+                if (this.isDM) this._dispatchCameraUpdate();
+            }
+        }, { passive: false });
+
+        this.app.canvas.addEventListener('touchend', () => {
+            touchStartDist = 0;
+            lastTouchPos = null;
+        });
+    }
+
+    _paintFog(x, y, radius = 150, broadcast = true) {
         if (!this.fogLayer.children.length) return;
         const hole = new PIXI.Graphics();
         hole.beginFill(0xffffff, 1);
-        hole.drawCircle(x, y, 150); // Brush size
+        hole.drawCircle(x, y, radius);
         hole.endFill();
         hole.blendMode = 'erase';
         this.fogLayer.addChild(hole);
+
+        const point = { x: Math.round(x), y: Math.round(y), radius };
+        this.fogPaths.push(point);
+
+        if (broadcast && this.isDM) {
+            window.dispatchEvent(new CustomEvent('tome:fog_path', {
+                detail: { points: point, paths: this.fogPaths }
+            }));
+        }
     }
 
     setTool(tool) {
         this.activeTool = tool;
-        if (tool === 'fog') {
+        if (tool === 'fog' || tool === 'eraser') {
             this.container.style.cursor = 'crosshair';
         } else if (tool === 'ruler') {
             this.container.style.cursor = 'crosshair';
         } else {
             this.container.style.cursor = 'grab';
         }
+    }
+
+    setSnapToGrid(enabled, step = 50) {
+        this.snapToGrid = enabled;
+        this.gridStep = step;
     }
 
     _dispatchCameraUpdate() {
@@ -220,15 +284,148 @@ export class TacticalMapEnginePixi {
     }
 
     setFog(fogData) {
-        // Remove existing fog graphics
         this.fogLayer.removeChildren();
+        this.fogPaths = [];
         
         if (fogData && fogData.enabled) {
             const darkness = new PIXI.Graphics();
-            darkness.beginFill(0x000000, 0.95);
-            darkness.drawRect(-5000, -5000, 10000, 10000);
+            darkness.beginFill(0x000000, 0.96);
+            darkness.drawRect(-10000, -10000, 20000, 20000);
             darkness.endFill();
             this.fogLayer.addChild(darkness);
+
+            // Restaura buracos de névoa anteriores
+            if (Array.isArray(fogData.paths)) {
+                fogData.paths.forEach(p => {
+                    const px = p.x !== undefined ? p.x : (Array.isArray(p) ? p[0] : 0);
+                    const py = p.y !== undefined ? p.y : (Array.isArray(p) ? p[1] : 0);
+                    const pr = p.radius || 150;
+                    this._paintFog(px, py, pr, false);
+                });
+            }
+        }
+    }
+
+    showPing(x, y, color = '#10b981') {
+        const pingGroup = new PIXI.Container();
+        pingGroup.x = x;
+        pingGroup.y = y;
+        this.uiLayer.addChild(pingGroup);
+
+        const hexColor = typeof color === 'string' ? parseInt(color.replace('#', '0x'), 16) : color;
+
+        const dot = new PIXI.Graphics();
+        dot.beginFill(hexColor, 1);
+        dot.drawCircle(0, 0, 8);
+        dot.endFill();
+        pingGroup.addChild(dot);
+
+        const ring = new PIXI.Graphics();
+        pingGroup.addChild(ring);
+
+        let elapsed = 0;
+        const duration = 60; // ~1s a 60fps
+
+        const onTick = () => {
+            elapsed++;
+            const t = elapsed / duration;
+            const radius = t * 90;
+            const alpha = Math.max(0, 1 - t);
+
+            ring.clear();
+            ring.lineStyle(3, hexColor, alpha);
+            ring.drawCircle(0, 0, radius);
+
+            if (elapsed >= duration) {
+                this.app.ticker.remove(onTick);
+                this.uiLayer.removeChild(pingGroup);
+                pingGroup.destroy({ children: true });
+            }
+        };
+
+        this.app.ticker.add(onTick);
+    }
+
+    showSpellEffect(x, y, color = '#9c27b0', type = 'spell') {
+        const fxGroup = new PIXI.Container();
+        fxGroup.x = x;
+        fxGroup.y = y;
+        this.uiLayer.addChild(fxGroup);
+
+        const hexColor = typeof color === 'string' ? parseInt(color.replace('#', '0x'), 16) : color;
+        const ring = new PIXI.Graphics();
+        fxGroup.addChild(ring);
+
+        const particles = [];
+        for (let i = 0; i < 12; i++) {
+            const angle = (i / 12) * Math.PI * 2;
+            const p = new PIXI.Graphics();
+            p.beginFill(hexColor, 1);
+            p.drawCircle(0, 0, 4);
+            p.endFill();
+            fxGroup.addChild(p);
+            particles.push({ gfx: p, angle });
+        }
+
+        let elapsed = 0;
+        const duration = 45;
+
+        const onTick = () => {
+            elapsed++;
+            const t = elapsed / duration;
+            const radius = t * 120;
+            const alpha = Math.max(0, 1 - t);
+
+            ring.clear();
+            ring.lineStyle(4, hexColor, alpha);
+            ring.drawCircle(0, 0, radius);
+
+            particles.forEach(p => {
+                p.gfx.x = Math.cos(p.angle) * radius * 0.8;
+                p.gfx.y = Math.sin(p.angle) * radius * 0.8;
+                p.gfx.alpha = alpha;
+            });
+
+            if (elapsed >= duration) {
+                this.app.ticker.remove(onTick);
+                this.uiLayer.removeChild(fxGroup);
+                fxGroup.destroy({ children: true });
+            }
+        };
+
+        this.app.ticker.add(onTick);
+    }
+
+    setAoeTemplate({ type = 'sphere', x, y, radius = 150, angle = 0, color = 0xef4444 }) {
+        this.clearAoeTemplates();
+        const g = new PIXI.Graphics();
+        const hexColor = typeof color === 'string' ? parseInt(color.replace('#', '0x'), 16) : color;
+
+        g.lineStyle(2, hexColor, 0.85);
+        g.beginFill(hexColor, 0.25);
+
+        if (type === 'sphere' || type === 'circle') {
+            g.drawCircle(x, y, radius);
+        } else if (type === 'cone') {
+            const halfAngle = (53 * Math.PI) / 360;
+            g.moveTo(x, y);
+            g.arc(x, y, radius, angle - halfAngle, angle + halfAngle);
+            g.lineTo(x, y);
+        } else if (type === 'line') {
+            const width = 50;
+            g.drawRect(x - width / 2, y, width, radius * 2);
+            g.rotation = angle;
+        } else if (type === 'cube') {
+            const side = radius * 2;
+            g.drawRect(x - radius, y - radius, side, side);
+        }
+        g.endFill();
+        this.aoeLayer.addChild(g);
+    }
+
+    clearAoeTemplates() {
+        if (this.aoeLayer) {
+            this.aoeLayer.removeChildren();
         }
     }
 
@@ -300,9 +497,14 @@ export class TacticalMapEnginePixi {
         graphics.endFill();
         group.addChild(graphics);
 
-        if (data.avatar) {
+        let avatarUrl = data.avatar || data.img || null;
+        if (!avatarUrl && data.name) {
+            avatarUrl = MonsterArt.getImage({ name: data.name, type: data.type }, true);
+        }
+
+        if (avatarUrl) {
             try {
-                const texture = await PIXI.Assets.load(data.avatar);
+                const texture = await PIXI.Assets.load(avatarUrl);
                 const sprite = new PIXI.Sprite(texture);
                 sprite.anchor.set(0.5);
                 // Cover the circle
@@ -317,7 +519,16 @@ export class TacticalMapEnginePixi {
                 group.addChild(mask);
                 sprite.mask = mask;
                 group.addChild(sprite);
-            } catch(e) {}
+            } catch(e) {
+                const text = new PIXI.Text(data.name ? data.name.substring(0, 2).toUpperCase() : '', {
+                    fontFamily: 'Cinzel',
+                    fontSize: size * 0.8,
+                    fill: 0xffffff,
+                    align: 'center'
+                });
+                text.anchor.set(0.5);
+                group.addChild(text);
+            }
         } else {
             const text = new PIXI.Text(data.name ? data.name.substring(0, 2).toUpperCase() : '', {
                 fontFamily: 'Cinzel',
@@ -328,6 +539,20 @@ export class TacticalMapEnginePixi {
             text.anchor.set(0.5);
             group.addChild(text);
         }
+
+        // Name Tag Label
+        const nameText = new PIXI.Text(data.name || 'Token', {
+            fontFamily: 'Outfit',
+            fontSize: 11,
+            fontWeight: 'bold',
+            fill: 0xffffff,
+            stroke: 0x000000,
+            strokeThickness: 3,
+            align: 'center'
+        });
+        nameText.anchor.set(0.5, 0);
+        nameText.y = size + 12;
+        group.addChild(nameText);
 
         // HP Bar
         const hpContainer = new PIXI.Container();

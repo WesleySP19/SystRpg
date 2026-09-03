@@ -220,11 +220,37 @@
             </div>
         </div>
 
+        <!-- MAP SCREEN -->
+        <div id="map-screen" class="hidden flex-col flex-1 overflow-hidden relative bg-obsidian-900">
+            <div id="player-map-container" class="absolute inset-0 w-full h-full"></div>
+            
+            <!-- Mobile Map Controls Overlay -->
+            <div class="absolute top-3 right-3 z-20 flex flex-col gap-2">
+                <button id="btn-map-ping" class="w-11 h-11 rounded-full bg-black/80 border border-tomeGold/50 text-tomeGold flex items-center justify-center shadow-[0_4px_15px_rgba(0,0,0,0.5)] active:scale-95" title="Enviar Ping Tático">
+                    <i class="fa-solid fa-location-crosshairs text-base"></i>
+                </button>
+                <button id="btn-map-center" class="w-11 h-11 rounded-full bg-black/80 border border-white/20 text-white flex items-center justify-center shadow-[0_4px_15px_rgba(0,0,0,0.5)] active:scale-95" title="Centralizar Mapa">
+                    <i class="fa-solid fa-crosshairs text-base"></i>
+                </button>
+            </div>
+
+            <!-- Empty State Notice -->
+            <div id="player-map-empty" class="absolute inset-0 flex flex-col items-center justify-center text-white/30 pointer-events-none z-10 p-6 text-center">
+                <i class="fa-solid fa-map text-5xl mb-3 text-tomeGold/30"></i>
+                <span class="font-cinzel text-lg tracking-widest text-gray-400">Aguardando Mapa do Mestre</span>
+                <p class="text-xs text-gray-500 mt-1 max-w-xs">O mapa de batalha aparecerá assim que o Mestre iniciar a cena tática.</p>
+            </div>
+        </div>
+
         <!-- BOTTOM TAB BAR -->
         <nav id="tab-bar">
             <button class="tab-btn active" id="tab-chat">
                 <i class="fa-solid fa-comment-dots"></i>
                 <span>Mesa</span>
+            </button>
+            <button class="tab-btn" id="tab-map">
+                <i class="fa-solid fa-map-location-dot"></i>
+                <span>Mapa</span>
             </button>
             <button class="tab-btn" id="tab-profile">
                 <i class="fa-solid fa-user-shield"></i>
@@ -245,9 +271,114 @@
     <script type="module">
         import { UI } from '/jogador/js/UI.js';
         import { Engine } from '/jogador/js/Engine.js';
+        import { TacticalMapEnginePixi } from '/ui/components/TacticalMapEnginePixi.js';
 
         const ui = new UI();
         const engine = new Engine(ui);
+
+        // Instancia a Engine PixiJS no Mobile do Jogador
+        let playerMapEngine = null;
+        let socket = null;
+
+        async function initPlayerMap(tableId) {
+            const container = document.getElementById('player-map-container');
+            const emptyHint = document.getElementById('player-map-empty');
+            if (!container || playerMapEngine) return;
+
+            playerMapEngine = new TacticalMapEnginePixi('player-map-container', {
+                width: container.clientWidth || window.innerWidth,
+                height: container.clientHeight || window.innerHeight,
+                isDM: false
+            });
+            await playerMapEngine.init(container.clientWidth || window.innerWidth, container.clientHeight || window.innerHeight);
+
+            // Redimensiona quando a aba Mapa for ativada
+            window.addEventListener('tome:map_tab_activated', () => {
+                if (playerMapEngine && playerMapEngine.app && playerMapEngine.app.renderer) {
+                    const rect = container.getBoundingClientRect();
+                    playerMapEngine.app.renderer.resize(rect.width || window.innerWidth, rect.height || window.innerHeight);
+                }
+            });
+
+            // Socket.IO para sincronização com o Mestre na LAN
+            try {
+                socket = io();
+                socket.emit('joinRoom', { mesaId: tableId });
+
+                socket.on('map_sync_event', (data) => {
+                    if (!data || !playerMapEngine) return;
+
+                    if (data.type === 'MAP_UPDATE') {
+                        if (data.mapUrl !== undefined) {
+                            playerMapEngine.setMapUrl(data.mapUrl);
+                            if (data.mapUrl) emptyHint.style.display = 'none';
+                            else emptyHint.style.display = 'flex';
+                        }
+                        if (data.fog !== undefined) playerMapEngine.setFog(data.fog);
+                        if (data.gridActive !== undefined) {
+                            playerMapEngine.setGrid(data.gridActive, data.gridScale || '1.5m');
+                        }
+                        if (data.tokens !== undefined) playerMapEngine.updateTokens(data.tokens);
+                    }
+                    if (data.type === 'TOKEN_MOVE' && data.data) {
+                        const { id, x, y } = data.data;
+                        const token = playerMapEngine.tokens.get(id);
+                        if (token) {
+                            token.targetX = x;
+                            token.targetY = y;
+                        }
+                    }
+                    if (data.type === 'PING') {
+                        const pos = data.position || data;
+                        playerMapEngine.showPing(pos.x, pos.y, data.color || '#10b981');
+                    }
+                    if (data.type === 'CAMERA_UPDATE' && data.data) {
+                        playerMapEngine.setCamera(data.data.x, data.data.y, data.data.scale);
+                    }
+                    if ((data.type === 'FOG_PATH_UPDATE' || data.type === 'FOG_UPDATE') && data.data) {
+                        const pt = data.data.points || data.data;
+                        if (pt && pt.x !== undefined && pt.y !== undefined) {
+                            playerMapEngine._paintFog(pt.x, pt.y, pt.radius || 150, false);
+                        }
+                    }
+                    if (data.type === 'AOE_TEMPLATE' && data.data) {
+                        playerMapEngine.setAoeTemplate(data.data);
+                    }
+                });
+
+                // Solicita o mapa atual do servidor
+                socket.emit('map_request_sync', { tableId });
+            } catch(err) {
+                console.warn('[PlayerMap] Falha ao conectar ao Socket.io:', err);
+            }
+
+            // Controles rápidos do mobile
+            const btnPing = document.getElementById('btn-map-ping');
+            if (btnPing) {
+                btnPing.addEventListener('click', () => {
+                    if (!playerMapEngine) return;
+                    const cx = (playerMapEngine.app.screen.width / 2 - playerMapEngine.mapContainer.x) / playerMapEngine.mapContainer.scale.x;
+                    const cy = (playerMapEngine.app.screen.height / 2 - playerMapEngine.mapContainer.y) / playerMapEngine.mapContainer.scale.y;
+                    playerMapEngine.showPing(cx, cy, '#f59e0b');
+                    if (socket) {
+                        socket.emit('map_sync_event', {
+                            type: 'PING',
+                            position: { x: cx, y: cy },
+                            color: '#f59e0b',
+                            sender: engine.currentName || 'Jogador'
+                        });
+                    }
+                });
+            }
+
+            const btnCenter = document.getElementById('btn-map-center');
+            if (btnCenter) {
+                btnCenter.addEventListener('click', () => {
+                    if (!playerMapEngine) return;
+                    playerMapEngine.setCamera(0, 0, 1);
+                });
+            }
+        }
 
         const sendAction = () => {
             const txt = ui.chatInput.value.trim();
@@ -270,9 +401,14 @@
 
         const pathParts = window.location.pathname.split('/');
         if (pathParts.length >= 2 && pathParts[1] === 'jogador') {
-            engine.connectWithToken();
+            engine.connectWithToken().then(() => {
+                if (engine.currentTable) initPlayerMap(engine.currentTable);
+            });
         } else {
-            document.getElementById('btn-connect').addEventListener('click', () => engine.connect());
+            document.getElementById('btn-connect').addEventListener('click', async () => {
+                await engine.connect();
+                if (engine.currentTable) initPlayerMap(engine.currentTable);
+            });
         }
 
         let deferredPrompt;

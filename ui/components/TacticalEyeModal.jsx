@@ -50,29 +50,34 @@ export function TacticalEyeModal({ unmount }) {
 
         const handleCameraUpdate = (e) => {
             const { x, y, scale } = e.detail;
-            broadcastRef.current?.postMessage({
-                type: 'CAMERA_UPDATE',
-                data: { x, y, scale }
-            });
+            const payload = { type: 'CAMERA_UPDATE', data: { x, y, scale } };
+            broadcastRef.current?.postMessage(payload);
+            window.TOME?.socket?.emit('map_sync_event', payload);
         };
         window.addEventListener('tome:camera_update', handleCameraUpdate);
 
         const handleFogPath = (e) => {
-            const { points } = e.detail;
-            fogPathsRef.current.push(points);
-            broadcastRef.current?.postMessage({
-                type: 'FOG_PATH_UPDATE',
-                data: { points }
-            });
+            const { points, paths } = e.detail;
+            if (paths) fogPathsRef.current = paths;
+            else fogPathsRef.current.push(points);
+
+            const payload = { type: 'FOG_UPDATE', data: { points, paths: fogPathsRef.current } };
+            broadcastRef.current?.postMessage({ type: 'FOG_PATH_UPDATE', data: { points } });
+            window.TOME?.socket?.emit('map_sync_event', payload);
         };
         window.addEventListener('tome:fog_path', handleFogPath);
 
         const handleTokenMove = (e) => {
             const { id, x, y } = e.detail;
+            const payload = { id, x, y };
             broadcastRef.current?.postMessage({
                 type: 'DELTA_UPDATE',
                 deltaType: 'TOKEN_MOVE',
-                data: { id, x, y }
+                data: payload
+            });
+            window.TOME?.socket?.emit('map_sync_event', {
+                type: 'TOKEN_MOVE',
+                data: payload
             });
             // Update server persistence on drop
             if (window.TOME?.socket) {
@@ -96,22 +101,24 @@ export function TacticalEyeModal({ unmount }) {
             e.preventDefault();
             if (activeTool === 'eraser') return;
             // PixiJS handling: get local position
-            if (mapEngine && mapEngine.mapContainer) {
+            if (mapEngineRef.current && mapEngineRef.current.mapContainer) {
                 const rect = container.getBoundingClientRect();
                 const pointerX = e.clientX - rect.left;
                 const pointerY = e.clientY - rect.top;
                 
-                const localX = (pointerX - mapEngine.mapContainer.x) / mapEngine.mapContainer.scale.x;
-                const localY = (pointerY - mapEngine.mapContainer.y) / mapEngine.mapContainer.scale.y;
+                const localX = (pointerX - mapEngineRef.current.mapContainer.x) / mapEngineRef.current.mapContainer.scale.x;
+                const localY = (pointerY - mapEngineRef.current.mapContainer.y) / mapEngineRef.current.mapContainer.scale.y;
 
-                if (typeof mapEngine.showPing === 'function') {
-                    mapEngine.showPing(localX, localY, '#10b981');
+                if (typeof mapEngineRef.current.showPing === 'function') {
+                    mapEngineRef.current.showPing(localX, localY, '#10b981');
                 }
-                broadcastRef.current?.postMessage({
+                const pingData = {
                     type: 'PING',
                     position: { x: localX, y: localY },
                     color: '#10b981'
-                });
+                };
+                broadcastRef.current?.postMessage(pingData);
+                window.TOME?.socket?.emit('map_sync_event', pingData);
                 if (window.TOME?.webrtc) {
                     window.TOME.webrtc.broadcast({ type: 'PING', x: localX, y: localY, color: '#10b981' });
                 }
@@ -243,6 +250,10 @@ export function TacticalEyeModal({ unmount }) {
             window.TOME.store.update(s => { s.mapUrl = url; });
         }
         if (mapEngineRef.current) mapEngineRef.current.setMapUrl(url);
+        window.TOME?.socket?.emit('map_sync_event', {
+            type: 'MAP_UPDATE',
+            mapUrl: url
+        });
         Toast.show('Mapa atualizado.', 'info');
     };
 
@@ -253,6 +264,11 @@ export function TacticalEyeModal({ unmount }) {
             window.TOME.store.update(s => { s.mapGrid = newGrid; });
         }
         if (mapEngineRef.current) mapEngineRef.current.setGrid(newGrid, '1.5m');
+        window.TOME?.socket?.emit('map_sync_event', {
+            type: 'MAP_UPDATE',
+            gridActive: newGrid,
+            gridScale: '1.5m'
+        });
     };
 
     const toggleFog = () => {
@@ -268,6 +284,10 @@ export function TacticalEyeModal({ unmount }) {
                 mapEngineRef.current.setFog({ enabled: false });
             }
         }
+        window.TOME?.socket?.emit('map_sync_event', {
+            type: 'FOG_UPDATE',
+            data: { enabled: newFog, paths: fogPathsRef.current }
+        });
     };
 
     const toggleDynamicLighting = () => {
@@ -288,17 +308,16 @@ export function TacticalEyeModal({ unmount }) {
     };
 
     const placeToken = (id) => {
-        const mapEngine = mapEngineRef.current;
-        if (!mapEngine) return;
-        const centerView = getStageCenter();
-        
-        const group = mapEngine.tokens.get(id);
-        if (group) {
-            group.x = centerView.x;
-            group.y = centerView.y;
-            
+        const engine = mapEngineRef.current;
+        if (!engine) return;
+
+        const center = getStageCenter();
+        const token = engine.tokens.get(id);
+        if (token) {
+            token.x = center.x;
+            token.y = center.y;
             const evt = new CustomEvent('tome:token_moved', {
-                detail: { id: id, x: centerView.x, y: centerView.y }
+                detail: { id, x: center.x, y: center.y }
             });
             window.dispatchEvent(evt);
             
@@ -310,17 +329,13 @@ export function TacticalEyeModal({ unmount }) {
         if (!mapEngineRef.current) return;
 
         const currentTokens = Array.from(mapEngineRef.current.tokens.values()).map(g => {
-            // PixiJS children: assuming 1st child is base circle (Graphics) and 3rd is Text (if no avatar)
-            let color = '#ffffff';
-            let name = 'Token';
-            let size = 50;
             return {
                 id: g.id || 'unknown',
                 x: g.x,
                 y: g.y,
-                name: name,
-                size: size,
-                color: color,
+                name: 'Token',
+                size: 50,
+                color: '#ffffff',
             };
         });
         
@@ -331,29 +346,53 @@ export function TacticalEyeModal({ unmount }) {
                 let avatar = c.img || c.portraitData || null;
                 if (isEnemy && !avatar) avatar = MonsterArt.getImage(c);
                 if (avatar && !avatar.startsWith('db://')) ct.avatar = avatar;
+                ct.name = c.name;
+                ct.hp = c.hp;
+                ct.maxHp = c.hp_max;
             }
             return ct;
         });
 
-        broadcastRef.current?.postMessage({
+        const mapPayload = {
             type: 'MAP_UPDATE',
             mapUrl: mapUrl,
             fog: { enabled: fog, paths: fogPathsRef.current },
             gridActive: grid,
             gridScale: '1.5m',
             tokens: enrichedTokens
-        });
-        
-        broadcastRef.current?.postMessage({
+        };
+
+        const cameraPayload = {
             type: 'CAMERA_UPDATE',
             data: { 
                 x: mapEngineRef.current.mapContainer.x, 
                 y: mapEngineRef.current.mapContainer.y, 
                 scale: mapEngineRef.current.mapContainer.scale.x 
             }
-        });
+        };
+
+        broadcastRef.current?.postMessage(mapPayload);
+        broadcastRef.current?.postMessage(cameraPayload);
+
+        if (window.TOME?.socket) {
+            window.TOME.socket.emit('map_sync_event', mapPayload);
+            window.TOME.socket.emit('map_sync_event', cameraPayload);
+        }
         
-        Toast.show('Sincronização cinematográfica ativada!', 'success');
+        Toast.show('📺 Telão e Celulares sincronizados via Rede Local!', 'success');
+    };
+
+    const triggerAoeTemplate = () => {
+        if (!mapEngineRef.current) return;
+        const center = getStageCenter();
+        mapEngineRef.current.setAoeTemplate({
+            type: 'sphere',
+            x: center.x,
+            y: center.y,
+            radius: 200,
+            color: '#ef4444'
+        });
+        Toast.show('🔥 Modelo de Área de Efeito (20ft) gerado no mapa.', 'warning');
     };
 
     const handleClose = () => {
@@ -451,6 +490,12 @@ export function TacticalEyeModal({ unmount }) {
                     </button>
                     <button class={`tool-btn ${activeTool === 'eraser' ? 'active' : ''}`} onClick={() => setTool('eraser')} title="Pincel Revelador de Névoa (E)">
                         <i class="fa-solid fa-eraser"></i>
+                    </button>
+                    <button class={`tool-btn ${activeTool === 'ruler' ? 'active' : ''}`} onClick={() => setTool('ruler')} title="Régua de Medição (R)">
+                        <i class="fa-solid fa-ruler-combined"></i>
+                    </button>
+                    <button class="tool-btn" onClick={triggerAoeTemplate} title="Modelo de Área de Efeito / Magia (Bola de Fogo 20ft)">
+                        <i class="fa-solid fa-burst"></i>
                     </button>
                     <button class={`tool-btn ${activeTool === 'wall' ? 'active' : ''}`} onClick={() => setTool('wall')} title="Desenhar Parede Oculta (W)">
                         <i class="fa-solid fa-layer-group"></i>

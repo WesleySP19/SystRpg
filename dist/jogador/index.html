@@ -83,9 +83,11 @@
       }
     }
     </script>
-  <script type="module" crossorigin src="/assets/player-D30QgCNq.js"></script>
+  <script type="module" crossorigin src="/assets/player-DcyJz_af.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/tailwind-hn7_9YSE.js">
   <link rel="modulepreload" crossorigin href="/assets/FXEngine-BKbXWGrS.js">
+  <link rel="modulepreload" crossorigin href="/assets/MonsterArt-DEMUppHj.js">
+  <link rel="modulepreload" crossorigin href="/assets/TacticalMapEnginePixi-BMclrTBW.js">
   <link rel="stylesheet" crossorigin href="/assets/tailwind-BE0TVmZw.css">
   <link rel="stylesheet" crossorigin href="/assets/player-CqYoThyT.css">
 </head>
@@ -224,11 +226,37 @@
             </div>
         </div>
 
+        <!-- MAP SCREEN -->
+        <div id="map-screen" class="hidden flex-col flex-1 overflow-hidden relative bg-obsidian-900">
+            <div id="player-map-container" class="absolute inset-0 w-full h-full"></div>
+            
+            <!-- Mobile Map Controls Overlay -->
+            <div class="absolute top-3 right-3 z-20 flex flex-col gap-2">
+                <button id="btn-map-ping" class="w-11 h-11 rounded-full bg-black/80 border border-tomeGold/50 text-tomeGold flex items-center justify-center shadow-[0_4px_15px_rgba(0,0,0,0.5)] active:scale-95" title="Enviar Ping Tático">
+                    <i class="fa-solid fa-location-crosshairs text-base"></i>
+                </button>
+                <button id="btn-map-center" class="w-11 h-11 rounded-full bg-black/80 border border-white/20 text-white flex items-center justify-center shadow-[0_4px_15px_rgba(0,0,0,0.5)] active:scale-95" title="Centralizar Mapa">
+                    <i class="fa-solid fa-crosshairs text-base"></i>
+                </button>
+            </div>
+
+            <!-- Empty State Notice -->
+            <div id="player-map-empty" class="absolute inset-0 flex flex-col items-center justify-center text-white/30 pointer-events-none z-10 p-6 text-center">
+                <i class="fa-solid fa-map text-5xl mb-3 text-tomeGold/30"></i>
+                <span class="font-cinzel text-lg tracking-widest text-gray-400">Aguardando Mapa do Mestre</span>
+                <p class="text-xs text-gray-500 mt-1 max-w-xs">O mapa de batalha aparecerá assim que o Mestre iniciar a cena tática.</p>
+            </div>
+        </div>
+
         <!-- BOTTOM TAB BAR -->
         <nav id="tab-bar">
             <button class="tab-btn active" id="tab-chat">
                 <i class="fa-solid fa-comment-dots"></i>
                 <span>Mesa</span>
+            </button>
+            <button class="tab-btn" id="tab-map">
+                <i class="fa-solid fa-map-location-dot"></i>
+                <span>Mapa</span>
             </button>
             <button class="tab-btn" id="tab-profile">
                 <i class="fa-solid fa-user-shield"></i>

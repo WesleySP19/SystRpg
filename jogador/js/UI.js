@@ -9,10 +9,12 @@ export class UI {
         this.chatInput = document.getElementById('chat-input');
         
         this.tabChat = document.getElementById('tab-chat');
+        this.tabMap = document.getElementById('tab-map');
         this.tabProfile = document.getElementById('tab-profile');
         this.tabDeck = document.getElementById('tab-deck');
         this.tabTomo = document.getElementById('tab-tomo');
 
+        this.mapScreen = document.getElementById('map-screen');
         this.deckScreen = document.getElementById('deck-screen');
         this.tomoScreen = document.getElementById('tomo-screen');
         
@@ -38,6 +40,7 @@ export class UI {
     _setupTabListeners() {
         const tabs = [
             { btn: this.tabChat, screen: this.chatScreen },
+            { btn: this.tabMap, screen: this.mapScreen },
             { btn: this.tabProfile, screen: this.profileScreen },
             { btn: this.tabDeck, screen: this.deckScreen },
             { btn: this.tabTomo, screen: this.tomoScreen }
@@ -54,6 +57,9 @@ export class UI {
                 // Show selected
                 t.btn.classList.add('active');
                 if(t.screen) t.screen.style.display = 'flex';
+                if (t.btn === this.tabMap) {
+                    window.dispatchEvent(new CustomEvent('tome:map_tab_activated'));
+                }
             });
         });
     }

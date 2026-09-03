@@ -203,7 +203,7 @@
     <script type="module">
         import * as Y from '/public/vendor/yjs.js';
         import { WebsocketProvider } from '/public/vendor/y-websocket.js';
-        import { TacticalMapEngine } from '/ui/components/TacticalMapEngine.js';
+        import { TacticalMapEnginePixi } from '/ui/components/TacticalMapEnginePixi.js';
 
         const dot = document.getElementById('dot-status');
         const txtStatus = document.getElementById('txt-status');
@@ -213,21 +213,24 @@
         const emptyHint = document.getElementById('empty-hint');
         const mapContainer = document.getElementById('map-container');
 
-        // Instancia a Engine do Konva no modo Espectador
-        const mapEngine = new TacticalMapEngine('map-container', {
+        // Instancia a Engine PixiJS no modo Espectador (Telão)
+        const mapEngine = new TacticalMapEnginePixi('map-container', {
             width: window.innerWidth,
             height: window.innerHeight,
             isDM: false
         });
+        await mapEngine.init(window.innerWidth, window.innerHeight);
 
         window.addEventListener('resize', () => {
-            mapEngine.resize(window.innerWidth, window.innerHeight);
+            if (mapEngine.app && mapEngine.app.renderer) {
+                mapEngine.app.renderer.resize(window.innerWidth, window.innerHeight);
+            }
         });
 
-        // Ouve atualizações instantâneas via BroadcastChannel (Mesmo Navegador/PC)
-        const channel = new BroadcastChannel('tome_map');
-        channel.onmessage = (event) => {
-            const data = event.data;
+        // Processador unificado de eventos de mapa (BroadcastChannel e Socket.IO)
+        function handleMapEvent(data) {
+            if (!data) return;
+
             if (data.type === 'MAP_UPDATE') {
                 if (data.mapUrl !== undefined) {
                     mapEngine.setMapUrl(data.mapUrl);
@@ -238,48 +241,50 @@
                     }
                 }
                 if (data.fog !== undefined) mapEngine.setFog(data.fog);
-                if (data.gridActive !== undefined || data.gridScale !== undefined) {
-                    // Ignorando gridScale temporariamente
-                    if(data.gridActive !== undefined) mapEngine.setGrid(data.gridActive, data.gridScale || '1.5m');
+                if (data.gridActive !== undefined) {
+                    mapEngine.setGrid(data.gridActive, data.gridScale || '1.5m');
                 }
                 if (data.tokens !== undefined) mapEngine.updateTokens(data.tokens);
             }
-            if (data.type === 'DELTA_UPDATE' && data.deltaType === 'TOKEN_MOVE') {
-                // Atualiza um token específico suavemente
-                if (data.data) {
-                    const currentTokens = Array.from(mapEngine.tokens.values()).map(g => ({
-                        id: g.id(),
-                        x: g.id() === data.data.id ? data.data.x : g.x(),
-                        y: g.id() === data.data.id ? data.data.y : g.y(),
-                        name: g.findOne('Text') ? g.findOne('Text').text() : 'Token',
-                        size: g.findOne('Circle') ? g.findOne('Circle').radius() * 2 : 50,
-                        color: g.findOne('Circle') ? g.findOne('Circle').fill() : '#eab308'
-                    }));
-                    
-                    // Adiciona o token se for novo (simplificado, ideal seria manter um array)
-                    const existing = currentTokens.find(t => t.id === data.data.id);
-                    if (!existing) {
-                        currentTokens.push({ id: data.data.id, x: data.data.x, y: data.data.y, name: 'Token', size: 40, color: '#eab308' });
-                    }
-                    mapEngine.updateTokens(currentTokens);
+            if (data.type === 'DELTA_UPDATE' && data.deltaType === 'TOKEN_MOVE' && data.data) {
+                const { id, x, y } = data.data;
+                const token = mapEngine.tokens.get(id);
+                if (token) {
+                    token.targetX = x;
+                    token.targetY = y;
+                }
+            }
+            if (data.type === 'TOKEN_MOVE' && data.data) {
+                const { id, x, y } = data.data;
+                const token = mapEngine.tokens.get(id);
+                if (token) {
+                    token.targetX = x;
+                    token.targetY = y;
                 }
             }
             if (data.type === 'PING') {
-                mapEngine.showPing(data.position.x, data.position.y, data.color);
+                const pos = data.position || data;
+                mapEngine.showPing(pos.x, pos.y, data.color || '#10b981');
             }
-            if (data.type === 'CAMERA_UPDATE') {
-                if (data.data) {
-                    mapEngine.setCamera(data.data.x, data.data.y, data.data.scale);
+            if (data.type === 'CAMERA_UPDATE' && data.data) {
+                mapEngine.setCamera(data.data.x, data.data.y, data.data.scale);
+            }
+            if ((data.type === 'FOG_PATH_UPDATE' || data.type === 'FOG_UPDATE') && data.data) {
+                const pt = data.data.points || data.data;
+                if (pt && pt.x !== undefined && pt.y !== undefined) {
+                    mapEngine._paintFog(pt.x, pt.y, pt.radius || 150, false);
                 }
             }
-            if (data.type === 'FOG_PATH_UPDATE') {
-                if (data.data && data.data.points) {
-                    mapEngine.addFogPath(data.data.points);
-                }
+            if (data.type === 'AOE_TEMPLATE' && data.data) {
+                mapEngine.setAoeTemplate(data.data);
             }
-        };
+        }
 
-        // Tenta detectar a mesa pela URL ou pelo default-table
+        // 1. Ouve via BroadcastChannel (mesmo PC/navegador)
+        const channel = new BroadcastChannel('tome_map');
+        channel.onmessage = (event) => handleMapEvent(event.data);
+
+        // 2. Ouve via Socket.IO (rede local LAN / Wi-Fi)
         const params = new URLSearchParams(window.location.search);
         const tableId = params.get('tableId') || localStorage.getItem('tome_last_table') || 'default-table';
 
@@ -291,6 +296,8 @@
             socket.on('connect', () => {
                 dot.classList.add('active');
                 txtStatus.textContent = `Telão Sintonizado (Mesa: ${tableId})`;
+                // Pede o mapa atualizado do servidor
+                socket.emit('map_request_sync', { tableId });
             });
 
             socket.on('disconnect', () => {
@@ -298,11 +305,15 @@
                 txtStatus.textContent = "Conexão de Rede Local interrompida.";
             });
 
+            socket.on('map_sync_event', (data) => {
+                handleMapEvent(data);
+            });
+
             socket.on('chat_message', msg => {
                 showEventPopup(msg);
             });
         } catch(e) {
-            console.warn("Socket.io não indisponível no cliente.");
+            console.warn("Socket.io indisponível no cliente.");
         }
 
         // Sintoniza com o Yjs para pegar avatares dos jogadores e rolagens CRDT em tempo real

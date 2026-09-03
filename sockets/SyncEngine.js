@@ -11,6 +11,7 @@ import * as Y from 'yjs';
 const activeYDocs = new Map();
 const messageHistory = new Map();
 const stateSnapshots = new Map(); // mesaId -> último estado salvo (para calcular deltas)
+const tacticalMapCache = new Map(); // tableId -> último estado completo do mapa tático
 
 // LRU Set para deduplicação robusta de mensagens por ID
 class LRUSet {
@@ -206,8 +207,55 @@ export function setupSyncEngine(server, io, dataDir, app) {
         
         socket.on('joinRoom', ({ mesaId }) => {
             if (mesaId) {
-                socket.join(mesaId);
-                console.log(`[NodeServer] [Socket] Cliente ${socket.id} entrou na sala da mesa: ${mesaId}`);
+                const cleanId = String(mesaId).replace(/^table-/, '');
+                socket.join(cleanId);
+                socket.join(`table-${cleanId}`);
+                socket._tableId = cleanId;
+                console.log(`[NodeServer] [Socket] Cliente ${socket.id} entrou na sala da mesa: ${cleanId}`);
+
+                // Sincronização inicial do mapa tático para clientes recém-conectados (TV, celular, etc)
+                const cached = tacticalMapCache.get(cleanId) || tacticalMapCache.get(`table-${cleanId}`);
+                if (cached) {
+                    socket.emit('map_sync_event', { type: 'MAP_UPDATE', ...cached });
+                }
+            }
+        });
+
+        socket.on('map_sync_event', (payload = {}) => {
+            const tableId = String(payload.tableId || socket._tableId || 'default-table').replace(/^table-/, '');
+            
+            if (!tacticalMapCache.has(tableId)) tacticalMapCache.set(tableId, {});
+            const current = tacticalMapCache.get(tableId);
+
+            if (payload.type === 'MAP_UPDATE') {
+                Object.assign(current, payload);
+            } else if (payload.type === 'CAMERA_UPDATE' && payload.data) {
+                current.camera = payload.data;
+            } else if (payload.type === 'TOKEN_MOVE' && payload.data) {
+                if (!current.tokens) current.tokens = [];
+                const idx = current.tokens.findIndex(t => t.id === payload.data.id);
+                if (idx >= 0) {
+                    Object.assign(current.tokens[idx], payload.data);
+                } else {
+                    current.tokens.push(payload.data);
+                }
+            } else if (payload.type === 'FOG_UPDATE' && payload.data) {
+                if (!current.fog) current.fog = { enabled: true, paths: [] };
+                if (payload.data.points) current.fog.paths.push(payload.data.points);
+                if (payload.data.paths) current.fog.paths = payload.data.paths;
+                if (payload.data.enabled !== undefined) current.fog.enabled = payload.data.enabled;
+            }
+
+            // Transmite em tempo real para toda a sala da mesa (smart TVs, notebooks, mobile)
+            socket.to(tableId).emit('map_sync_event', payload);
+            socket.to(`table-${tableId}`).emit('map_sync_event', payload);
+        });
+
+        socket.on('map_request_sync', (payload = {}) => {
+            const tableId = String(payload.tableId || socket._tableId || 'default-table').replace(/^table-/, '');
+            const cached = tacticalMapCache.get(tableId);
+            if (cached) {
+                socket.emit('map_sync_event', { type: 'MAP_UPDATE', ...cached });
             }
         });
         
