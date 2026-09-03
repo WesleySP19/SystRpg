@@ -1,6 +1,6 @@
 {
   "activeView": "home",
-  "activeTab": "tomesinal",
+  "activeTab": "dmtable",
   "players": [],
   "monsters": [],
   "savedNPCs": [],
@@ -10,7 +10,7 @@
   "combatActive": false,
   "journalEntries": [],
   "sessionNotes": "",
-  "sessionTitle": "Aventura de 10/08/2026",
+  "sessionTitle": "",
   "campaigns": [],
   "activeCampaignId": null,
   "quests": [],
@@ -27,10 +27,5 @@
     "potions": 0,
     "scrolls": 0
   },
-  "schemaVersion": 5,
-  "sessionNumber": 1,
-  "sessionsHistory": [],
-  "xpDistributed": 0,
-  "sessionLoot": "",
-  "_aiCronicle": "O destino sussurra, mas as palavras se perdem na brisa antes que possamos ouvi-las claramente."
+  "schemaVersion": 5
 }
