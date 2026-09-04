@@ -25,6 +25,7 @@ export class Engine {
         this.lastSyncTimestamp = 0;
         this.pollingInterval = null;
         this.isSocketConnected = false;
+        this._lastKnownHp = 100;
     }
 
     generateUUID() {
@@ -170,6 +171,13 @@ export class Engine {
                         this.hydrate(data, true); // true = via WebSocket, não forçar re-render sujo
                     }
                 });
+
+                this.socket.on('delta_state_update', (data) => {
+                    // Se receber delta de estado geral, requisita o estado fresco
+                    if (this.currentTable) {
+                        this.syncHTTPFallback();
+                    }
+                });
                 
                 // Heartbeat de Presença (a cada 10s)
                 if (this.presencePingInterval) clearInterval(this.presencePingInterval);
@@ -186,6 +194,52 @@ export class Engine {
         }
     }
 
+    hydrate(state, fromSocket = false) {
+        if (!state) return;
+
+        const players = state.players || [];
+        const myChar = players.find(p => {
+            if (this.currentCharId && String(p.id) === String(this.currentCharId)) return true;
+            if (this.currentName && p.name && p.name.trim().toLowerCase() === this.currentName.trim().toLowerCase()) return true;
+            return false;
+        });
+
+        if (myChar) {
+            if (myChar.id && !this.currentCharId) this.currentCharId = myChar.id;
+            if (myChar.name) this.currentName = myChar.name;
+            if (myChar.avatar && !this.currentAvatar) {
+                this.currentAvatar = myChar.avatar;
+                this.ui.updateAvatarDisplay(myChar.avatar);
+            }
+            if (myChar.class) {
+                this.currentClass = myChar.class;
+            }
+
+            this.ui.renderProfile({
+                name: this.currentName,
+                avatar: this.currentAvatar,
+                classe: this.currentClass,
+                charId: this.currentCharId,
+                tableId: this.currentTable
+            });
+            this.ui.renderVitals(myChar);
+
+            // Alerta sonoro / vibração se HP caiu a zero
+            let currentHp = 0;
+            if (typeof myChar.hp === 'object' && myChar.hp !== null) {
+                currentHp = Number(myChar.hp.current ?? myChar.hp.hp ?? 0);
+            } else {
+                currentHp = Number(myChar.hp ?? myChar.hp_current ?? 0);
+            }
+
+            if (!isNaN(currentHp) && currentHp <= 0 && this._lastKnownHp > 0) {
+                this.ui.playAlertEffect();
+                if (navigator.vibrate) navigator.vibrate([300, 150, 300, 150, 500]);
+            }
+            this._lastKnownHp = currentHp;
+        }
+    }
+
     // Sistema de Sincronização Inicial (Polling removido em favor do WebSocket)
     initFallbackPolling() {
         if (this.pollingInterval) {
@@ -197,6 +251,15 @@ export class Engine {
 
     async syncHTTPFallback() {
         if (!this.currentTable) return;
+        try {
+            // Tenta buscar o estado da mesa para hidratar o jogador
+            const tableRes = await fetch(`/data/mesa_${this.currentTable}.json?t=${Date.now()}`);
+            if (tableRes.ok) {
+                const tableData = await tableRes.json();
+                this.hydrate(tableData, false);
+            }
+        } catch(e) {}
+
         try {
             const res = await fetch(`/api/chat/sync?tableId=${this.currentTable}&since=${this.lastSyncTimestamp}`);
             if (res.ok) {

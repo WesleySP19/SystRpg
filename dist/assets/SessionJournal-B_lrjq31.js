@@ -1,5 +1,5 @@
-import{_ as R}from"./main-DOG5rWX3.js";import{R as A,d as I,A as B,h as F,T as h}from"./FXEngine-C1PzBub2.js";import{a as g,u as q,m as p}from"./Boot-nUpoHU-k.js";import{Toast as y}from"./Toast-m0Ci56ke.js";import{e as U}from"./imageExport-BGvIrfaA.js";import"./tailwind-CVCQhc7L.js";function Y({title:T,content:o,type:s,onConfirm:m,onCancel:x,onClose:z}){const w=s==="danger"?"fa-triangle-exclamation":s==="confirm"?"fa-circle-question":"fa-circle-info",f=s==="danger"?"border-red-500":"border-tomeGold",d=s==="danger"?"text-red-500":"text-tomeGold",E=s==="danger"?"bg-red-500 hover:bg-red-600":"bg-tomeGold hover:bg-tomeGold-bright",$=typeof o=="string"?o.split(`
-`).map((C,j)=>g("span",{children:[C,g("br",{})]},j)):o;return g("div",{class:"modal-overlay fixed inset-0 bg-black/80 backdrop-blur-md z-[20000] flex items-center justify-center p-5 animate-in fade-in duration-300",children:g("div",{class:`modal-card relative w-full max-w-[500px] border-t-4 ${f} bg-obsidian-900/95 shadow-[0_20px_50px_rgba(0,0,0,0.8)] rounded-xl overflow-hidden animate-in zoom-in-95 duration-300`,children:[g("div",{class:"modal-header px-6 py-5 border-b border-white/5 flex items-center gap-3",children:[g("i",{class:`fa-solid ${w} ${d} text-xl`}),g("h2",{class:"m-0 font-cinzel text-lg font-bold tracking-wide text-slate-100",children:T})]}),g("div",{class:"modal-body px-7 py-6 text-sm text-slate-300 leading-relaxed font-sans",children:$}),g("div",{class:"modal-footer px-7 py-4 bg-black/40 flex justify-end gap-3",children:[(s==="confirm"||s==="danger")&&g("button",{class:"px-4 py-2 rounded-lg font-sans text-sm font-semibold text-slate-400 bg-white/5 hover:bg-white/10 hover:text-slate-200 transition-colors",onClick:x,children:"CANCELAR"}),g("button",{class:`px-6 py-2 rounded-lg font-sans text-sm font-semibold text-white ${E} min-w-[100px] transition-colors shadow-lg`,onClick:m,children:s==="confirm"||s==="danger"?"CONFIRMAR":"OK"})]})]})})}class k{static show(o){const s=document.createElement("div");s.id=`modal-${Date.now()}`,document.body.appendChild(s);const m=()=>{A(null,s),s.remove()},x=()=>{o.onConfirm&&o.onConfirm(),m()},z=()=>{o.onCancel&&o.onCancel(),m()};A(g(Y,{title:o.title||"Aviso",content:o.content||"",type:o.type||"info",onConfirm:x,onCancel:z,onClose:m}),s)}static confirm(o,s,m="confirm"){return new Promise(x=>{k.show({title:o,content:s,type:m,onConfirm:()=>x(!0),onCancel:()=>x(!1)})})}static alert(o,s,m="info"){return new Promise(x=>{k.show({title:o,content:s,type:m,onConfirm:()=>x(!0)})})}}function Z(T){var N;const o=q(),[s,m]=I(!1),[x,z]=I(null),w=B(null),f=((N=window.TOME)==null?void 0:N.store)||{state:o},d=i=>w.current?w.current.querySelector(i):null;function E(){if(x){const{id:e,start:r,end:l}=x,n=d("#"+e);if(n&&(n.focus(),r!==null&&l!==null))try{n.setSelectionRange(r,l)}catch{}z(null)}const i=d("#session-title-input"),t=d("#session-notes-textarea"),a=d("#session-loot-textarea");i&&i.addEventListener("change",e=>{h.store.update(r=>r.sessionTitle=e.target.value)}),t&&t.addEventListener("change",e=>{h.store.update(r=>r.sessionNotes=e.target.value)}),a&&a.addEventListener("change",e=>{h.store.update(r=>r.sessionLoot=e.target.value)})}function $(){var e,r,l;const i=(e=d("#session-title-input"))==null?void 0:e.value,t=(r=d("#session-notes-textarea"))==null?void 0:r.value,a=(l=d("#session-loot-textarea"))==null?void 0:l.value;h.store.update(n=>{i!==void 0&&(n.sessionTitle=i),t!==void 0&&(n.sessionNotes=t),a!==void 0&&(n.sessionLoot=a)})}const C=i=>{const t=i.target.closest("[data-action]");if(t){const a=t.dataset.action;a==="generateAICronicle"&&D(),a==="exportReport"&&P(),a==="exportSummaryPNG"&&M(),a==="viewPastSession"&&_(i,t),a==="copyCronicle"&&G(),a==="addManualEvent"&&L(),a==="deleteEvent"&&O(i,t),a==="closeModal"&&closeModal(i,t)}};F(()=>(E(),()=>$()),[]);function j(){const{players:i,combatRound:t,sessionNumber:a}=f.state;return`
+import{_ as R}from"./main-CThBSHY6.js";import{R as A,d as I,A as F,h as H,T as u}from"./FXEngine-C1PzBub2.js";import{a as b,u as q,m as z}from"./Boot-CFGi7JQc.js";import{Toast as v}from"./Toast-m0Ci56ke.js";import{e as U}from"./imageExport-BGvIrfaA.js";import"./tailwind-CVCQhc7L.js";function Y({title:$,content:o,type:s,onConfirm:c,onCancel:g,onClose:w}){const y=s==="danger"?"fa-triangle-exclamation":s==="confirm"?"fa-circle-question":"fa-circle-info",m=s==="danger"?"border-red-500":"border-tomeGold",d=s==="danger"?"text-red-500":"text-tomeGold",k=s==="danger"?"bg-red-500 hover:bg-red-600":"bg-tomeGold hover:bg-tomeGold-bright",E=typeof o=="string"?o.split(`
+`).map((j,T)=>b("span",{children:[j,b("br",{})]},T)):o;return b("div",{class:"modal-overlay fixed inset-0 bg-black/80 backdrop-blur-md z-[20000] flex items-center justify-center p-5 animate-in fade-in duration-300",children:b("div",{class:`modal-card relative w-full max-w-[500px] border-t-4 ${m} bg-obsidian-900/95 shadow-[0_20px_50px_rgba(0,0,0,0.8)] rounded-xl overflow-hidden animate-in zoom-in-95 duration-300`,children:[b("div",{class:"modal-header px-6 py-5 border-b border-white/5 flex items-center gap-3",children:[b("i",{class:`fa-solid ${y} ${d} text-xl`}),b("h2",{class:"m-0 font-cinzel text-lg font-bold tracking-wide text-slate-100",children:$})]}),b("div",{class:"modal-body px-7 py-6 text-sm text-slate-300 leading-relaxed font-sans",children:E}),b("div",{class:"modal-footer px-7 py-4 bg-black/40 flex justify-end gap-3",children:[(s==="confirm"||s==="danger")&&b("button",{class:"px-4 py-2 rounded-lg font-sans text-sm font-semibold text-slate-400 bg-white/5 hover:bg-white/10 hover:text-slate-200 transition-colors",onClick:g,children:"CANCELAR"}),b("button",{class:`px-6 py-2 rounded-lg font-sans text-sm font-semibold text-white ${k} min-w-[100px] transition-colors shadow-lg`,onClick:c,children:s==="confirm"||s==="danger"?"CONFIRMAR":"OK"})]})]})})}class C{static show(o){const s=document.createElement("div");s.id=`modal-${Date.now()}`,document.body.appendChild(s);const c=()=>{A(null,s),s.remove()},g=()=>{o.onConfirm&&o.onConfirm(),c()},w=()=>{o.onCancel&&o.onCancel(),c()};A(b(Y,{title:o.title||"Aviso",content:o.content||"",type:o.type||"info",onConfirm:g,onCancel:w,onClose:c}),s)}static confirm(o,s,c="confirm"){return new Promise(g=>{C.show({title:o,content:s,type:c,onConfirm:()=>g(!0),onCancel:()=>g(!1)})})}static alert(o,s,c="info"){return new Promise(g=>{C.show({title:o,content:s,type:c,onConfirm:()=>g(!0)})})}}function Z($){var N;const o=q(),[s,c]=I(!1),[g,w]=I(null),y=F(null),m=((N=window.TOME)==null?void 0:N.store)||{state:o},d=i=>y.current?y.current.querySelector(i):null;function k(){if(g){const{id:e,start:r,end:l}=g,n=d("#"+e);if(n&&(n.focus(),r!==null&&l!==null))try{n.setSelectionRange(r,l)}catch{}w(null)}const i=d("#session-title-input"),t=d("#session-notes-textarea"),a=d("#session-loot-textarea");i&&i.addEventListener("change",e=>{u.store.update(r=>r.sessionTitle=e.target.value)}),t&&t.addEventListener("change",e=>{u.store.update(r=>r.sessionNotes=e.target.value)}),a&&a.addEventListener("change",e=>{u.store.update(r=>r.sessionLoot=e.target.value)})}function E(){var e,r,l;const i=(e=d("#session-title-input"))==null?void 0:e.value,t=(r=d("#session-notes-textarea"))==null?void 0:r.value,a=(l=d("#session-loot-textarea"))==null?void 0:l.value;u.store.update(n=>{i!==void 0&&(n.sessionTitle=i),t!==void 0&&(n.sessionNotes=t),a!==void 0&&(n.sessionLoot=a)})}const j=i=>{const t=i.target.closest("[data-action]");if(t){const a=t.dataset.action;a==="generateAICronicle"&&D(),a==="exportReport"&&P(),a==="exportSummaryPNG"&&M(),a==="viewPastSession"&&_(i,t),a==="copyCronicle"&&G(),a==="addManualEvent"&&L(),a==="deleteEvent"&&O(i,t),a==="closeModal"&&closeModal(i,t)}};H(()=>(k(),()=>E()),[]);function T(){const{players:i,combatRound:t,sessionNumber:a}=m.state;return`
             <style>
                 @keyframes journalFadeIn {
                     from { opacity: 0; transform: scale(0.98) translateY(12px); }
@@ -440,7 +440,7 @@ import{_ as R}from"./main-DOG5rWX3.js";import{R as A,d as I,A as B,h as F,T as h
                     </div>
                     <div style="display:flex; gap:12px;" class="mt-4 lg:mt-0">
                         <button class="btn btn-magic" data-action="generateAICronicle" ${s?"disabled":""}>
-                            ${s?p`<i class="fa-solid fa-spinner fa-spin"></i> Tecendo história...`:p`<i class="fa-solid fa-wand-magic-sparkles"></i> Gerar Crônica IA`}
+                            ${s?'<i class="fa-solid fa-spinner fa-spin"></i> Tecendo história...':'<i class="fa-solid fa-wand-magic-sparkles"></i> Gerar Crônica IA'}
                         </button>
                         <button class="btn btn-premium" data-action="exportReport">
                             <i class="fa-solid fa-file-export"></i> Exportar Relatório
@@ -486,13 +486,13 @@ import{_ as R}from"./main-DOG5rWX3.js";import{R as A,d as I,A as B,h as F,T as h
                         </div>
 
                         <!-- CAPITULOS ANTERIORES -->
-                        ${f.state.sessionsHistory&&f.state.sessionsHistory.length>0?p`
+                        ${m.state.sessionsHistory&&m.state.sessionsHistory.length>0?`
                         <div class="journal-card" style="margin-top: 10px;">
                             <h3 style="font-family:'Cinzel'; color:#c5a059; font-size:1.05rem; margin: 0 0 15px 0; display:flex; align-items:center; gap:8px;">
-                                <i class="fa-solid fa-clock-rotate-left"></i> Crônicas Passadas (${f.state.sessionsHistory.length})
+                                <i class="fa-solid fa-clock-rotate-left"></i> Crônicas Passadas (${m.state.sessionsHistory.length})
                             </h3>
                             <div style="display:flex; flex-direction:column; gap:8px; max-height:220px; overflow-y:auto; padding-right:4px;">
-                                ${f.state.sessionsHistory.map(e=>p`
+                                ${m.state.sessionsHistory.map(e=>`
                                     <div class="tome-hover-row" style="background:rgba(255,255,255,0.02); border:1px solid rgba(197,160,89,0.15); border-radius:8px; padding:10px; font-size:0.8rem; cursor:pointer;" 
                                          data-action="viewPastSession" data-id="${e.sessionNumber}">
                                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; width:100%;">
@@ -501,7 +501,7 @@ import{_ as R}from"./main-DOG5rWX3.js";import{R as A,d as I,A as B,h as F,T as h
                                         </div>
                                         <div style="color:#e2e8f0; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${e.sessionTitle}</div>
                                     </div>
-                                `)}
+                                `).join("")}
                             </div>
                         </div>
                         `:""}
@@ -527,7 +527,7 @@ import{_ as R}from"./main-DOG5rWX3.js";import{R as A,d as I,A as B,h as F,T as h
                         </div>
 
                         <!-- AI CRONICLE BANNER -->
-                        ${o._aiCronicle?p`
+                        ${o._aiCronicle?`
                             <div class="chronicle-container animate-fadeIn">
                                 <h3 class="chronicle-title">
                                     <i class="fa-solid fa-wand-magic-sparkles"></i> A Crônica do Bardo Real
@@ -555,10 +555,10 @@ import{_ as R}from"./main-DOG5rWX3.js";import{R as A,d as I,A as B,h as F,T as h
                             <div class="timeline-track">
                                 <div class="timeline-line"></div>
                                 
-                                ${(f.state.journalEntries||[]).slice().reverse().map(e=>{const r=e.type||"info",l={combat:"fa-swords",loot:"fa-coins",social:"fa-comments",info:"fa-scroll",oracle:"fa-wand-magic-sparkles"},n={combat:"#ef4444",loot:"#22c55e",social:"#3b82f6",info:"#c5a059",oracle:"#a855f7"},c={combat:"rgba(239, 68, 68, 0.35)",loot:"rgba(34, 197, 94, 0.35)",social:"rgba(59, 130, 246, 0.35)",info:"rgba(197, 160, 89, 0.35)",oracle:"rgba(168, 85, 247, 0.35)"},b=n[r]||n.info,u=c[r]||c.info,v=l[r]||l.info;return p`
-                                        <div class="timeline-item" style="--badge-color: ${b}; --badge-glow: ${u};">
+                                ${(m.state.journalEntries||[]).slice().reverse().map(e=>{const r=e.type||"info",l={combat:"fa-swords",loot:"fa-coins",social:"fa-comments",info:"fa-scroll",oracle:"fa-wand-magic-sparkles"},n={combat:"#ef4444",loot:"#22c55e",social:"#3b82f6",info:"#c5a059",oracle:"#a855f7"},p={combat:"rgba(239, 68, 68, 0.35)",loot:"rgba(34, 197, 94, 0.35)",social:"rgba(59, 130, 246, 0.35)",info:"rgba(197, 160, 89, 0.35)",oracle:"rgba(168, 85, 247, 0.35)"},f=n[r]||n.info,x=p[r]||p.info,h=l[r]||l.info;return`
+                                        <div class="timeline-item" style="--badge-color: ${f}; --badge-glow: ${x};">
                                             <div class="timeline-badge">
-                                                <i class="fa-solid ${v}"></i>
+                                                <i class="fa-solid ${h}"></i>
                                             </div>
                                             <div class="timeline-content-card">
                                                 <div class="timeline-item-header">
@@ -571,7 +571,7 @@ import{_ as R}from"./main-DOG5rWX3.js";import{R as A,d as I,A as B,h as F,T as h
                                                 <p class="timeline-item-body">${e.content}</p>
                                             </div>
                                         </div>
-                                    `}).join("")||p`
+                                    `}).join("")||`
                                     <div style="text-align:center; padding:40px 0; color:#64748b;">
                                         <i class="fa-solid fa-feather" style="font-size:2rem; opacity:0.3; margin-bottom:12px; display:block;"></i>
                                         <span style="font-size:0.85rem; font-style:italic;">Nenhum evento registrado nesta linha do tempo ainda...</span>
@@ -582,12 +582,12 @@ import{_ as R}from"./main-DOG5rWX3.js";import{R as A,d as I,A as B,h as F,T as h
                     </div>
                 </div>
             </div>
-            ${H()}
-        `}async function D(){var r,l,n;const i=((r=d("#session-title-input"))==null?void 0:r.value)||"",t=((l=d("#session-notes-textarea"))==null?void 0:l.value)||"",a=((n=d("#session-loot-textarea"))==null?void 0:n.value)||"";h.store.update(c=>{c.sessionTitle=i,c.sessionNotes=t,c.sessionLoot=a});const e=f.state.journalEntries||[];if(e.length===0&&!t){y.show("Escreva algumas notas ou comece o combate para ter fatos a narrar!","warning");return}m(!0),render();try{const b=`Como um bardo medieval lendário, teça uma crônica literária emocionante e poética (máximo 4 parágrafos) narrando os acontecimentos desta sessão de RPG.
+            ${B()}
+        `}async function D(){var r,l,n;const i=((r=d("#session-title-input"))==null?void 0:r.value)||"",t=((l=d("#session-notes-textarea"))==null?void 0:l.value)||"",a=((n=d("#session-loot-textarea"))==null?void 0:n.value)||"";u.store.update(p=>{p.sessionTitle=i,p.sessionNotes=t,p.sessionLoot=a});const e=m.state.journalEntries||[];if(e.length===0&&!t){v.show("Escreva algumas notas ou comece o combate para ter fatos a narrar!","warning");return}c(!0),render();try{const f=`Como um bardo medieval lendário, teça uma crônica literária emocionante e poética (máximo 4 parágrafos) narrando os acontecimentos desta sessão de RPG.
             Escreva em português medieval literário e dramático.
             
             FATOS DA LINHA DO TEMPO:
-            ${e.map(v=>`[${v.type.toUpperCase()}] ${v.title}: ${v.content}`).join(`
+            ${e.map(h=>`[${h.type.toUpperCase()}] ${h.title}: ${h.content}`).join(`
 `)}
             
             TESOUROS ENCONTRADOS:
@@ -596,11 +596,11 @@ import{_ as R}from"./main-DOG5rWX3.js";import{R as A,d as I,A as B,h as F,T as h
             ANOTAÇÕES DO MESTRE:
             ${t}
             
-            Foque nos heróis e no destino que os aguarda.`,u=await h.ai.ask(b);h.store.update(v=>{v._aiCronicle=u}),y.show("A crônica foi tecida pelos deuses!","success")}catch{y.show("O bardo está sem voz agora... Tente novamente.","danger")}finally{m(!1),render()}}function L(){const i=d("#manual-event-input");!i||!i.value.trim()||(h.store.update(t=>{t.journalEntries||(t.journalEntries=[]),t.journalEntries.push({id:Date.now(),timestamp:Date.now(),date:new Date().toLocaleDateString("pt-BR"),type:"info",title:"Anotação do Mestre",content:i.value.trim()})}),i.value="",R(()=>import("./Toast-m0Ci56ke.js"),[]).then(t=>t.Toast.show("Evento adicionado à linha do tempo!","success")),render())}function O(i,t){const a=t.dataset.id;!a||!confirm("Remover este evento da linha do tempo?")||(h.store.update(e=>{e.journalEntries&&(e.journalEntries=e.journalEntries.filter(r=>String(r.id)!==String(a)))}),R(()=>import("./Toast-m0Ci56ke.js"),[]).then(e=>e.Toast.show("Evento removido.","info")),render())}function _(i,t){const a=parseInt(t.dataset.id),e=(f.state.sessionsHistory||[]).find(b=>b.sessionNumber===a);if(!e)return;const r=new Date(e.timestamp).toLocaleDateString("pt-BR"),l=e.sessionNotes?e.sessionNotes:"Nenhuma nota registrada.",n=e.sessionLoot?e.sessionLoot:"Nenhum tesouro registrado.",c=(e.journalEntries||[]).map(b=>p`
+            Foque nos heróis e no destino que os aguarda.`,x=await u.ai.ask(f);u.store.update(h=>{h._aiCronicle=x}),v.show("A crônica foi tecida pelos deuses!","success")}catch{v.show("O bardo está sem voz agora... Tente novamente.","danger")}finally{c(!1),render()}}function L(){const i=d("#manual-event-input");!i||!i.value.trim()||(u.store.update(t=>{t.journalEntries||(t.journalEntries=[]),t.journalEntries.push({id:Date.now(),timestamp:Date.now(),date:new Date().toLocaleDateString("pt-BR"),type:"info",title:"Anotação do Mestre",content:i.value.trim()})}),i.value="",R(()=>import("./Toast-m0Ci56ke.js"),[]).then(t=>t.Toast.show("Evento adicionado à linha do tempo!","success")),render())}function O(i,t){const a=t.dataset.id;!a||!confirm("Remover este evento da linha do tempo?")||(u.store.update(e=>{e.journalEntries&&(e.journalEntries=e.journalEntries.filter(r=>String(r.id)!==String(a)))}),R(()=>import("./Toast-m0Ci56ke.js"),[]).then(e=>e.Toast.show("Evento removido.","info")),render())}function _(i,t){const a=parseInt(t.dataset.id),e=(m.state.sessionsHistory||[]).find(f=>f.sessionNumber===a);if(!e)return;const r=new Date(e.timestamp).toLocaleDateString("pt-BR"),l=e.sessionNotes?e.sessionNotes:"Nenhuma nota registrada.",n=e.sessionLoot?e.sessionLoot:"Nenhum tesouro registrado.",p=(e.journalEntries||[]).map(f=>z`
             <div style="margin-bottom:8px; padding-bottom:8px; border-bottom:1px dashed rgba(255,255,255,0.05); font-size:0.8rem;">
-                <span style="color:#c5a059; font-weight:bold;">[${b.type.toUpperCase()}]</span> <strong>${b.title}:</strong> ${b.content}
+                <span style="color:#c5a059; font-weight:bold;">[${f.type.toUpperCase()}]</span> <strong>${f.title}:</strong> ${f.content}
             </div>
-        `).join("")||"Sem eventos registrados.";k.show({title:`Sessão #${e.sessionNumber}`,content:p`
+        `);C.show({title:`Sessão #${e.sessionNumber}`,content:z`
                 <div style="max-height:60vh; overflow-y:auto; padding-right:8px; text-align:left; font-family:'Outfit', sans-serif;">
                     <div style="text-align:center; margin-bottom:15px; border-bottom:1px solid rgba(197,160,89,0.15); padding-bottom:10px;">
                         <h3 style="font-family:'Cinzel', serif; color:#fbbf24; margin:0; font-size:1.3rem;">${e.sessionTitle}</h3>
@@ -621,11 +621,11 @@ import{_ as R}from"./main-DOG5rWX3.js";import{R as A,d as I,A as B,h as F,T as h
                         <i class="fa-solid fa-list-ul" style="margin-right:6px;"></i> Eventos da Sessão
                     </h4>
                     <div style="background:rgba(0,0,0,0.25); padding:10px; border-radius:6px; color:#cbd5e1;">
-                        ${c}
+                        ${p.length>0?p:z`<span>Sem eventos registrados.</span>`}
                     </div>
                 </div>
-            `,type:"info"})}function G(){o._aiCronicle&&(navigator.clipboard.writeText(o._aiCronicle),y.show("Crônica copiada com sucesso!","success"))}function P(){var e,r,l;const i=((e=d("#session-title-input"))==null?void 0:e.value)||"",t=((r=d("#session-notes-textarea"))==null?void 0:r.value)||"",a=((l=d("#session-loot-textarea"))==null?void 0:l.value)||"";h.store.update(n=>{n.sessionTitle=i,n.sessionNotes=t,n.sessionLoot=a}),y.show("Gerando relatório ilustrado para impressão...","info"),document.body.classList.add("print-report-mode"),window.print(),setTimeout(()=>document.body.classList.remove("print-report-mode"),500)}async function M(){var n,c,b;const i=((n=d("#session-title-input"))==null?void 0:n.value)||o.sessionTitle,t=((c=d("#session-notes-textarea"))==null?void 0:c.value)||o.sessionNotes,a=((b=d("#session-loot-textarea"))==null?void 0:b.value)||o.sessionLoot,{players:e,sessionNumber:r,journalEntries:l}=f.state;h.store.update(u=>{u.sessionTitle=i,u.sessionNotes=t,u.sessionLoot=a}),y.show("Renderizando cartão místico PNG da sessão...","info");try{const u=(l||[]).map(S=>`• [${S.title}] ${S.content}`).join(`
-`),v=o._aiCronicle||u||t;await U({title:i,sessionNumber:r||1,date:new Date().toLocaleDateString("pt-BR"),players:e||[],loot:a,chronicle:v,notes:t}),y.show("Cartão PNG gerado e baixado com sucesso!","success")}catch(u){console.error("[SessionJournal] Erro ao exportar PNG:",u),y.show("Falha ao exportar cartão PNG. Tente novamente.","danger")}}function H(){const{players:i,combatRound:t,journalEntries:a,sessionNumber:e}=f.state,r=o.sessionLoot||"Nenhum item especial registrado.",l=new Date().toLocaleDateString("pt-BR");return p`<div ref=${w} onClick=${C}>`+p`
+            `,type:"info"})}function G(){o._aiCronicle&&(navigator.clipboard.writeText(o._aiCronicle),v.show("Crônica copiada com sucesso!","success"))}function P(){var e,r,l;const i=((e=d("#session-title-input"))==null?void 0:e.value)||"",t=((r=d("#session-notes-textarea"))==null?void 0:r.value)||"",a=((l=d("#session-loot-textarea"))==null?void 0:l.value)||"";u.store.update(n=>{n.sessionTitle=i,n.sessionNotes=t,n.sessionLoot=a}),v.show("Gerando relatório ilustrado para impressão...","info"),document.body.classList.add("print-report-mode"),window.print(),setTimeout(()=>document.body.classList.remove("print-report-mode"),500)}async function M(){var n,p,f;const i=((n=d("#session-title-input"))==null?void 0:n.value)||o.sessionTitle,t=((p=d("#session-notes-textarea"))==null?void 0:p.value)||o.sessionNotes,a=((f=d("#session-loot-textarea"))==null?void 0:f.value)||o.sessionLoot,{players:e,sessionNumber:r,journalEntries:l}=m.state;u.store.update(x=>{x.sessionTitle=i,x.sessionNotes=t,x.sessionLoot=a}),v.show("Renderizando cartão místico PNG da sessão...","info");try{const x=(l||[]).map(S=>`• [${S.title}] ${S.content}`).join(`
+`),h=o._aiCronicle||x||t;await U({title:i,sessionNumber:r||1,date:new Date().toLocaleDateString("pt-BR"),players:e||[],loot:a,chronicle:h,notes:t}),v.show("Cartão PNG gerado e baixado com sucesso!","success")}catch(x){console.error("[SessionJournal] Erro ao exportar PNG:",x),v.show("Falha ao exportar cartão PNG. Tente novamente.","danger")}}function B(){const{players:i,combatRound:t,journalEntries:a,sessionNumber:e}=m.state,r=o.sessionLoot||"Nenhum item especial registrado.",l=new Date().toLocaleDateString("pt-BR");return`
             <div class="dnd-report-template" style="box-sizing:border-box; width:100%; max-width:800px; margin:0 auto; padding:40px; background:#ffffff; color:#000000; font-family:'Outfit', sans-serif;">
                 <!-- HEADER -->
                 <div style="text-align:center; border-bottom:3px double #000; padding-bottom:20px; margin-bottom:30px;">
@@ -639,7 +639,7 @@ import{_ as R}from"./main-DOG5rWX3.js";import{R as A,d as I,A as B,h as F,T as h
                     <div style="border:1.5px solid #000; padding:15px; border-radius:8px; background:#fafafa;">
                         <strong style="display:block; border-bottom:1.5px solid #000; padding-bottom:6px; margin-bottom:10px; font-family:'Cinzel'; font-size:12px; text-transform:uppercase;">👥 Heróis Ativos</strong>
                         <ul style="margin:0; padding-left:20px; font-size:11px; line-height:1.6; color:#222;">
-                            ${(i||[]).map(n=>p`<li><strong>${n.name}</strong> (${n.race} ${n.class} Nív ${n.level})</li>`).join("")||"<li>Nenhum herói ativo.</li>"}
+                            ${(i||[]).map(n=>`<li><strong>${n.name}</strong> (${n.race||""} ${n.class||""} Nív ${n.level||1})</li>`).join("")||"<li>Nenhum herói ativo.</li>"}
                         </ul>
                     </div>
                     <div style="border:1.5px solid #000; padding:15px; border-radius:8px; background:#fafafa;">
@@ -653,7 +653,7 @@ import{_ as R}from"./main-DOG5rWX3.js";import{R as A,d as I,A as B,h as F,T as h
                 </div>
 
                 <!-- CRONICA IA -->
-                ${o._aiCronicle?p`
+                ${o._aiCronicle?`
                     <div style="border:1.5px solid #000; padding:20px; border-radius:8px; background:#fffcf5; margin-bottom:35px; box-shadow:inset 0 0 10px rgba(0,0,0,0.02);">
                         <strong style="display:block; border-bottom:1.5px solid #000; padding-bottom:6px; margin-bottom:12px; font-family:'Cinzel'; font-size:13px; text-transform:uppercase; color:#8b1e0f;">📖 A Crônica do Bardo</strong>
                         <p style="font-size:11px; line-height:1.8; color:#111; font-style:italic; margin:0; white-space:pre-wrap;">${o._aiCronicle}</p>
@@ -670,13 +670,14 @@ import{_ as R}from"./main-DOG5rWX3.js";import{R as A,d as I,A as B,h as F,T as h
                 <div>
                     <strong style="display:block; border-bottom:1.5px solid #000; padding-bottom:6px; margin-bottom:15px; font-family:'Cinzel'; font-size:12px; text-transform:uppercase;">⏳ Linha do Tempo dos Acontecimentos</strong>
                     <div style="display:flex; flex-direction:column; gap:10px; padding-left:10px;">
-                        ${(a||[]).map(n=>p`
+                        ${(a||[]).map(n=>`
                             <div style="border-left:2px solid #000; padding-left:12px; font-size:10.5px; line-height:1.5;">
                                 <div style="font-weight:800; color:#555; font-size:9.5px; text-transform:uppercase;">
                                     ${new Date(n.timestamp||Date.now()).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})} - ${n.title||"Evento"}
                                 </div>
                                 <div style="color:#222; margin-top:2px;">${n.content}</div>
-                                `).join("")||p`<div style="font-size:11px; color:#555; font-style:italic;">Nenhum evento registrado nesta linha do tempo...</div>`}
+                            </div>
+                        `).join("")||'<div style="font-size:11px; color:#555; font-style:italic;">Nenhum evento registrado nesta linha do tempo...</div>'}
                     </div>
                 </div>
 
@@ -685,4 +686,4 @@ import{_ as R}from"./main-DOG5rWX3.js";import{R as A,d as I,A as B,h as F,T as h
                     Documento de Campanha Oficial • Domínio RPG v10.0
                 </div>
             </div>
-        `}return p`<div ref=${w} onClick=${C} dangerouslySetInnerHTML=${{__html:j()}}></div>`}export{Z as SessionJournal};
+        `}return z`<div ref=${y} onClick=${j} dangerouslySetInnerHTML=${{__html:T()}}></div>`}export{Z as SessionJournal};

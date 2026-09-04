@@ -176,9 +176,14 @@
 <body>
     <header>
         <h1>TOME • TELÃO ARCANO (MODO ESPECTADOR)</h1>
-        <div class="status-badge">
-            <span id="dot-status" class="status-dot"></span>
-            <span id="txt-status">Aguardando Sintonização com a Mesa...</span>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <button id="btn-unmute" style="background: rgba(179,139,45,0.2); border: 1px solid var(--border-gold); color: var(--text-gold); font-size: 0.8rem; padding: 6px 14px; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;" title="Ativar Som do Telão">
+                <span id="unmute-icon">🔇</span> <span id="unmute-text">Ativar Áudio da TV</span>
+            </button>
+            <div class="status-badge">
+                <span id="dot-status" class="status-dot"></span>
+                <span id="txt-status">Aguardando Sintonização com a Mesa...</span>
+            </div>
         </div>
     </header>
 
@@ -278,6 +283,9 @@
             if (data.type === 'AOE_TEMPLATE' && data.data) {
                 mapEngine.setAoeTemplate(data.data);
             }
+            if (data.type === 'SPELL_EFFECT') {
+                mapEngine.showSpellEffect(data.x, data.y, data.color || '#9c27b0', data.spellType || 'spell');
+            }
             if (data.type === 'COMBAT_UPDATE' && data.state) {
                 const { initiativeOrder, initiativeIndex, combatActive } = data.state;
                 if (combatActive && initiativeOrder && initiativeOrder.length > 0) {
@@ -289,6 +297,71 @@
                             mapEngine.focusOn(token.x, token.y);
                         }
                     }
+                }
+            }
+        }
+
+        // Sistema de Áudio Sincronizado para o Telão (Música e Ambientes)
+        let audioAllowed = false;
+        const audioChannels = {
+            music: { audio: null, volume: 0.5, lastUrl: null },
+            ambience: { audio: null, volume: 0.5, lastUrl: null }
+        };
+
+        const btnUnmute = document.getElementById('btn-unmute');
+        const unmuteIcon = document.getElementById('unmute-icon');
+        const unmuteText = document.getElementById('unmute-text');
+
+        function enableAudio() {
+            audioAllowed = true;
+            if (btnUnmute) {
+                btnUnmute.style.background = 'rgba(16, 185, 129, 0.25)';
+                btnUnmute.style.borderColor = '#10b981';
+                btnUnmute.style.color = '#34d399';
+            }
+            if (unmuteIcon) unmuteIcon.textContent = '🔊';
+            if (unmuteText) unmuteText.textContent = 'Áudio da TV Ativado';
+
+            ['music', 'ambience'].forEach(ch => {
+                if (audioChannels[ch].lastUrl && (!audioChannels[ch].audio || audioChannels[ch].audio.paused)) {
+                    playAudio(ch, audioChannels[ch].lastUrl);
+                }
+            });
+        }
+
+        if (btnUnmute) btnUnmute.addEventListener('click', enableAudio);
+        window.addEventListener('click', () => { if (!audioAllowed) enableAudio(); }, { once: true });
+
+        function playAudio(channel, url) {
+            if (!audioChannels[channel]) return;
+            audioChannels[channel].lastUrl = url;
+            stopAudio(channel);
+            if (!url) return;
+            try {
+                const snd = new Audio(url);
+                snd.loop = true;
+                snd.volume = audioChannels[channel].volume;
+                if (audioAllowed) {
+                    snd.play().catch(err => console.warn(`[Telão Som] Autoplay bloqueado:`, err.message));
+                }
+                audioChannels[channel].audio = snd;
+            } catch(err) {
+                console.warn('[Telão Som] Falha ao carregar áudio:', err);
+            }
+        }
+
+        function stopAudio(channel) {
+            if (audioChannels[channel] && audioChannels[channel].audio) {
+                audioChannels[channel].audio.pause();
+                audioChannels[channel].audio = null;
+            }
+        }
+
+        function setAudioVolume(channel, vol) {
+            if (audioChannels[channel]) {
+                audioChannels[channel].volume = Math.max(0, Math.min(1, vol));
+                if (audioChannels[channel].audio) {
+                    audioChannels[channel].audio.volume = audioChannels[channel].volume;
                 }
             }
         }
@@ -320,6 +393,22 @@
 
             socket.on('map_sync_event', (data) => {
                 handleMapEvent(data);
+            });
+
+            socket.on('map_audio', (data) => {
+                if (!data) return;
+                const action = data.action;
+                const payload = data.payload || {};
+                if (action === 'PLAY_MUSIC') {
+                    playAudio('music', payload.url);
+                } else if (action === 'PLAY_AMB') {
+                    playAudio('ambience', payload.url);
+                } else if (action === 'STOP_AUDIO') {
+                    stopAudio('music');
+                    stopAudio('ambience');
+                } else if (action === 'SET_CHANNEL_VOL') {
+                    setAudioVolume(payload.channel, payload.volume);
+                }
             });
 
             socket.on('chat_message', msg => {

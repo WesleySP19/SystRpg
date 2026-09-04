@@ -73,17 +73,6 @@
         }
         #send-btn:active { transform: scale(0.9); }
     </style>
-    
-    <script type="importmap">
-    {
-      "imports": {
-        "@preact/signals": "https://esm.sh/@preact/signals@1.2.2?external=preact",
-        "preact": "https://esm.sh/preact@10.19.3",
-        "preact/hooks": "https://esm.sh/preact@10.19.3/hooks",
-        "htm/preact": "https://esm.sh/htm@3.1.1/preact?external=preact"
-      }
-    }
-    </script>
 </head>
 <body class="text-gray-100 flex flex-col h-screen overflow-hidden selection:bg-tomeGold/30">
 
@@ -192,9 +181,46 @@
             <span class="text-xs text-gray-500 mb-6 font-outfit">Toque para atualizar Retrato</span>
 
             <div class="glass-panel w-full max-w-md p-6 mb-6">
-                <div class="text-center mb-6">
+                <div class="text-center mb-4">
                     <div class="font-cinzel text-tomeGold text-2xl font-bold mb-1" id="hero-name-display">Aventureiro</div>
                     <div class="text-xs text-gray-400 uppercase tracking-wider font-outfit" id="hero-class-display">Sintonizado no TOME</div>
+                </div>
+
+                <!-- LIVE HERO VITALS HUD -->
+                <div class="bg-obsidian-950/70 border border-white/10 rounded-xl p-4 mb-4 shadow-inner">
+                    <div class="flex justify-between items-center mb-1.5">
+                        <span class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="fa-solid fa-heart-pulse text-red-400"></i> Pontos de Vida
+                        </span>
+                        <div class="flex items-center gap-1.5">
+                            <span id="hero-hp-text" class="text-sm font-black font-cinzel text-white">-- / -- HP</span>
+                            <span id="hero-hp-temp" class="text-xs font-bold text-amber-300"></span>
+                        </div>
+                    </div>
+                    <!-- HP Progress Bar -->
+                    <div class="w-full h-3 bg-black/60 rounded-full overflow-hidden p-0.5 border border-white/10">
+                        <div id="hero-hp-bar" class="h-full bg-emerald-500 rounded-full transition-all duration-300" style="width: 100%;"></div>
+                    </div>
+                    
+                    <!-- Quick Combat Stats Grid -->
+                    <div class="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-white/5">
+                        <div class="flex items-center justify-between px-3 py-1.5 bg-white/5 rounded-lg border border-white/5">
+                            <span class="text-[11px] text-gray-400 flex items-center gap-1"><i class="fa-solid fa-shield text-tomeGold"></i> CA</span>
+                            <strong id="hero-ac-display" class="text-sm font-bold text-white">10</strong>
+                        </div>
+                        <div class="flex items-center justify-between px-3 py-1.5 bg-white/5 rounded-lg border border-white/5">
+                            <span class="text-[11px] text-gray-400 flex items-center gap-1"><i class="fa-solid fa-person-running text-blue-400"></i> Desloc.</span>
+                            <strong id="hero-speed-display" class="text-sm font-bold text-white">30ft</strong>
+                        </div>
+                    </div>
+
+                    <!-- Active Conditions Row -->
+                    <div class="mt-3 pt-2 border-t border-white/5">
+                        <div class="text-[10px] text-gray-400 uppercase tracking-wider font-bold mb-1.5">Condições Ativas</div>
+                        <div id="hero-conditions-list" class="flex flex-wrap gap-1.5 items-center">
+                            <span class="text-emerald-400/80 text-xs flex items-center gap-1 font-medium"><i class="fa-solid fa-heart-pulse"></i> Normal (Sem Condições)</span>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="grid grid-cols-3 gap-3">
@@ -376,6 +402,9 @@
                     }
                     if (data.type === 'AOE_TEMPLATE' && data.data) {
                         playerMapEngine.setAoeTemplate(data.data);
+                    }
+                    if (data.type === 'SPELL_EFFECT') {
+                        playerMapEngine.showSpellEffect(data.x, data.y, data.color || '#9c27b0', data.spellType || 'spell');
                     }
                     if (data.type === 'COMBAT_UPDATE' && data.state) {
                         updateCombatBanner(data.state);
