@@ -11,6 +11,106 @@ import { WebRTCManager } from '../services/WebRTCManager.js';
 import { render } from 'preact';
 import { html } from 'htm/preact';
 
+export function initGMSocket(tableId) {
+    try {
+        const ioClient = window.io || (typeof io !== 'undefined' ? io : null);
+        if (!ioClient) return;
+
+        let socket = window.TOME.socket;
+        if (!socket) {
+            socket = ioClient('/', {
+                reconnectionDelayMax: 10000,
+                reconnectionAttempts: 10,
+                autoConnect: true,
+                transports: ['websocket', 'polling']
+            });
+            
+            socket.on('connect_error', (err) => {
+                console.warn('[Boot] GM Socket erro de conexão:', err.message);
+                if (socket.io && socket.io.engine) {
+                    socket.io.engine.id = null;
+                }
+            });
+
+            window.TOME.socket = socket;
+        }
+
+        if (!socket._tomeListenersAttached) {
+            socket._tomeListenersAttached = true;
+
+            socket.on('connect', () => {
+                console.log('[Boot] GM Socket conectado ao servidor.');
+                const currentTable = tableId || localStorage.getItem('DM_ACTIVE_TABLE');
+                if (currentTable) {
+                    socket.emit('joinRoom', { mesaId: currentTable });
+                    console.log(`[Boot] GM entrou na sala: ${currentTable}`);
+                }
+                
+                // Inicializa WebRTC após ter o socket conectado
+                try {
+                    const webrtc = new WebRTCManager();
+                    TOME.registerService('webrtc', webrtc);
+                } catch (e) {
+                    console.warn('[Boot] Falha ao inicializar WebRTC:', e);
+                }
+            });
+
+            socket.on('map_audio', (data) => {
+                const action = data.action;
+                const payload = data.payload || {};
+                if (action === 'PLAY_MUSIC') TOME.audio?.fadeTo('music', payload.url, 2000);
+                else if (action === 'PLAY_AMB') TOME.audio?.fadeTo('ambience', payload.url, 2000);
+                else if (action === 'STOP_AUDIO') TOME.audio?.stopAll();
+                else if (action === 'SET_CHANNEL_VOL') TOME.audio?.setChannelVolume(payload.channel, payload.volume);
+                else if (action === 'SET_ENV') {
+                    TOME.store.update(s => s.currentEnvironment = payload.env);
+                }
+            });
+
+            socket.on('state_update', async (data) => {
+                if (data && typeof data === 'object') {
+                    try {
+                        const SessionManager = (await import('../services/SessionManager.js')).SessionManager;
+                        SessionManager._isApplyingNetworkState = true;
+                        TOME.store.update(s => Object.assign(s, data));
+                        setTimeout(() => SessionManager._isApplyingNetworkState = false, 500);
+                    } catch(e) {
+                        console.error('[Boot] Erro ao sincronizar state_update', e);
+                    }
+                }
+            });
+
+            // Delta State Update — recebe apenas patches (RFC 6902) ao invés do estado completo
+            socket.on('delta_state_update', async (payload) => {
+                if (payload && payload.patches && Array.isArray(payload.patches)) {
+                    try {
+                        const { applyPatch } = await import('../utils/DeltaSync.js');
+                        const SessionManager = (await import('../services/SessionManager.js')).SessionManager;
+                        SessionManager._isApplyingNetworkState = true;
+                        
+                        const currentState = TOME.store.snapshot();
+                        const patched = applyPatch(currentState, payload.patches);
+                        TOME.store.update(s => Object.assign(s, patched));
+                        
+                        console.log(`[Boot] Delta sync aplicado: ${payload.patches.length} patches (v${payload.version})`);
+                        setTimeout(() => SessionManager._isApplyingNetworkState = false, 500);
+                    } catch(e) {
+                        console.error('[Boot] Erro no delta_state_update, solicitando estado completo:', e);
+                    }
+                }
+            });
+        }
+
+        const currentTable = tableId || localStorage.getItem('DM_ACTIVE_TABLE');
+        if (socket.connected && currentTable) {
+            socket.emit('joinRoom', { mesaId: currentTable });
+            console.log(`[Boot] GM entrou na sala: ${currentTable}`);
+        }
+    } catch (e) {
+        console.warn('[Boot] Falha ao inicializar Socket.io:', e);
+    }
+}
+
 export async function startApp() {
     // Garantir que temos um registro de início
     if (!localStorage.getItem('DM_SESSION_START')) {
@@ -50,44 +150,9 @@ export async function startApp() {
         console.error('[Boot] Falha grave no IndexedDB. O app pode nao funcionar corretamente offline.', e);
     }
 
-    try {
-        const activeTable = localStorage.getItem('DM_ACTIVE_TABLE');
-        const ioClient = window.io || (typeof io !== 'undefined' ? io : null);
-        if (activeTable && ioClient) {
-            const socket = ioClient('/', {
-                reconnectionDelayMax: 10000,
-                reconnectionAttempts: 10,
-                autoConnect: true,
-                transports: ['websocket', 'polling']
-            });
-            
-            socket.on('connect_error', (err) => {
-                console.warn('[Boot] GM Socket erro de conexão:', err.message);
-                if (socket.io && socket.io.engine) {
-                    socket.io.engine.id = null;
-                }
-            });
-
-            window.TOME.socket = socket;
-            socket.on('connect', () => {
-                console.log('[Boot] GM Socket conectado ao servidor.');
-                if (activeTable) {
-                    socket.emit('joinRoom', { mesaId: activeTable });
-                    console.log(`[Boot] GM entrou na sala: ${activeTable}`);
-                }
-                
-                // Inicializa WebRTC após ter o socket conectado
-                try {
-                    const webrtc = new WebRTCManager();
-                    TOME.registerService('webrtc', webrtc);
-                } catch (e) {
-                    console.warn('[Boot] Falha ao inicializar WebRTC:', e);
-                }
-            });
-        }
-    } catch (e) {
-        console.warn('[Boot] Falha ao inicializar Socket.io:', e);
-    }
+    TOME.initGMSocket = initGMSocket;
+    TOME.events.on('TABLE_ACTIVATED', (tid) => initGMSocket(tid));
+    initGMSocket(localStorage.getItem('DM_ACTIVE_TABLE'));
 
     TOME.registerService('audio', new AudioService());
     
@@ -97,53 +162,6 @@ export async function startApp() {
     }).catch(e => console.warn('[Boot] Failed to load AIService', e));
 
     FXEngine.init();
-
-    if (window.TOME.socket) {
-        window.TOME.socket.on('map_audio', (data) => {
-            const action = data.action;
-            const payload = data.payload || {};
-            if (action === 'PLAY_MUSIC') TOME.audio.fadeTo('music', payload.url, 2000);
-            else if (action === 'PLAY_AMB') TOME.audio.fadeTo('ambience', payload.url, 2000);
-            else if (action === 'STOP_AUDIO') TOME.audio.stopAll();
-            else if (action === 'SET_CHANNEL_VOL') TOME.audio.setChannelVolume(payload.channel, payload.volume);
-            else if (action === 'SET_ENV') {
-                TOME.store.update(s => s.currentEnvironment = payload.env);
-            }
-        });
-
-        window.TOME.socket.on('state_update', async (data) => {
-            if (data && typeof data === 'object') {
-                try {
-                    const SessionManager = (await import('../services/SessionManager.js')).SessionManager;
-                    SessionManager._isApplyingNetworkState = true;
-                    TOME.store.update(s => Object.assign(s, data));
-                    setTimeout(() => SessionManager._isApplyingNetworkState = false, 500);
-                } catch(e) {
-                    console.error('[Boot] Erro ao sincronizar state_update', e);
-                }
-            }
-        });
-
-        // Delta State Update — recebe apenas patches (RFC 6902) ao invés do estado completo
-        window.TOME.socket.on('delta_state_update', async (payload) => {
-            if (payload && payload.patches && Array.isArray(payload.patches)) {
-                try {
-                    const { applyPatch } = await import('../utils/DeltaSync.js');
-                    const SessionManager = (await import('../services/SessionManager.js')).SessionManager;
-                    SessionManager._isApplyingNetworkState = true;
-                    
-                    const currentState = TOME.store.snapshot();
-                    const patched = applyPatch(currentState, payload.patches);
-                    TOME.store.update(s => Object.assign(s, patched));
-                    
-                    console.log(`[Boot] Delta sync aplicado: ${payload.patches.length} patches (v${payload.version})`);
-                    setTimeout(() => SessionManager._isApplyingNetworkState = false, 500);
-                } catch(e) {
-                    console.error('[Boot] Erro no delta_state_update, solicitando estado completo:', e);
-                }
-            }
-        });
-    }
 
     const persistence = new PersistenceService();
     TOME.registerService('persistence', persistence);

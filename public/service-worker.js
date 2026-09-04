@@ -7,7 +7,7 @@
  *   - Recursos externos: Stale-While-Revalidate
  */
 
-const CACHE_VERSION = 'tome-v23-0-1';
+const CACHE_VERSION = 'tome-v23-0-2';
 const CACHE_STATIC = `${CACHE_VERSION}-static`;
 const CACHE_DATA = `${CACHE_VERSION}-data`;
 
@@ -18,6 +18,7 @@ const STATIC_ASSETS = [
   '/manifest.json',
   '/assets/tome-master.css',
   '/assets/logo.png',
+  '/vendor/qrious.min.js',
   '/data/spells-5e.js',
 ];
 

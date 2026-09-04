@@ -2,6 +2,7 @@ import { render } from 'preact';
 import { useState, useEffect, useRef } from 'preact/hooks';
 import { PersistenceService } from '../../services/PersistenceService.js';
 import { injectStyles } from './AuthScreenStyles.jsx';
+import { TOME } from '../../core/Registry.js';
 
 export function AuthScreenComponent({ closeAuthScreen, initialOnLogin }) {
     const [step, setStep] = useState('login'); // 'login', 'register', 'tables', 'session_choice', 'forgot_password'
@@ -246,6 +247,7 @@ export function AuthScreenComponent({ closeAuthScreen, initialOnLogin }) {
                 if (!localStorage.getItem('DM_JWT_TOKEN')) {
                     localStorage.setItem('DM_JWT_TOKEN', 'local_lan_token_' + Date.now());
                 }
+                TOME.events?.emit('TABLE_ACTIVATED', tableId);
                 closeAuthScreen();
             }
         } catch (e) {
@@ -264,6 +266,7 @@ export function AuthScreenComponent({ closeAuthScreen, initialOnLogin }) {
             if (!localStorage.getItem('DM_JWT_TOKEN')) {
                 localStorage.setItem('DM_JWT_TOKEN', 'local_lan_token_' + Date.now());
             }
+            TOME.events?.emit('TABLE_ACTIVATED', newTable.id);
             closeAuthScreen();
         } catch (e) {
             showError('Erro ao criar mesa: ' + (e.message || 'falha de rede'));
@@ -285,6 +288,7 @@ export function AuthScreenComponent({ closeAuthScreen, initialOnLogin }) {
             const linkedTable = await PersistenceService.linkTable(tableId, phone);
             localStorage.setItem('DM_ACTIVE_TABLE', linkedTable.id);
             localStorage.setItem('TOME_ACTIVE_SESSION', `mesa_${linkedTable.id}.json`);
+            TOME.events?.emit('TABLE_ACTIVATED', linkedTable.id);
             showError(`Mesa #${linkedTable.id} vinculada com sucesso! Carregando...`, true);
             setTimeout(() => closeAuthScreen(), 1200);
         } catch (e) {
@@ -315,6 +319,7 @@ export function AuthScreenComponent({ closeAuthScreen, initialOnLogin }) {
         if (!localStorage.getItem('DM_JWT_TOKEN')) {
             localStorage.setItem('DM_JWT_TOKEN', 'local_lan_token_' + Date.now());
         }
+        TOME.events?.emit('TABLE_ACTIVATED', selectedTableId);
         closeAuthScreen();
     };
 
@@ -331,6 +336,7 @@ export function AuthScreenComponent({ closeAuthScreen, initialOnLogin }) {
             if (!localStorage.getItem('DM_JWT_TOKEN')) {
                 localStorage.setItem('DM_JWT_TOKEN', 'local_lan_token_' + Date.now());
             }
+            TOME.events?.emit('TABLE_ACTIVATED', selectedTableId);
             closeAuthScreen();
         } catch (e) {
             alert('Erro ao iniciar nova sessao: ' + e.message);
