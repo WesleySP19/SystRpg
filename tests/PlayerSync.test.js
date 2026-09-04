@@ -191,5 +191,17 @@ describe('Player Sync & Mobile Vitals Protocol', () => {
         expect(ranked[2].isVirtual).toBe(true);
         expect(ranked[3].isVirtual).toBe(true);
     });
+
+    test('getNetworkInfo returns valid local IP and IP candidates list', async () => {
+        const { getNetworkInfo } = await import('../routes/system.js');
+        const info = getNetworkInfo();
+        expect(info).toHaveProperty('localIp');
+        expect(info).toHaveProperty('allIps');
+        expect(typeof info.localIp).toBe('string');
+        expect(Array.isArray(info.allIps)).toBe(true);
+        // Valid IPv4 format
+        expect(info.localIp).toMatch(/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/);
+    });
 });
+
 

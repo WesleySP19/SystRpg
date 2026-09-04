@@ -29,7 +29,7 @@ export function PlayerForm({ store }) {
     const rules = RulesEngine.getActiveRuleset();
     const skills = rules ? rules.skills : [];
     
-    const actions = {};
+    const actions = { render: forceUpdate };
     const _renderInventoryRows = () => {
         return inventoryRows.map((item, i) => (
             <div key={i} className="grid grid-cols-[1fr_65px_65px_30px] gap-2 mb-1.5 items-center">
@@ -733,6 +733,7 @@ export function PlayerForm({ store }) {
         setInventoryRows,
         setAttackRows,
         forceUpdate,
+        render: forceUpdate,
         _currentTab: currentTab,
         _skills: skills
     });

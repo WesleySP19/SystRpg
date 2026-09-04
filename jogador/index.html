@@ -361,10 +361,11 @@
 
             // Socket.IO para sincronização com o Mestre na LAN
             try {
-                socket = io();
-                socket.emit('joinRoom', { mesaId: tableId });
+                if (typeof io === 'function') {
+                    socket = io();
+                    socket.emit('joinRoom', { mesaId: tableId });
 
-                socket.on('map_sync_event', (data) => {
+                    socket.on('map_sync_event', (data) => {
                     if (!data || !playerMapEngine) return;
 
                     if (data.type === 'MAP_UPDATE') {
@@ -487,6 +488,7 @@
 
                 // Solicita o mapa atual do servidor
                 socket.emit('map_request_sync', { tableId });
+                }
             } catch(err) {
                 console.warn('[PlayerMap] Falha ao conectar ao Socket.io:', err);
             }

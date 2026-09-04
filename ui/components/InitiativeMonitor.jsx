@@ -186,6 +186,7 @@ export function InitiativeMonitor() {
         if (nextActor) {
             setShowTurnAnnounce(true);
             setAnnounceText(isNewRound ? `⚔️ RODADA ${newRound} — Vez de ${nextActor.name}` : `Vez de ${nextActor.name}`);
+            window.TOME?.audio?.playSyntheticSFX?.('alert');
         }
 
         if (window.TOME?.store) {
@@ -235,6 +236,7 @@ export function InitiativeMonitor() {
         setFocusId(null);
         setShowTurnAnnounce(true);
         setAnnounceText(`⚔️ RODADA 1 — Vez de ${allCombatants[0]?.name}`);
+        window.TOME?.audio?.playSyntheticSFX?.('alert');
 
         if (window.TOME?.store) {
             window.TOME.store.update(s => {
@@ -262,6 +264,7 @@ export function InitiativeMonitor() {
             });
         }
         setEconomy({ action: true, bonus: true, reaction: true, movement: 30 });
+        window.TOME?.audio?.playSyntheticSFX?.('dice');
         Toast.show('🎲 Iniciativa rerolada!', 'info');
     };
 
@@ -391,6 +394,7 @@ export function InitiativeMonitor() {
         }
 
         setTimeout(() => broadcastStateUpdate(), 50);
+        window.TOME?.audio?.playSyntheticSFX?.('hit');
         Toast.show(`💥 ${val} de dano aplicado a ${target.name}`, 'danger');
         setDmgInput('');
 
@@ -426,14 +430,17 @@ export function InitiativeMonitor() {
         }
 
         setTimeout(() => broadcastStateUpdate(), 50);
+        window.TOME?.audio?.playSyntheticSFX?.('spell');
         Toast.show(`💚 ${val} HP restaurados para ${target.name}`, 'success');
         setDmgInput('');
     };
 
     const rollDice = () => {
         const result = Dice.roll(6);
-        setDmgInput(result.toString());
-        Toast.show(`🎲 1d6 = ${result}`, 'info');
+        const total = result?.total ?? result;
+        setDmgInput(total.toString());
+        window.TOME?.audio?.playSyntheticSFX?.('dice');
+        Toast.show(`🎲 1d6 = ${total}`, 'info');
     };
 
     const applyCondition = () => {

@@ -15,7 +15,8 @@ export function SessionJournal(opts) {
     const [loadingCronicle, setLoadingCronicle] = useState(false);
     const [focusedElement, setFocusedElement] = useState(null);
     const containerRef = useRef(null);
-
+    const [, setTick] = useState(0);
+    const render = () => setTick(t => t + 1);
 
     const store = window.TOME?.store || { state: storeState };
     const $ = (sel) => containerRef.current ? containerRef.current.querySelector(sel) : null;
@@ -83,6 +84,17 @@ export function SessionJournal(opts) {
             if (action === "addManualEvent") addManualEvent(e, btn);
             if (action === "deleteEvent") deleteEvent(e, btn);
             if (action === "closeModal") closeModal(e, btn);
+        }
+    };
+
+    const handleContainerChange = (e) => {
+        const id = e.target?.id;
+        if (id === 'session-title-input') {
+            TOME.store.update(s => s.sessionTitle = e.target.value);
+        } else if (id === 'session-notes-textarea') {
+            TOME.store.update(s => s.sessionNotes = e.target.value);
+        } else if (id === 'session-loot-textarea') {
+            TOME.store.update(s => s.sessionLoot = e.target.value);
         }
     };
     
@@ -760,7 +772,7 @@ export function SessionJournal(opts) {
         });
         
         input.value = '';
-        import('./Toast.js').then(m => m.Toast.show('Evento adicionado à linha do tempo!', 'success'));
+        Toast.show('Evento adicionado à linha do tempo!', 'success');
         render();
     }
 
@@ -774,7 +786,7 @@ export function SessionJournal(opts) {
             }
         });
         
-        import('./Toast.js').then(m => m.Toast.show('Evento removido.', 'info'));
+        Toast.show('Evento removido.', 'info');
         render();
     }
 
@@ -950,5 +962,5 @@ export function SessionJournal(opts) {
         `;
     }
 
-    return html`<div ref=${containerRef} onClick=${handleGlobalClick} dangerouslySetInnerHTML=${{__html: template()}}></div>`;
+    return html`<div ref=${containerRef} onClick=${handleGlobalClick} onInput=${handleContainerChange} onChange=${handleContainerChange} dangerouslySetInnerHTML=${{__html: template()}}></div>`;
 }

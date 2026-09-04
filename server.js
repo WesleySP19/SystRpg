@@ -14,7 +14,7 @@ import { WebSocketServer } from 'ws';
 import compression from 'compression';
 
 import registerAuthRoutes from './routes/auth.js';
-import registerSystemRoutes from './routes/system.js';
+import registerSystemRoutes, { getNetworkInfo } from './routes/system.js';
 import registerMediaRoutes from './routes/media.js';
 import { createAuthMiddleware } from './controllers/AuthController.js';
 import { setupSyncEngine, cleanupSession } from './sockets/SyncEngine.js';
@@ -481,6 +481,24 @@ app.post('/api/save', authenticateToken, async (req, res) => {
     }
 });
 
+// 1.1 GET /api/load — Carrega o estado de um documento (com suporte a Prisma ou fallback local)
+app.get(['/api/load', '/api/data/:filename'], async (req, res) => {
+    try {
+        const rawName = req.query.filename || req.params.filename || 'state.json';
+        let safeName = path.basename(rawName).replace(/[^a-zA-Z0-9_.-]/g, '');
+        if (!safeName.toLowerCase().endsWith('.json')) {
+            safeName += '.json';
+        }
+        const doc = await getDocument(safeName, dataDir);
+        if (doc) {
+            return res.json(doc);
+        }
+        res.status(404).json({ error: 'Documento não encontrado' });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // 2. POST /api/upload — Faz o upload de imagens base64 decodificando e salvando em disco (Com JWT se em produção)
 app.post('/api/upload', authenticateToken, async (req, res) => {
     try {
@@ -560,12 +578,14 @@ if (fs.existsSync(distPath)) {
     app.use('/assets', express.static(path.join(PSScriptRoot, 'assets'), cacheOptions));
     app.use('/vendor', express.static(path.join(PSScriptRoot, 'public', 'vendor'), cacheOptions));
     app.use('/public', express.static(path.join(PSScriptRoot, 'public'), cacheOptions));
+    app.use('/data', express.static(dataDir, cacheOptions));
     app.use('/node_modules', express.static(path.join(PSScriptRoot, 'node_modules'), cacheOptions));
 } else {
     console.log('[NodeServer] Servindo arquivos estáticos a partir do modo desenvolvedor.');
     app.use('/', express.static(PSScriptRoot, cacheOptions));
     app.use('/vendor', express.static(path.join(PSScriptRoot, 'public', 'vendor'), cacheOptions));
     app.use('/public', express.static(path.join(PSScriptRoot, 'public'), cacheOptions));
+    app.use('/data', express.static(dataDir, cacheOptions));
 }
 
 // Fallback para index.html nas rotas raiz
@@ -660,16 +680,7 @@ async function start() {
     const finalPort = await getAvailablePort(port);
     
     server.listen(finalPort, '0.0.0.0', async () => {
-        const interfaces = os.networkInterfaces();
-        let localIp = '127.0.0.1';
-        for (const name of Object.keys(interfaces)) {
-            for (const iface of interfaces[name]) {
-                if (iface.family === 'IPv4' && !iface.internal && !name.toLowerCase().includes('vmware') && !name.toLowerCase().includes('virtual') && !name.toLowerCase().includes('vbox')) {
-                    localIp = iface.address;
-                    break;
-                }
-            }
-        }
+        const { localIp } = getNetworkInfo();
         console.log(`\n================================================================================`);
         console.log(`           ✨ Mesa Psigologos — THE ATOMIC ENGINE ✨           
 ================================================================`);

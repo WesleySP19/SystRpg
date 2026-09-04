@@ -16,6 +16,9 @@ export function useVanillaActions(actionsMap) {
             actionsMap.$ = (sel) => container.querySelector(sel);
             actionsMap.$$ = (sel) => container.querySelectorAll(sel);
         }
+        if (!actionsMap.render) {
+            actionsMap.render = () => {};
+        }
 
         const handleClick = (e) => {
             const actionBtn = e.target.closest('[data-action]');
