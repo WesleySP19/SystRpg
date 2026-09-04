@@ -10,17 +10,6 @@
         "avatar": "",
         "classe": "Bardo"
       }
-    ],
-    [
-      "3a240cb5-e6f6-42a6-b19f-a56541ef023a",
-      {
-        "characterId": "salazar_190796",
-        "tableId": "112793",
-        "connected": false,
-        "nome": "Salazar",
-        "avatar": "",
-        "classe": "Mago"
-      }
     ]
   ],
   "tables": [
@@ -28,12 +17,6 @@
       "747346",
       [
         "6a891c8a-d5e4-4820-b2f6-96e99eb7aa61"
-      ]
-    ],
-    [
-      "112793",
-      [
-        "3a240cb5-e6f6-42a6-b19f-a56541ef023a"
       ]
     ]
   ]

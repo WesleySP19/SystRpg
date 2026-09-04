@@ -31,8 +31,9 @@ export class RulesEngine {
      * @returns {Object} { total, rolls, isCrit, isFumble, formula }
      */
     static rollExpression(expression, mode = 'normal') {
-        const regex = /^(\d+)d(\d+)([\+\-]\d+)?$/i;
-        const match = expression.trim().match(regex);
+        const cleanExpr = String(expression || '').trim().replace(/\s+/g, '');
+        const regex = /^(\d+)d(\d+)((?:[\+\-]\d+)+)?$/i;
+        const match = cleanExpr.match(regex);
         
         if (!match) {
             throw new Error(`Invalid dice expression: ${expression}. Expected format: 'XdY+Z'`);
@@ -40,8 +41,14 @@ export class RulesEngine {
 
         const numDice = parseInt(match[1], 10);
         const sides = parseInt(match[2], 10);
-        const modifierStr = match[3] || "+0";
-        const modifier = parseInt(modifierStr, 10);
+        
+        let modifier = 0;
+        if (match[3]) {
+            const modMatches = match[3].match(/[\+\-]\d+/g);
+            if (modMatches) {
+                modifier = modMatches.reduce((sum, m) => sum + parseInt(m, 10), 0);
+            }
+        }
 
         let rolls = [];
         let total = 0;
@@ -94,7 +101,7 @@ export class RulesEngine {
      * @param {string} mode
      */
     static resolveFormula(template, context, mode = 'normal') {
-        let parsedExpression = template;
+        let parsedExpression = String(template || '').replace(/\s+/g, '');
         
         if (context) {
             for (const [key, value] of Object.entries(context)) {
@@ -104,7 +111,11 @@ export class RulesEngine {
             }
         }
         
-        parsedExpression = parsedExpression.replace(/\+\+/g, '+').replace(/\+-/g, '-');
+        parsedExpression = parsedExpression
+            .replace(/\+\+/g, '+')
+            .replace(/\+-/g, '-')
+            .replace(/-\+/g, '-')
+            .replace(/--/g, '+');
         return this.rollExpression(parsedExpression, mode);
     }
 

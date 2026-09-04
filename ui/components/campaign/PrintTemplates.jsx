@@ -6,6 +6,13 @@ export function PrintTemplates({ player }) {
     const stats = player.stats || { str:10, dex:10, con:10, int:10, wis:10, cha:10 };
     const getMod = (v) => Math.floor((v - 10) / 2);
 
+    const curHp = typeof player.hp === 'object' && player.hp !== null
+        ? Number(player.hp.current ?? player.hp.value ?? 10)
+        : (typeof player.hp === 'number' ? player.hp : Number(player.hp_current ?? 10));
+    const maxHp = typeof player.hp === 'object' && player.hp !== null
+        ? Number(player.hp.max ?? player.hp.maxHp ?? curHp)
+        : Number(player.maxHp || player.hp_max || curHp || 10);
+
     const formatItems = (equipment) => {
         if (!equipment?.items) return '';
         if (Array.isArray(equipment.items)) {
@@ -34,7 +41,7 @@ export function PrintTemplates({ player }) {
                     <div className="dnd-box"><div className="val">{10 + getMod(stats.dex)}</div><div className="label">CA</div></div>
                     <div className="dnd-box"><div className="val">{getMod(stats.dex) >= 0 ? '+' : ''}{getMod(stats.dex)}</div><div className="label">Iniciativa</div></div>
                     <div className="dnd-box"><div className="val">{player.speed || 30}ft</div><div className="label">Deslocamento</div></div>
-                    <div className="dnd-box" style={{flex: 2}}><div className="val">{player.hp?.current} / {player.hp?.max}</div><div className="label">Pontos de Vida Atuais</div></div>
+                    <div className="dnd-box" style={{flex: 2}}><div className="val">{curHp} / {maxHp}</div><div className="label">Pontos de Vida Atuais</div></div>
                 </div>
 
                 <div className="dnd-grid">
@@ -100,7 +107,7 @@ export function PrintTemplates({ player }) {
                         <div style={{fontSize: '10px', fontWeight: 'bold'}}>Combate</div>
                         <div style={{fontSize: '12px'}}>CA: <strong>{10 + getMod(stats.dex)}</strong></div>
                         <div style={{fontSize: '12px'}}>Inic: <strong>{getMod(stats.dex) >= 0 ? '+' : ''}{getMod(stats.dex)}</strong></div>
-                        <div style={{fontSize: '12px'}}>HP: <strong>{player.hp?.current}/{player.hp?.max}</strong></div>
+                        <div style={{fontSize: '12px'}}>HP: <strong>{curHp}/{maxHp}</strong></div>
                     </div>
                     <div style={{flex: 1, borderLeft: '1px solid #ccc', paddingLeft: '10px'}}>
                         <div style={{fontSize: '10px', fontWeight: 'bold'}}>Atributos Base</div>

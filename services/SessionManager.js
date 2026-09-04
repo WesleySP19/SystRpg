@@ -113,6 +113,25 @@ export class SessionManager {
         }
     }
 
+    static _migrateState(state) {
+        if (!state) return;
+        if (!state.schemaVersion || state.schemaVersion < 2) {
+            state.xpDistributed = state.xpDistributed || 0;
+            state.campaigns = state.campaigns || [];
+            state.quests = state.quests || [];
+        }
+        if (state.schemaVersion < 3) {
+            state.tacticalMap = state.tacticalMap || { fog: null, mapUrl: null, tokens: [] };
+        }
+        if (state.schemaVersion < 4) {
+            state.resources = state.resources || { potions: 0, scrolls: 0 };
+        }
+        if (state.schemaVersion < 5) {
+            state.sessionsHistory = state.sessionsHistory || [];
+        }
+        state.schemaVersion = DEFAULT_INITIAL_STATE.schemaVersion;
+    }
+
     static async startNewSession(tableId) {
         const table = await FrontendDirectoryService.linkTable(tableId, localStorage.getItem('DM_MASTER_PHONE') || 'local');
         

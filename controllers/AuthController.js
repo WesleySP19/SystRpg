@@ -22,6 +22,15 @@ export function createAuthMiddleware(JWT_SECRET) {
         const authHeader = req.headers['authorization'];
         const token = authHeader && authHeader.split(' ')[1];
         
+        // Verifica se é uma requisição autenticada de jogador via QR code / sessionToken
+        const playerToken = req.headers['x-player-token'] || 
+            (req.headers.cookie && req.headers.cookie.match(/tome_player_session=([^;]+)/)?.[1]);
+        if (playerToken && req.app?.locals?.sessionTokens?.has(playerToken)) {
+            const playerSession = req.app.locals.sessionTokens.get(playerToken);
+            req.user = { role: 'player', ...playerSession };
+            return next();
+        }
+
         if (!token) {
             return res.status(401).json({ status: 'error', message: 'Acesso negado. Token não fornecido.' });
         }

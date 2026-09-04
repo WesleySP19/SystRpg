@@ -65,4 +65,32 @@ describe('Rules Engine (D&D 5e)', () => {
         const actorNull = null;
         expect(RulesEngine.getHP(actorNull)).toEqual({ current: 10, max: 10 });
     });
+
+    test('deve resolver expressões com múltiplos modificadores acumulados', () => {
+        const rollMulti = RulesEngine.rollExpression('1d20+4+2');
+        expect(rollMulti.total).toBe(rollMulti.roll + 6);
+
+        const rollCompound = RulesEngine.rollExpression('2d6+3-2-1');
+        const diceSum = rollCompound.rolls.reduce((a, b) => a + b, 0);
+        expect(rollCompound.total).toBe(diceSum + 0);
+    });
+
+    test('deve resolver fórmulas com contexto dinâmico de atributos', () => {
+        const ctx = { FOR: 4, PROF: 2 };
+        const result = RulesEngine.resolveFormula('1d20+FOR+PROF', ctx);
+        expect(result.total).toBe(result.roll + 6);
+
+        const ctx2 = { INT: 3, PENALTY: -2 };
+        const result2 = RulesEngine.resolveFormula('2d6+INT+PENALTY-1', ctx2);
+        const sum2 = result2.rolls.reduce((a, b) => a + b, 0);
+        expect(result2.total).toBe(sum2);
+    });
+
+    test('deve calcular distâncias táticas em diferentes grids', () => {
+        const posA = { x: 0, y: 0 };
+        const posB = { x: 3, y: 4 };
+        expect(RulesEngine.calculateDistance(posA, posB, 'square')).toBe(4);
+        expect(RulesEngine.calculateDistance(posA, posB, 'manhattan')).toBe(7);
+        expect(RulesEngine.calculateDistance(posA, posB, 'hex')).toBe(7);
+    });
 });

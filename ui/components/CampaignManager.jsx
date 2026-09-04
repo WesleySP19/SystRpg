@@ -336,7 +336,11 @@ export function CampaignManager() {
         let finalVal = 0;
         let rollText = '';
 
-        TOME.audio.playSFX('https://assets.mixkit.co/active_storage/sfx/1271/1271-preview.mp3');
+        if (TOME.audio?.playSyntheticSFX) {
+            TOME.audio.playSyntheticSFX('dice');
+        } else if (TOME.audio?.playSFX) {
+            TOME.audio.playSFX('https://assets.mixkit.co/active_storage/sfx/1271/1271-preview.mp3');
+        }
 
         if (mode === 'normal') {
             finalVal = r1.total + mod;

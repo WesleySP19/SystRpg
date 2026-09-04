@@ -35,9 +35,13 @@ export function HeroCommandPanel({
         );
     }
 
-    const curHp = player.hp?.current !== undefined ? player.hp.current : (player.hp_current || 0);
-    const maxHp = player.hp?.max || player.hp_max || 10;
-    const hpPct = maxHp > 0 ? (curHp / maxHp) * 100 : 0;
+    const curHp = typeof player.hp === 'object' && player.hp !== null
+        ? Number(player.hp.current ?? player.hp.value ?? 10)
+        : (typeof player.hp === 'number' ? player.hp : Number(player.hp_current ?? 10));
+    const maxHp = typeof player.hp === 'object' && player.hp !== null
+        ? Number(player.hp.max ?? player.hp.maxHp ?? curHp)
+        : Number(player.maxHp || player.hp_max || curHp || 10);
+    const hpPct = maxHp > 0 ? Math.min(100, Math.max(0, (curHp / maxHp) * 100)) : 0;
     
     // D&D 5e XP levels threshold mapping
     const levelsXP = [0, 0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000, 85000, 100000, 120000, 140000, 165000, 195000, 225000, 265000, 305000, 355000];

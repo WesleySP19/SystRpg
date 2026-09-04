@@ -1,9 +1,10 @@
-const CACHE_NAME = 'tome-jogador-v23.0.2';
+const CACHE_NAME = 'tome-jogador-v23.1.0';
 const STATIC_ASSETS = [
   '/jogador/index.html',
   '/jogador/css/theme.css',
   '/jogador/js/UI.js',
   '/jogador/js/Engine.js',
+  '/jogador/js/app.js',
   '/jogador/manifest.json',
   '/assets/logo.png',
   '/assets/tailwind.css',
@@ -43,8 +44,11 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   
-  // API e Socket.io bypass
-  if (event.request.url.includes('/socket.io/') || event.request.url.includes('/api/')) return;
+  // Bypass para rotas em tempo real e arquivos dinâmicos de dados
+  const url = event.request.url;
+  if (url.includes('/socket.io/') || url.includes('/api/') || url.includes('/data/') || url.includes('/yjs')) {
+    return;
+  }
 
   event.respondWith(
     caches.match(event.request, { ignoreSearch: true }).then((cached) => {

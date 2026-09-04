@@ -108,6 +108,11 @@ const throttleState = new Map(); // masterId -> lastMessageTime
 
 // ── SESSÕES POR QR CODE (TOME.SINAL V2) ──
 let sessionTokens = new Map(); // sessionToken -> { characterId, tableId, connected, nome, avatar, classe }
+Object.defineProperty(app.locals, 'sessionTokens', {
+    get() { return sessionTokens; },
+    configurable: true,
+    enumerable: true
+});
 let activeTables = new Map(); // tableId -> Set of sessionTokens
 
 async function loadSessions() {
@@ -528,6 +533,10 @@ if (fs.existsSync(distPath)) {
     app.use('/public', express.static(path.join(PSScriptRoot, 'public'), cacheOptions));
     app.use('/jogador', express.static(path.join(PSScriptRoot, 'jogador'), cacheOptions));
     app.use('/data', express.static(dataDir, cacheOptions));
+    app.use('/core', express.static(path.join(PSScriptRoot, 'core'), cacheOptions));
+    app.use('/services', express.static(path.join(PSScriptRoot, 'services'), cacheOptions));
+    app.use('/utils', express.static(path.join(PSScriptRoot, 'utils'), cacheOptions));
+    app.use('/ui', express.static(path.join(PSScriptRoot, 'ui'), cacheOptions));
     app.use('/node_modules', express.static(path.join(PSScriptRoot, 'node_modules'), cacheOptions));
 } else {
     console.log('[NodeServer] Servindo arquivos estáticos a partir do modo desenvolvedor.');
