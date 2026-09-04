@@ -24,7 +24,12 @@ export function TomeSinalPanel() {
     useEffect(() => {
         if (!window.QRious) {
             const script = document.createElement('script');
-            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js';
+            script.src = '/vendor/qrious.min.js';
+            script.onerror = () => {
+                const fallback = document.createElement('script');
+                fallback.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js';
+                document.head.appendChild(fallback);
+            };
             document.head.appendChild(script);
         }
 

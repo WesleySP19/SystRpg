@@ -148,4 +148,48 @@ describe('Player Sync & Mobile Vitals Protocol', () => {
         expect(spellPayload.y).toBe(350);
         expect(spellPayload.color).toBe('#ff4500');
     });
+
+    test('Table ID extraction regex supports both numeric and alphanumeric slugs', () => {
+        const tableIdRegex = /^mesa_([a-zA-Z0-9_-]+)\.json$/;
+
+        expect('mesa_123456.json'.match(tableIdRegex)?.[1]).toBe('123456');
+        expect('mesa_campanha-epic_01.json'.match(tableIdRegex)?.[1]).toBe('campanha-epic_01');
+        expect('mesa_abc-def-ghi.json'.match(tableIdRegex)?.[1]).toBe('abc-def-ghi');
+        expect('other_file.json'.match(tableIdRegex)).toBeNull();
+    });
+
+    test('Network interface ranking prioritizes physical Wi-Fi and Ethernet over virtual adapters', () => {
+        const virtualRegex = /(vethernet|virtualbox|vmware|tailscale|zerotier|hamachi|docker|wsl|loopback|teredo|npcap)/i;
+        const priorityRegex = /(wi-fi|wifi|wireless|wlan|ethernet|eth|en0|en1|lan)/i;
+
+        const mockedInterfaces = [
+            { name: 'vEthernet (WSL)', ip: '172.28.16.1' },
+            { name: 'VirtualBox Host-Only', ip: '192.168.56.1' },
+            { name: 'Wi-Fi', ip: '192.168.1.105' },
+            { name: 'Ethernet', ip: '10.0.0.50' }
+        ];
+
+        const ranked = mockedInterfaces.map(i => ({
+            ...i,
+            isVirtual: virtualRegex.test(i.name),
+            isPriority: priorityRegex.test(i.name)
+        })).sort((a, b) => {
+            if (a.isVirtual !== b.isVirtual) return a.isVirtual ? 1 : -1;
+            if (a.isPriority !== b.isPriority) return a.isPriority ? -1 : 1;
+            const a192 = a.ip.startsWith('192.168.');
+            const b192 = b.ip.startsWith('192.168.');
+            if (a192 !== b192) return a192 ? -1 : 1;
+            return 0;
+        });
+
+        // Wi-Fi should be ranked #1 because it is physical priority + 192.168.x.x
+        expect(ranked[0].name).toBe('Wi-Fi');
+        expect(ranked[0].ip).toBe('192.168.1.105');
+        // Ethernet should be ranked #2
+        expect(ranked[1].name).toBe('Ethernet');
+        // Virtual adapters should be pushed to the bottom
+        expect(ranked[2].isVirtual).toBe(true);
+        expect(ranked[3].isVirtual).toBe(true);
+    });
 });
+

@@ -286,7 +286,7 @@ export function setupSyncEngine(server, io, dataDir, app) {
 
                 await saveDocument(safeName, data, dataDir);
 
-                const match = safeName.match(/^mesa_(\d+)\.json$/);
+                const match = safeName.match(/^mesa_([a-zA-Z0-9_-]+)\.json$/);
                 if (match) {
                     const mesaId = match[1];
                     const previousState = stateSnapshots.get(mesaId);
