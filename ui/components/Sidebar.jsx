@@ -17,6 +17,7 @@ export function Sidebar() {
             items: [
                 { id: 'dmtable',       label: 'Mesa do Mestre',        icon: 'fa-table-cells-large' },
                 { id: 'dashboard',     label: 'Painel de Controle',    icon: 'fa-shield-halved' },
+                { id: 'reference',     label: 'Cenas & Referência',    icon: 'fa-image' },
                 { id: 'dmshield',      label: 'Escudo do Mestre',      icon: 'fa-scroll' },
                 { id: 'combat',        label: 'Combate Tatico',        icon: 'fa-crosshairs' },
                 { id: 'initiative',    label: 'Monitor de Iniciativa', icon: 'fa-swords' },

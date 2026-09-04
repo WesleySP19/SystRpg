@@ -14,6 +14,19 @@ export class DiceBoxService {
             container.id = this.containerId;
             document.body.appendChild(container);
         }
+
+        try {
+            this.channel = new BroadcastChannel('tome_dice');
+            this.channel.onmessage = async (e) => {
+                if (e.data?.type === 'DICE_ROLL_3D' && e.data.notation) {
+                    if (!this.initialized) await this.init();
+                    if (this.box) {
+                        this.box.roll(e.data.notation);
+                        setTimeout(() => this.box?.clear(), 3500);
+                    }
+                }
+            };
+        } catch(e) {}
     }
 
     /**
@@ -77,6 +90,14 @@ export class DiceBoxService {
             } else {
                 total = results;
             }
+
+            // Broadcast do dado 3D para o Telão e dispositivos
+            try {
+                this.channel?.postMessage({ type: 'DICE_ROLL_3D', notation: rollString, total });
+                if (window.TOME?.socket) {
+                    window.TOME.socket.emit('dice_roll_3d', { notation: rollString, total });
+                }
+            } catch(e) {}
 
             // Oculta os dados após 3 segundos
             setTimeout(() => {

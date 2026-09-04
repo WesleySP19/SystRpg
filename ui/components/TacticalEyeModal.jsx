@@ -510,6 +510,13 @@ export function TacticalEyeModal({ unmount }) {
                     <button class={`tool-btn ${dynamicLighting ? 'active-yellow' : ''}`} onClick={toggleDynamicLighting} title="Iluminação Dinâmica (L)">
                         <i class="fa-solid fa-lightbulb"></i>
                     </button>
+                    <div class="w-px bg-white/10 mx-1"></div>
+                    <button class="tool-btn" onClick={() => { mapEngineRef.current?.undo(); Toast.show('Ação desfeita.', 'info'); }} title="Desfazer (Ctrl+Z)">
+                        <i class="fa-solid fa-rotate-left"></i>
+                    </button>
+                    <button class="tool-btn" onClick={() => { mapEngineRef.current?.redo(); Toast.show('Ação refeita.', 'info'); }} title="Refazer (Ctrl+Y)">
+                        <i class="fa-solid fa-rotate-right"></i>
+                    </button>
                 </div>
 
                 <style>{`

@@ -1,115 +1,166 @@
-import { useState, useEffect, useRef } from "preact/hooks";
-import { useStore } from "../core/hooks.js";
-import { html } from "htm/preact";
+import { useState, useMemo, useCallback, useRef, useEffect } from 'preact/hooks';
+import { useStore } from '../core/hooks.js';
 import { TOME } from '../../core/Registry.js';
 import { MonsterData } from '../../data/MonsterData.js';
 import { Toast } from '../components/core/Toast.jsx';
 import { Dice } from '../../utils/Dice.js';
 import { RulesEngine } from '../../core/RulesEngine.js';
 import { MonsterArt } from '../../services/MonsterArt.js';
+import { Schemas } from '../../data/schemas.js';
 
-/**
- * BESTIARY / BESTIÁRIO ARCANO v7.0
- * Complete creature library with custom forged/imported monsters,
- * level filters, detail stats sheets, and mass JSON importing.
- */
-export function Bestiary(opts) {
+// ==========================================
+// SUBCOMPONENT: Monster Token (Circular)
+// ==========================================
+function MonsterToken({ monster, size = "w-20 h-20", showGlow = true }) {
+    const [imgFailed, setImgFailed] = useState(false);
+    const heraldry = useMemo(() => MonsterArt.getHeraldry(monster), [monster]);
+    const rawSrc = useMemo(() => {
+        if (monster.customImg) return monster.customImg;
+        if (monster.img && !monster.img.includes('wikimedia.org')) return monster.img;
+        return MonsterArt.getImage(monster, true) || MonsterArt.getCdnFallback(monster, true);
+    }, [monster]);
+
+    return (
+        <div class={`${size} relative rounded-full overflow-hidden flex items-center justify-center border-2 border-accent/60 bg-slate-950 shrink-0 ${showGlow ? 'shadow-[0_4px_15px_rgba(0,0,0,0.8),0_0_12px_rgba(197,160,89,0.25)]' : ''}`}>
+            {rawSrc && !imgFailed ? (
+                <img
+                    src={rawSrc}
+                    alt={monster.name}
+                    loading="lazy"
+                    class="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+                    onError={() => setImgFailed(true)}
+                />
+            ) : (
+                <div class="w-full h-full flex flex-col items-center justify-center text-center p-1" style={{ background: heraldry.bg }}>
+                    {monster.emoji ? (
+                        <span class="text-2xl filter drop-shadow">{monster.emoji}</span>
+                    ) : (
+                        <i class={`${heraldry.icon} text-2xl drop-shadow`} style={{ color: heraldry.color }}></i>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ==========================================
+// MAIN COMPONENT: Bestiário Arcano v8.0
+// ==========================================
+export function Bestiary() {
     const storeState = useStore();
-    const [selectedId, setSelectedId] = useState(null);
-    const [selectedLevel, setSelectedLevel] = useState("Nível 1");
-    const [searchQuery, setSearchQuery] = useState("");
-    const [viewMode, setViewMode] = useState("grid");
-    const [selectedCreature, setSelectedCreature] = useState(null);
+    const customMonsters = storeState?.customMonsters || [];
+    const monsterOverrides = storeState?.monsterOverrides || {};
+
+    // Navigation & Views
+    const [selectedMonster, setSelectedMonster] = useState(null);
+    const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'table'
+
+    // Filters
+    const [selectedLevel, setSelectedLevel] = useState('Todos');
+    const [selectedType, setSelectedType] = useState('Todos');
+    const [sourceFilter, setSourceFilter] = useState('all'); // 'all' | 'srd' | 'custom'
+    const [searchQuery, setSearchQuery] = useState('');
+
+    // Modals
     const [showForgeModal, setShowForgeModal] = useState(false);
+    const [forgeData, setForgeData] = useState(null); // null = new, object = edit/clone
     const [showArtModal, setShowArtModal] = useState(false);
-    const [artEditingCreature, setArtEditingCreature] = useState(null);
+    const [artTargetMonster, setArtTargetMonster] = useState(null);
+    const [showImportModal, setShowImportModal] = useState(false);
+    const [importJsonText, setImportJsonText] = useState('');
+
+    // Visual Dice Roller
     const [activeRoll, setActiveRoll] = useState(null);
-    const [rollMod, setRollMod] = useState("normal");
-    const [, setTick] = useState(0);
-    const forceUpdate = () => setTick(t => t + 1);
-    const render = forceUpdate;
-    const containerRef = useRef(null);
+    const [targetAC, setTargetAC] = useState(13);
 
-    const handleGlobalClick = (e) => {
-        const btn = e.target.closest("[data-action]");
-        if (btn) {
-            const action = btn.dataset.action;
-            if (action === "selectLevel") selectLevel(e, btn);
-            if (action === "viewCreature") viewCreature(e, btn);
-            if (action === "spawnCreature") spawnCreature(e, btn);
-            if (action === "spawnFromDetail") spawnFromDetail(e, btn);
-            if (action === "deleteCustomMonster") deleteCustomMonster(e, btn);
-            if (action === "addCustomMonster") addCustomMonster(e, btn);
-            if (action === "triggerImportJSON") triggerImportJSON(e, btn);
-            if (action === "rollBestiaryAttack") rollBestiaryAttack(e, btn);
-            if (action === "proceedToDamage") proceedToDamage(e, btn);
-            if (action === "applyVisualRollResult") applyVisualRollResult(e, btn);
-            if (action === "closeVisualRoll") closeVisualRoll(e, btn);
-            if (action === "closeForgeModal") closeForgeModal(e, btn);
-            if (action === "forgeCustomMonster") forgeCustomMonster(e, btn);
-            if (action === "backToGrid") backToGrid(e, btn);
-            if (action === "openArtModal") openArtModal(e, btn);
-            if (action === "closeArtModal") closeArtModal(e, btn);
-            if (action === "saveArtModal") handleSaveArt(e, btn);
-            if (action === "resetArtToDefault") resetArtToDefault(e, btn);
-        }
-    };
+    const fileImportInputRef = useRef(null);
 
-    const narrativeQuotes = {
-        hit: [
-            "A lâmina corta o ar com precisão!",
-            "Um golpe certeiro nas defesas do inimigo!",
-            "O impacto ressoa por toda a biblioteca!",
-            "Sangue e faíscas voam com o acerto!",
-            "O ataque encontra uma brecha na armadura!"
-        ],
-        miss: [
-            "O golpe passa raspando!",
-            "A defesa se mantém impenetrável.",
-            "O monstro vacila por um momento...",
-            "O ataque atinge apenas o vácuo.",
-            "Um desvio ágil no último segundo!"
-        ],
-        crit: [
-            "UM GOLPE LENDÁRIO! A criatura cambaleia!",
-            "PERFEIÇÃO TÁTICA! O dano é devastador!",
-            "A força do destino guia esta arma!"
-        ]
-    };
-
-
-    const store = window.TOME?.store || { state: storeState };
-    const $ = (sel) => containerRef.current ? containerRef.current.querySelector(sel) : null;
-    const $$ = (sel) => containerRef.current ? containerRef.current.querySelectorAll(sel) : [];
-
-    function _getCombinedCreatures() {
-        const overrides = store.state.monsterOverrides || {};
-        const staticCreatures = (MonsterData[selectedLevel] || []).map(m => {
-            if (overrides[m.name]) {
-                return { ...m, ...overrides[m.name] };
+    // ------------------------------------------
+    // 1. DATA COMBINATION & NORMALIZATION
+    // ------------------------------------------
+    const allCreatures = useMemo(() => {
+        const list = [];
+        
+        // SRD Monsters from MonsterData
+        Object.entries(MonsterData).forEach(([levelKey, monsters]) => {
+            if (Array.isArray(monsters)) {
+                monsters.forEach(m => {
+                    const override = monsterOverrides[m.name] || {};
+                    list.push({
+                        ...m,
+                        ...override,
+                        isCustom: false,
+                        level: levelKey,
+                        cr: levelKey.replace('Nível ', '')
+                    });
+                });
             }
-            return m;
         });
-        const customCreatures = (store.state.customMonsters || [])
-            .filter(m => m.level === selectedLevel || m.cr === selectedLevel || (!m.level && selectedLevel === 'Nível 1'))
-            .map(m => {
-                if (overrides[m.name]) {
-                    return { ...m, ...overrides[m.name] };
-                }
-                return m;
+
+        // Custom Monsters from Store
+        customMonsters.forEach(cm => {
+            const override = monsterOverrides[cm.name] || {};
+            const lvl = cm.level || (cm.cr ? `Nível ${cm.cr}` : 'Nível 1');
+            list.push({
+                ...cm,
+                ...override,
+                isCustom: true,
+                level: lvl,
+                cr: lvl.replace('Nível ', '')
             });
-        return [...customCreatures, ...staticCreatures];
-    }
+        });
 
-    function _getNarrative(type, targetName, damage = 0) {
-        const base = narrativeQuotes[type][Math.floor(Math.random() * narrativeQuotes[type].length)];
-        if (type === 'hit' || type === 'crit') {
-            return `${base} <br> ⚔️ <strong>${targetName}</strong> sofre <strong>${damage}</strong> de dano!`;
-        }
-        return `${base} <br> 🛡️ <strong>${targetName}</strong> escapa ileso!`;
-    }
+        return list;
+    }, [customMonsters, monsterOverrides]);
 
-    function _getCreatureActions(m) {
+    // Available Types
+    const availableTypes = useMemo(() => {
+        const types = new Set();
+        allCreatures.forEach(c => {
+            if (c.type) types.add(c.type.trim());
+        });
+        return ['Todos', ...Array.from(types).sort()];
+    }, [allCreatures]);
+
+    // Available Levels
+    const availableLevels = useMemo(() => {
+        const lvls = Object.keys(MonsterData);
+        return ['Todos', ...lvls];
+    }, []);
+
+    // Filtered Creatures
+    const filteredCreatures = useMemo(() => {
+        return allCreatures.filter(m => {
+            // Source Filter
+            if (sourceFilter === 'srd' && m.isCustom) return false;
+            if (sourceFilter === 'custom' && !m.isCustom) return false;
+
+            // Level Filter
+            if (selectedLevel !== 'Todos' && m.level !== selectedLevel) return false;
+
+            // Type Filter
+            if (selectedType !== 'Todos' && (m.type || '').toLowerCase() !== selectedType.toLowerCase()) return false;
+
+            // Search Query
+            if (searchQuery.trim()) {
+                const q = searchQuery.toLowerCase().trim();
+                const matchName = (m.name || '').toLowerCase().includes(q);
+                const matchType = (m.type || '').toLowerCase().includes(q);
+                const matchNotes = (m.notes || m.description || '').toLowerCase().includes(q);
+                if (!matchName && !matchType && !matchNotes) return false;
+            }
+
+            return true;
+        });
+    }, [allCreatures, sourceFilter, selectedLevel, selectedType, searchQuery]);
+
+    // ------------------------------------------
+    // 2. ACTIONS & HELPERS
+    // ------------------------------------------
+    const getMod = (val) => Math.floor(((parseInt(val) || 10) - 10) / 2);
+    const formatMod = (mod) => (mod >= 0 ? `+${mod}` : `${mod}`);
+
+    const getCreatureActions = useCallback((m) => {
         if (m.actions && m.actions.length > 0) {
             return m.actions.map(act => ({
                 name: act.name || 'Ataque',
@@ -119,1048 +170,1476 @@ export function Bestiary(opts) {
             }));
         }
         
-        const nameLower = (m.name || '').toLowerCase();
-        let prof = 2;
-        const levelStr = String(m.level || m.cr || 'Nível 1');
-        if (levelStr.includes('BOSS')) prof = 6;
-        else {
-            const num = parseInt(levelStr.replace(/\D/g, '')) || 1;
-            if (num >= 17) prof = 6;
-            else if (num >= 13) prof = 5;
-            else if (num >= 9) prof = 4;
-            else if (num >= 5) prof = 3;
-        }
-        
-        const bonus = primaryMod + prof;
-        
-        // Damage formula based on level/CR
-        let damageDice = "1d6";
-        let damageBonus = primaryMod >= 0 ? `+${primaryMod}` : `${primaryMod}`;
-        if (levelStr.includes('BOSS')) {
-            damageDice = "4d10";
-        } else {
-            const num = parseInt(levelStr.replace(/\D/g, '')) || 1;
-            if (num >= 17) damageDice = "4d8";
-            else if (num >= 13) damageDice = "3d8";
-            else if (num >= 9) damageDice = "2d10";
-            else if (num >= 5) damageDice = "2d6";
-            else if (num >= 3) damageDice = "1d10";
-            else if (num >= 2) damageDice = "1d8";
-        }
-        
-        const damage = `${damageDice}${primaryMod !== 0 ? damageBonus : ''}`;
-        
-        // Determine attack name
-        let attackName1 = "Ataque Corporal";
-        let attackName2 = "Ataque de Garra";
-        
-        if (nameLower.includes('lobo') || nameLower.includes('werewolf') || nameLower.includes('cão') || nameLower.includes('dragão') || nameLower.includes('dragon')) {
-            attackName1 = "Mordida";
-            attackName2 = "Garras";
-        } else if (nameLower.includes('esqueleto') || nameLower.includes('goblin') || nameLower.includes('orc') || nameLower.includes('humano')) {
-            attackName1 = "Espada Curta";
-            attackName2 = "Arco Curto";
-        } else if (nameLower.includes('mago') || nameLower.includes('bruxo') || nameLower.includes('spell')) {
-            attackName1 = "Disparo Místico";
-            attackName2 = "Cajado";
-        }
-        
+        // Fallback procedural actions based on level
+        const strMod = getMod(m.stats?.str ?? 14);
+        const dexMod = getMod(m.stats?.dex ?? 12);
+        const primaryMod = Math.max(strMod, dexMod);
+        const prof = m.level === 'BOSS' ? 6 : Math.max(2, Math.min(6, Math.floor(((parseInt(m.cr) || 1) - 1) / 4) + 2));
+        const toHit = primaryMod + prof;
+        const dmgDice = m.damage || '1d8';
+
         return [
-            { name: attackName1, bonus: bonus, damage: damage, desc: `Ataque corporal com bônus de +${bonus} e dano de ${damage}.` },
-            { name: attackName2, bonus: bonus, damage: damageDice, desc: `Ataque rápido com bônus de +${bonus} e dano de ${damageDice}.` }
+            { name: 'Ataque Principal', bonus: toHit, damage: `${dmgDice}${formatMod(primaryMod)}`, desc: `Ataque natural com bônus de ${formatMod(toHit)} e dano de ${dmgDice}${formatMod(primaryMod)}.` },
+            { name: 'Investida Secundária', bonus: toHit, damage: '1d6+2', desc: `Golpe tático veloz causando 1d6+2 de dano.` }
         ];
-    }
-    
-    useEffect(() => {
-        if (onMount) onMount();
-        return () => { if (onUnmount) onUnmount(); };
     }, []);
 
-    function template() {
-        const levels = Object.keys(MonsterData);
-        const allCreatures = _getCombinedCreatures();
-        const filtered = allCreatures.filter(m =>
-            m.name.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-        const isBoss = selectedLevel === 'BOSS';
-
-        const customStyle = `
-            <style>
-                @keyframes diceSpin {
-                    0% { transform: rotate(0deg) scale(0.6); opacity: 0; }
-                    30% { transform: rotate(360deg) scale(1.2); opacity: 1; }
-                    60% { transform: rotate(720deg) scale(0.9); }
-                    100% { transform: rotate(1080deg) scale(1); }
-                }
-
-                @keyframes diceShake {
-                    0% { transform: translate(2px, 1px) rotate(0deg); }
-                    10% { transform: translate(-1px, -2px) rotate(-1deg); }
-                    20% { transform: translate(-3px, 0px) rotate(1deg); }
-                    30% { transform: translate(0px, 2px) rotate(0deg); }
-                    40% { transform: translate(1px, -1px) rotate(1deg); }
-                    50% { transform: translate(-1px, 2px) rotate(-1deg); }
-                    60% { transform: translate(-3px, 1px) rotate(0deg); }
-                    70% { transform: translate(2px, 1px) rotate(-1deg); }
-                    80% { transform: translate(-1px, -1px) rotate(1deg); }
-                    90% { transform: translate(2px, 2px) rotate(0deg); }
-                    100% { transform: translate(1px, -2px) rotate(-1deg); }
-                }
-
-                .dice-preview-box {
-                    font-size: 4rem;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    min-height: 120px;
-                    color: var(--accent);
-                    text-shadow: 0 0 20px rgba(197, 160, 89, 0.5);
-                }
-
-                .dice-preview-box.spinning {
-                    animation: diceSpin 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-                }
-
-                .dice-preview-box.shaking {
-                    animation: diceShake 0.6s infinite linear;
-                    color: var(--danger);
-                }
-            </style>
-        `;
-
-        return `
-            ${customStyle}
-            <div class="page bestiary animate-fadeIn" style="max-width:1400px; padding:20px;">
-                <!-- HEADER -->
-                <div class="section-header" style="flex-wrap:wrap; gap:15px; border-bottom:1px solid rgba(197,160,89,0.3); padding-bottom:20px; margin-bottom:20px;">
-                    <div>
-                        <h2 class="section-title" style="font-family:'Cinzel'; color:var(--accent); text-shadow:0 0 10px rgba(197,160,89,0.5);"><i class="fa-solid fa-book-skull" style="margin-right:12px;"></i> Bestiário Arcano</h2>
-                        <p class="section-subtitle" style="color:var(--text-dim);">Biblioteca de criaturas e ameaças lendárias.</p>
-                    </div>
-                    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                        <div style="position:relative; margin-right: 10px;">
-                            <i class="fa-solid fa-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--accent); opacity:0.7;"></i>
-                            <input type="text" class="legacy-input" placeholder="Buscar criatura..." value="${searchQuery}"
-                                   style="min-width:250px; padding-left:35px !important; border-radius:20px !important; background:rgba(0,0,0,0.5) !important;"
-                                   oninput="closest('.bestiary').__component._doSearch(value)">
-                        </div>
-                        
-                        <button class="btn btn-ghost" data-action="triggerImportJSON" style="border-radius:20px; border:1px solid rgba(255,255,255,0.15); padding:8px 20px; display:flex; align-items:center; gap:8px;">
-                            <i class="fa-solid fa-file-import"></i> Importar JSON
-                        </button>
-                        <input type="file" id="bestiary-json-input" style="display:none;" accept=".json" multiple>
-                        
-                        <button class="btn btn-primary" data-action="addCustomMonster" style="border-radius:20px; padding:8px 20px; display:flex; align-items:center; gap:8px;">
-                            <i class="fa-solid fa-hammer"></i> Forjar Monstro
-                        </button>
-                    </div>
-                </div>
-
-                <!-- LEVEL FILTER BAR -->
-                <div style="display:flex; overflow-x:auto; gap:10px; padding-bottom:15px; margin-bottom:20px; scrollbar-width:thin;">
-                    ${levels.map(lvl => {
-                        const isActive = selectedLevel === lvl;
-                        const isBossTab = lvl === 'BOSS';
-                        return `
-                            <button class="btn ${isActive ? (isBossTab ? 'btn-danger' : 'btn-primary') : 'btn-ghost'}"
-                                    style="border-radius:20px; padding:6px 16px; white-space:nowrap; border:1px solid ${isActive ? 'transparent' : 'rgba(255,255,255,0.1)'}; ${isBossTab && !isActive ? 'color:var(--danger); border-color:var(--danger);' : ''}"
-                                    data-action="selectLevel" data-level="${lvl}">
-                                ${isBossTab ? '<i class="fa-solid fa-skull-crossbones" style="margin-right:6px;"></i>' : ''}
-                                ${lvl}
-                            </button>
-                        `;
-                    }).join('')}
-                </div>
-
-                <!-- MAIN CONTENT -->
-                ${selectedCreature ? _renderDetailView(selectedCreature, isBoss) : _renderGridView(filtered, isBoss)}
-                
-                <!-- FORGE MODAL -->
-                ${showForgeModal ? _renderForgeModal() : ''}
-
-                <!-- VISUAL DYNAMIC DICE ROLLER OVERLAY -->
-                ${activeRoll ? _renderVisualDiceRoller() : ''}
-
-                <!-- CUSTOM ART MODAL -->
-                ${showArtModal ? _renderArtModal() : ''}
-            </div>
-        `;
-    }
-
-    /* ── Grid View ─────────────────────────────────────────────── */
-    function _renderGridView(creatures, isBoss) {
-        if (creatures.length === 0) {
-            return `
-                <div class="card empty-state" style="height:40vh; border-color:var(--danger); background:rgba(255,0,0,0.02);">
-                    <i class="fa-solid fa-dragon fa-3x" style="opacity:0.2; margin-bottom:20px; color:var(--danger);"></i>
-                    <h3 style="font-family:'Cinzel';">Santuário Vazio</h3>
-                    <p style="color:var(--text-dim);">Nenhuma criatura deste poder foi encontrada.</p>
-                </div>
-            `;
-        }
-
-        return `
-            <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap:20px;">
-                ${creatures.map((m, i) => _renderCreatureCard(m, i, isBoss)).join('')}
-            </div>
-        `;
-    }
-
-    function _renderCreatureCard(m, index, isBoss) {
-        const delay = index * 0.04;
-        const isCustom = m.id && String(m.id).startsWith('custom_');
-        const tokenHtml = MonsterArt.renderToken(m, 'w-24 h-24');
-
-        const levelStr = String(m.level || m.cr || 1);
-        const levelNum = levelStr.replace(/\D/g, '') || 1;
-
-        return `
-            <div class="card bestiary-card-premium group hover:border-amber-400/80 transition-all duration-300 cursor-pointer"
-                 style="animation: fadeIn 0.4s ease-out ${delay}s both;"
-                 data-action="viewCreature" data-name="${m.name}">
-                
-                <div class="bc-inner relative overflow-hidden rounded-xl bg-slate-900/95 border border-tomeGold/30 hover:shadow-[0_10px_25px_rgba(0,0,0,0.8),0_0_15px_rgba(197,160,89,0.2)] transition-all">
-                    <!-- Badges -->
-                    <span class="bc-badge level">Nível ${levelNum}</span>
-                    ${isBoss ? '<span class="bc-badge boss">Boss</span>' : ''}
-                    ${isCustom ? '<span class="bc-badge forged">Forjado</span>' : ''}
-
-                    <!-- Top Banner -->
-                    <div class="bc-top-banner text-center py-2 px-3 border-b border-tomeGold/20 bg-slate-950/60">
-                        <h4 class="bc-name text-amber-300 font-cinzel font-bold text-sm truncate m-0 drop-shadow">${m.name}</h4>
-                    </div>
-                    
-                    <!-- Token Image Container with Metallic Frame -->
-                    <div class="bc-portrait flex items-center justify-center p-4 min-h-[140px] bg-gradient-to-b from-black/40 via-slate-950/60 to-black/40">
-                        <div class="w-24 h-24 relative flex items-center justify-center">
-                            ${tokenHtml}
-                        </div>
-                    </div>
-
-                    <!-- Bottom Banner (Type & Actions) -->
-                    <div class="bc-bottom-banner creature-action-btn flex justify-between items-center px-3 py-2 bg-slate-950/80 border-t border-tomeGold/20">
-                        <div class="bc-type text-slate-400 text-[0.7rem] font-bold uppercase truncate max-w-[110px]">${m.type || 'Monstro'}</div>
-                        <div class="bc-actions-bar flex items-center gap-1.5">
-                            <button class="btn btn-sm text-[0.7rem] font-cinzel font-bold px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-tomeGold/40 rounded shadow cursor-pointer" onclick="event.stopPropagation(); closest('.bestiary-card-premium').click();">
-                                FICHA
-                            </button>
-                            <button class="btn btn-sm px-2 py-1 bg-red-900/80 hover:bg-red-800 text-white rounded border border-red-500/40 cursor-pointer shadow" data-action="spawnCreature" data-name="${m.name}" title="Invocar no Mapa">
-                                <i class="fa-solid fa-swords text-xs"></i>
-                            </button>
-                            ${isCustom ? `<button class="btn btn-sm px-2 py-1 bg-red-950 hover:bg-red-900 text-red-300 rounded border border-red-700/50 cursor-pointer" data-action="deleteCustomMonster" data-id="${m.id}" title="Excluir"><i class="fa-solid fa-trash-can text-xs"></i></button>` : ''}
-                        </div>
-                    </div>
-
-                    <!-- Floating Stats Box (Bottom Right) -->
-                    <div class="bc-stats-box">
-                        <div class="stat-line ac"><i class="fa-solid fa-shield-halved"></i> ${m.ac}</div>
-                        <div class="stat-divider"></div>
-                        <div class="stat-line hp"><i class="fa-solid fa-heart"></i> ${m.hp}</div>
-                    </div>
-                </div>
-
-            </div>
-        `;
-    }
-
-    /* ── Detail View (Monster Sheet) ────────────────────────── */
-    function _renderDetailView(m, isBoss) {
-        const stats = m.stats || { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 };
-        const actions = _getCreatureActions(m);
-        const statNames = { str: 'FOR', dex: 'DES', con: 'CON', int: 'INT', wis: 'SAB', cha: 'CAR' };
-        const getMod = (v) => Math.floor((v - 10) / 2);
-        const dmgType = (a) => {
-            const n = (a.name || '').toLowerCase();
-            if (n.includes('sopro') || n.includes('fogo') || n.includes('gelo') || n.includes('relampago') || n.includes('relâmpago')) return 'Elemental';
-            if (n.includes('mordida') || n.includes('garra') || n.includes('bico')) return 'Slashing';
-            return 'Bludgeoning';
+    // Combat Summoning (1-Click)
+    const handleSummonToCombat = (monster, e) => {
+        if (e) e.stopPropagation();
+        const maxHp = typeof monster.hp === 'object' ? (monster.hp.max ?? monster.hp.current ?? 10) : (Number(monster.hp) || 10);
+        const imgUrl = monster.customImg || monster.img || MonsterArt.getImage(monster, true) || '';
+        
+        const entity = {
+            id: 'm-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+            name: monster.name,
+            cr: monster.cr || '1',
+            hp_max: maxHp,
+            hp: maxHp,
+            ac: monster.ac || 10,
+            emoji: monster.emoji || '👹',
+            img: imgUrl,
+            size: monster.size || 'Médio',
+            speed: monster.speed || '30 ft.',
+            type: monster.type || 'monster',
+            originalData: { ...monster }
         };
 
-        const actionCards = actions.slice(0, 4).map((a, idx) => {
-            const melee = MonsterArt.isMeleeAction(a);
-            const icon = melee ? 'fa-swords' : 'fa-wand-sparkles';
-            return `
-                <div class="sb-action-card p-3 rounded-xl bg-slate-900/90 border border-tomeGold/30 flex flex-col justify-between shadow-md">
-                    <h4 class="m-0 text-sm font-cinzel font-bold text-amber-300 flex items-center gap-2 mb-1.5">
-                        <i class="fa-solid ${icon} text-red-400"></i> ${a.name}
-                    </h4>
-                    <div class="sb-action-stat text-xs text-slate-300 mb-2 leading-relaxed">
-                        <strong class="text-amber-400">+${a.bonus || 0}</strong> para atingir ·
-                        <strong class="text-red-400">${(a.damage || '1d6').toUpperCase()}</strong> ${dmgType(a)} DMG
-                    </div>
-                    <button type="button" class="sb-action-roll w-full py-1.5 px-3 text-xs font-bold font-outfit uppercase tracking-wider bg-red-900/80 hover:bg-red-800 text-white rounded-lg border border-red-500/50 cursor-pointer transition-colors shadow" data-action="rollBestiaryAttack" data-index="${idx}">
-                        <i class="fa-solid fa-dice-d20 mr-1"></i> Rolar Ataque
-                    </button>
-                </div>`;
-        }).join('');
+        // Emit to listeners (InitiativeMonitor)
+        if (window.TOME?.events) {
+            window.TOME.events.emit('MONSTER_INVOKED', entity);
+        }
 
-        const abilityBoxes = Object.entries(stats).map(([k, v]) => {
-            const mod = getMod(v);
-            return `
-                <div class="sb-ability p-3 rounded-xl bg-slate-900/90 border border-tomeGold/30 text-center shadow-md">
-                    <div class="sb-ability-mod text-xl font-black text-amber-400 leading-none">${mod >= 0 ? '+' : ''}${mod}</div>
-                    <div class="sb-ability-score text-xs font-bold text-slate-400 mt-1 mb-1">${v}</div>
-                    <div class="sb-ability-name text-[0.7rem] font-bold text-tomeGold uppercase tracking-wider">${statNames[k] || k.toUpperCase()}</div>
-                </div>`;
-        }).join('');
-
-        const notes = m.notes || m.traits || '';
-        const traitsBlock = notes
-            ? `<div class="sb-trait-title font-cinzel font-bold text-amber-300 text-sm mb-1">${notes.split(/[.!]/)[0]}</div><p class="text-xs text-slate-300 leading-relaxed">${notes}</p>`
-            : `<p class="text-xs text-slate-300 leading-relaxed"><strong>Percepção Passiva</strong> ${10 + getMod(stats.wis)} · <strong>Idiomas</strong> Comum</p>`;
-
-        const descriptionBlock = (m.description || m.lore) ? `
-            <div style="padding: 15px 25px; font-family: 'Cinzel', serif; font-style: italic; font-size: 0.95rem; color: #cbd5e1; text-align: center; line-height: 1.6; border-bottom: 1px dashed rgba(197,160,89,0.3); margin-bottom: 15px; background: rgba(0,0,0,0.2);">
-                "${m.description || m.lore}"
-            </div>
-        ` : '';
-
-        return `
-            <div class="animate-fadeIn max-w-[960px] mx-auto pb-10">
-                <button class="btn inline-flex items-center gap-2 mb-5 px-5 py-2.5 rounded-xl bg-slate-900 border border-tomeGold/40 hover:border-amber-400 text-slate-200 hover:text-white font-cinzel font-bold text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer shadow-lg hover:shadow-amber-500/10" data-action="backToGrid">
-                    <i class="fa-solid fa-arrow-left"></i> Voltar ao Bestiário
-                </button>
-
-                <div class="bestiary-statblock ${isBoss ? 'is-boss border-red-600 shadow-[0_0_40px_rgba(220,38,38,0.3)]' : 'border-tomeGold/40 shadow-[0_20px_50px_rgba(0,0,0,0.9),0_0_30px_rgba(197,160,89,0.15)]'} bg-slate-950/95 border-2 rounded-2xl overflow-hidden backdrop-blur-md">
-                    <header class="sb-header bg-gradient-to-b from-slate-900 to-slate-950 border-b border-tomeGold/30 p-6 text-center">
-                        <h1 class="sb-name font-cinzel text-3xl md:text-4xl font-black text-amber-300 uppercase tracking-widest m-0 drop-shadow-[0_2px_10px_rgba(251,191,36,0.3)]">${m.name}</h1>
-                        <p class="sb-subtitle font-outfit text-xs md:text-sm font-bold text-slate-400 uppercase tracking-wider mt-2">${MonsterArt.getSubtitle(m, selectedLevel)}</p>
-                    </header>
-                    ${descriptionBlock}
-
-                    <div class="sb-class-bar mx-5 my-4 px-4 py-2 rounded-lg bg-gradient-to-r from-red-950 via-slate-900 to-red-950 border border-tomeGold/40 flex justify-between items-center text-xs font-bold uppercase tracking-wider text-slate-200 shadow">
-                        <span class="text-amber-200">${MonsterArt.getClassification(m)}</span>
-                        <span class="sb-cr px-3 py-1 rounded bg-black/60 border border-tomeGold/40 text-amber-400 font-extrabold">${MonsterArt.getCrDisplay(selectedLevel)}</span>
-                    </div>
-
-                    <div class="sb-hero grid grid-cols-1 md:grid-cols-[130px_1fr_260px] gap-5 p-5 min-h-[300px]">
-                        <div class="sb-side-left flex flex-col gap-3">
-                            <div class="sb-vital-box ac p-4 rounded-xl bg-slate-900/90 border border-slate-700/60 text-center shadow-md">
-                                <i class="fa-solid fa-shield-halved text-xl text-slate-400 mb-1 block"></i>
-                                <div class="sb-vital-value text-3xl font-black text-white leading-none">${m.ac}</div>
-                                <div class="sb-vital-label text-[0.65rem] font-bold text-slate-400 uppercase mt-1">Classe de Armadura</div>
-                            </div>
-                            <div class="sb-vital-box hp p-4 rounded-xl bg-slate-900/90 border border-red-900/60 text-center shadow-md">
-                                <i class="fa-solid fa-heart text-xl text-red-500 mb-1 block"></i>
-                                <div class="sb-vital-value text-3xl font-black text-red-400 leading-none">${m.hp}</div>
-                                <div class="sb-vital-label text-[0.65rem] font-bold text-red-300 uppercase mt-1">Pontos de Vida</div>
-                            </div>
-                            <div class="sb-vital-box spd p-4 rounded-xl bg-slate-900/90 border border-emerald-900/60 text-center shadow-md">
-                                <i class="fa-solid fa-person-running text-xl text-emerald-400 mb-1 block"></i>
-                                <div class="sb-vital-value text-2xl font-black text-emerald-300 leading-none">${MonsterArt.getSpeed(m).replace(' ft.', '')} ft</div>
-                                <div class="sb-vital-label text-[0.65rem] font-bold text-emerald-400 uppercase mt-1">Deslocamento</div>
-                            </div>
-                        </div>
-
-                        <div class="flex flex-col gap-2">
-                            ${MonsterArt.renderPortrait(m, 'sb-portrait-wrap border-2 border-tomeGold/40 rounded-xl overflow-hidden bg-black/40 min-h-[260px] flex items-center justify-center relative shadow-lg')}
-                            <button type="button" class="btn btn-ghost btn-sm text-xs font-bold text-amber-300 hover:text-amber-200 border border-tomeGold/40 hover:border-amber-400 bg-slate-900/90 hover:bg-slate-800 py-1.5 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow" data-action="openArtModal" data-name="${m.name}">
-                                <i class="fa-solid fa-palette text-amber-400"></i> Trocar Arte do Monstro
-                            </button>
-                        </div>
-
-                        <div class="sb-side-right flex flex-col gap-3">
-                            <div class="sb-multi-box p-3 rounded-xl bg-amber-950/60 border border-amber-500/40 text-xs font-bold text-amber-300 uppercase text-center shadow">
-                                Multi-Atk<br><span class="text-[0.7rem] text-slate-300">${MonsterArt.getMultiattackSummary(actions)}</span>
-                            </div>
-                            ${actionCards}
-                        </div>
-                    </div>
-
-                    <div class="sb-abilities grid grid-cols-3 sm:grid-cols-6 gap-3 px-5 pb-5">${abilityBoxes}</div>
-
-                    <div class="sb-traits mx-5 mb-5 p-4 rounded-xl bg-slate-900/80 border border-tomeGold/30">
-                        <p class="text-xs text-slate-300 mb-2 font-medium">
-                            <strong class="text-amber-400">ND:</strong> ${selectedLevel.replace('Nível ', '')} · 
-                            <strong class="text-amber-400">Tipo:</strong> ${m.type || 'Monstro'}
-                        </p>
-                        ${traitsBlock}
-                    </div>
-
-                    ${isBoss ? '<div class="sb-boss-banner mx-5 mb-5 p-3 rounded-xl bg-red-950/80 border border-red-500/50 text-red-300 text-center font-cinzel font-bold text-sm uppercase tracking-widest shadow">👑 Criatura Lendária</div>' : ''}
-
-                    <footer class="sb-footer border-t border-tomeGold/30 p-5 bg-slate-900/60 flex flex-wrap justify-between items-center gap-4">
-                        <div class="sb-test-ac flex items-center gap-2 text-xs font-bold text-slate-300">
-                            <span>CA de teste:</span>
-                            <input type="number" id="bestiary-test-ac" value="13" min="1" max="30" class="w-14 text-center bg-black/50 border border-slate-700 rounded p-1 text-white font-bold">
-                        </div>
-                        <button class="btn inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-red-800 to-red-950 hover:from-red-700 hover:to-red-900 text-white font-cinzel font-bold text-xs uppercase tracking-wider border border-amber-400/50 cursor-pointer shadow-lg hover:shadow-red-500/20 transition-all" data-action="spawnFromDetail">
-                            <i class="fa-solid fa-swords text-amber-400"></i> Invocação Direta
-                        </button>
-                    </footer>
-                </div>
-            </div>
-        `;
-    }
-
-    function _renderForgeModal() {
-        const levels = Object.keys(MonsterData);
-        return `
-            <div class="modal-overlay animate-fadeIn" style="position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:2000; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(5px);">
-                <div class="card glass-accent animate-scaleIn" style="max-width:650px; width:100%; padding:30px; border:2px solid var(--accent); max-height: 90vh; overflow-y: auto;">
-                    <h2 style="font-family:'Cinzel'; color:var(--accent); margin-top:0; border-bottom:1px solid rgba(197,160,89,0.3); padding-bottom:10px;"><i class="fa-solid fa-hammer"></i> Forjar Nova Criatura</h2>
-                    
-                    <form id="forge-monster-form" onsubmit="event.preventDefault(); closest('.bestiary').__component.saveForgedMonster(this);">
-                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:15px;">
-                            <div>
-                                <small style="display:block; color:var(--text-dim); margin-bottom:4px;">Nome da Ameaça</small>
-                                <input class="legacy-input" name="name" required placeholder="Ex: Dragão de Cinzas" style="width:100%;">
-                            </div>
-                            <div>
-                                <small style="display:block; color:var(--text-dim); margin-bottom:4px;">Tipo de Criatura</small>
-                                <input class="legacy-input" name="type" placeholder="Ex: Dragão, Humanoide" style="width:100%;">
-                            </div>
-                        </div>
-
-                        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:15px; margin-bottom:15px;">
-                            <div>
-                                <small style="display:block; color:var(--text-dim); margin-bottom:4px;">Categoria / Nível</small>
-                                <select class="legacy-input" name="level" style="width:100%; background: #1a1a1f; color: #fff; border: 1px solid rgba(255,255,255,0.15); border-radius: 4px; padding: 6px;">
-                                    ${levels.map(lvl => `<option value="${lvl}">${lvl}</option>`).join('')}
-                                </select>
-                            </div>
-                            <div>
-                                <small style="display:block; color:var(--text-dim); margin-bottom:4px;">Classe de Armadura (CA)</small>
-                                <input class="legacy-input" type="number" name="ac" value="10" min="1" max="40" style="width:100%;">
-                            </div>
-                            <div>
-                                <small style="display:block; color:var(--text-dim); margin-bottom:4px;">Pontos de Vida (HP)</small>
-                                <input class="legacy-input" type="number" name="hp" value="10" min="1" max="1000" style="width:100%;">
-                            </div>
-                        </div>
-
-                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:20px;">
-                            <div>
-                                <small style="display:block; color:var(--text-dim); margin-bottom:4px;">Emoji Representativo</small>
-                                <input class="legacy-input" name="emoji" value="👿" placeholder="👿" style="width:100%; text-align:center;">
-                            </div>
-                            <div>
-                                <small style="display:block; color:var(--text-dim); margin-bottom:4px;">Imagem Sprite (URL)</small>
-                                <input class="legacy-input" name="img" placeholder="https://..." style="width:100%;">
-                            </div>
-                        </div>
-
-                        <h4 style="font-family:'Cinzel'; color:var(--accent); margin-bottom:10px;">Atributos Básicos</h4>
-                        <div style="display:grid; grid-template-columns: repeat(6, 1fr); gap:10px; margin-bottom:20px; text-align:center;">
-                            <div><small style="color:var(--text-dim);">FOR</small><input class="legacy-input" type="number" name="stat_str" value="10" style="width:100%; text-align:center;"></div>
-                            <div><small style="color:var(--text-dim);">DES</small><input class="legacy-input" type="number" name="stat_dex" value="10" style="width:100%; text-align:center;"></div>
-                            <div><small style="color:var(--text-dim);">CON</small><input class="legacy-input" type="number" name="stat_con" value="10" style="width:100%; text-align:center;"></div>
-                            <div><small style="color:var(--text-dim);">INT</small><input class="legacy-input" type="number" name="stat_int" value="10" style="width:100%; text-align:center;"></div>
-                            <div><small style="color:var(--text-dim);">SAB</small><input class="legacy-input" type="number" name="stat_wis" value="10" style="width:100%; text-align:center;"></div>
-                            <div><small style="color:var(--text-dim);">CAR</small><input class="legacy-input" type="number" name="stat_cha" value="10" style="width:100%; text-align:center;"></div>
-                        </div>
-
-                        <h4 style="font-family:'Cinzel'; color:var(--accent); margin-bottom:10px;">Ação Principal de Combate</h4>
-                        <div style="display:grid; grid-template-columns: 1.5fr 80px 1.2fr; gap:10px; margin-bottom:25px;">
-                            <input class="legacy-input" name="action_name" placeholder="Nome: Garra, Sopro" style="width:100%;">
-                            <input class="legacy-input" type="number" name="action_bonus" value="4" placeholder="+4" style="width:100%; text-align:center;">
-                            <input class="legacy-input" name="action_damage" placeholder="Dano: 2d6+2" style="width:100%;">
-                        </div>
-
-                        <div style="display:flex; gap:15px; justify-content:flex-end; border-top:1px solid rgba(197,160,89,0.3); padding-top:20px;">
-                            <button type="button" class="btn btn-ghost" onclick="closest('.bestiary').__component.closeForgeModal()">CANCELAR</button>
-                            <button type="submit" class="btn btn-primary">FORJAR CRIATURA</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        `;
-    }
-
-    function saveForgedMonster(form) {
-        const fd = new FormData(form);
-        const name = fd.get('name');
-        if (!name) return;
-        
-        const actionName = fd.get('action_name');
-        const actions = [];
-        if (actionName) {
-            actions.push({
-                name: actionName,
-                bonus: parseInt(fd.get('action_bonus')) || 0,
-                damage: fd.get('action_damage') || '1d6'
+        // Direct sync to store initiative order
+        if (window.TOME?.store) {
+            window.TOME.store.update(s => {
+                if (!s.initiativeOrder) s.initiativeOrder = [];
+                if (!s.initiativeOrder.some(comb => comb.id === entity.id)) {
+                    const initRoll = Dice.roll(20).total;
+                    s.initiativeOrder.push({
+                        id: entity.id,
+                        name: entity.name,
+                        initiative: initRoll,
+                        hp: { current: entity.hp_max, max: entity.hp_max },
+                        ac: entity.ac,
+                        type: 'Enemy',
+                        emoji: entity.emoji,
+                        img: entity.img,
+                        conditions: []
+                    });
+                    if (s.combatActive) {
+                        s.initiativeOrder.sort((a, b) => (b.initiative ?? 0) - (a.initiative ?? 0));
+                    }
+                }
             });
         }
 
-        const forged = {
-            id: `custom_${Date.now()}`,
-            name: name,
-            type: fd.get('type') || 'Monstro',
-            ac: parseInt(fd.get('ac')) || 10,
-            hp: parseInt(fd.get('hp')) || 10,
-            level: fd.get('level') || 'Nível 1',
-            emoji: fd.get('emoji') || '👿',
-            img: fd.get('img') || '',
-            stats: {
-                str: parseInt(fd.get('stat_str')) || 10,
-                dex: parseInt(fd.get('stat_dex')) || 10,
-                con: parseInt(fd.get('stat_con')) || 10,
-                int: parseInt(fd.get('stat_int')) || 10,
-                wis: parseInt(fd.get('stat_wis')) || 10,
-                cha: parseInt(fd.get('stat_cha')) || 10
-            },
-            actions: actions
-        };
+        Toast.show(`⚔️ ${monster.name} foi invocado na Arena de Combate!`, 'success');
+    };
 
-        TOME.store.update(s => {
-            if (!s.customMonsters) s.customMonsters = [];
-            s.customMonsters.push(forged);
+    // Place on Tactical Map
+    const handlePlaceOnMap = (monster, e) => {
+        if (e) e.stopPropagation();
+        handleSummonToCombat(monster);
+        Toast.show(`🗺️ Token de ${monster.name} preparado no Mapa Tático!`, 'info');
+    };
+
+    // Clone Monster
+    const handleCloneMonster = (monster, e) => {
+        if (e) e.stopPropagation();
+        const cloned = Schemas.createMonster({
+            ...monster,
+            id: `custom_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+            name: `${monster.name} (Clone)`,
+            level: monster.level || 'Nível 1'
         });
 
-        Toast.show(`🔥 ${name} foi forjado no fogo eterno do Bestiário!`, 'success');
-        setShowForgeModal(false);
-        render();
-    }
-
-    function closeForgeModal() {
-        setShowForgeModal(false);
-        render();
-    }
-
-    /* ── Monster Art Customization ────────────────────────────── */
-    function openArtModal(e, el) {
-        const name = el.dataset.name || selectedCreature?.name;
-        const all = _getCombinedCreatures();
-        const c = all.find(m => m.name === name) || selectedCreature;
-        if (c) {
-            setArtEditingCreature(c);
-            setShowArtModal(true);
-            render();
+        if (window.TOME?.store) {
+            window.TOME.store.update(s => {
+                if (!s.customMonsters) s.customMonsters = [];
+                s.customMonsters.push(cloned);
+            });
         }
-    }
+        Toast.show(`✨ ${cloned.name} clonado com sucesso na biblioteca!`, 'success');
+    };
 
-    function closeArtModal() {
-        setShowArtModal(false);
-        setArtEditingCreature(null);
-        render();
-    }
-
-    async function handleSaveArt(e, el) {
-        if (!artEditingCreature) return;
-        const name = artEditingCreature.name;
-        
-        // 1. Verificar se usuário enviou arquivo do computador
-        const fileInput = document.getElementById('art-modal-file-input');
-        if (fileInput && fileInput.files && fileInput.files[0]) {
-            const file = fileInput.files[0];
-            const formData = new FormData();
-            formData.append('imageFile', file);
-            Toast.show('Enviando arte da criatura...', 'info');
-            try {
-                const token = localStorage.getItem('token') || '';
-                const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-                const res = await fetch('/api/upload', {
-                    method: 'POST',
-                    headers,
-                    body: formData
+    // Delete Custom Monster
+    const handleDeleteCustomMonster = (id, name, e) => {
+        if (e) e.stopPropagation();
+        if (confirm(`Deseja realmente banir "${name}" do Bestiário?`)) {
+            if (window.TOME?.store) {
+                window.TOME.store.update(s => {
+                    s.customMonsters = (s.customMonsters || []).filter(m => m.id !== id);
                 });
-                const data = await res.json();
-                if (data && data.url) {
-                    _applyMonsterArtOverride(name, data.url);
-                    return;
-                }
-            } catch (err) {
-                console.error('Falha no upload:', err);
-                Toast.show('Erro ao enviar imagem. Verifique o arquivo.', 'danger');
-                return;
             }
-        }
-
-        // 2. Verificar se usuário digitou URL direta
-        const urlInput = document.getElementById('art-modal-url-input');
-        if (urlInput && urlInput.value.trim()) {
-            _applyMonsterArtOverride(name, urlInput.value.trim());
-            return;
-        }
-
-        Toast.show('Escolha um arquivo ou insira uma URL de imagem.', 'warning');
-    }
-
-    function _applyMonsterArtOverride(name, newUrl) {
-        TOME.store.update(s => {
-            if (!s.monsterOverrides) s.monsterOverrides = {};
-            s.monsterOverrides[name] = {
-                ...(s.monsterOverrides[name] || {}),
-                customImg: newUrl,
-                img: newUrl
-            };
-        });
-
-        if (selectedCreature && selectedCreature.name === name) {
-            setSelectedCreature({
-                ...selectedCreature,
-                customImg: newUrl,
-                img: newUrl
-            });
-        }
-
-        Toast.show(`🎨 Ilustração de <strong>${name}</strong> atualizada com sucesso!`, 'success');
-        setShowArtModal(false);
-        setArtEditingCreature(null);
-        render();
-    }
-
-    function resetArtToDefault() {
-        if (!artEditingCreature) return;
-        const name = artEditingCreature.name;
-        TOME.store.update(s => {
-            if (s.monsterOverrides?.[name]) {
-                delete s.monsterOverrides[name].customImg;
-                delete s.monsterOverrides[name].img;
+            if (selectedMonster?.id === id) {
+                setSelectedMonster(null);
             }
-        });
-
-        if (selectedCreature && selectedCreature.name === name) {
-            const copy = { ...selectedCreature };
-            delete copy.customImg;
-            delete copy.img;
-            setSelectedCreature(copy);
+            Toast.show(`Criatura ${name} removida.`, 'warning');
         }
+    };
 
-        Toast.show(`✨ Arte de <strong>${name}</strong> restaurada para o padrão oficial 5e!`, 'info');
-        setShowArtModal(false);
-        setArtEditingCreature(null);
-        render();
-    }
+    // Roll Monster Attack Interactive
+    const handleStartAttackRoll = (monster, action) => {
+        const bonus = action.bonus !== undefined ? action.bonus : 4;
+        const damageFormula = action.damage || '1d8+2';
 
-    function _renderArtModal() {
-        if (!artEditingCreature) return '';
-        const currentArt = MonsterArt.getImage(artEditingCreature, false);
-        const currentToken = MonsterArt.getImage(artEditingCreature, true);
-        const canonicalFallback = MonsterArt.getCdnFallback(artEditingCreature, false);
-        const isCustomized = !!(artEditingCreature.customImg || (artEditingCreature.img && !artEditingCreature.img.includes('/assets/sprites/')));
-
-        return `
-            <div class="modal-overlay animate-fadeIn" style="position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:4500; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(8px); padding:20px;">
-                <div class="card glass-accent animate-scaleIn bg-slate-900 border-2 border-tomeGold/50 rounded-2xl p-6 max-w-[520px] w-full shadow-2xl text-left" style="background:#0f172a;">
-                    <div class="flex justify-between items-center border-b border-tomeGold/30 pb-3 mb-4">
-                        <h3 class="font-cinzel text-lg font-bold text-amber-300 m-0 flex items-center gap-2">
-                            <i class="fa-solid fa-palette text-amber-400"></i> Trocar Arte: ${artEditingCreature.name}
-                        </h3>
-                        <button type="button" class="btn btn-ghost text-slate-400 hover:text-white p-1 text-lg leading-none cursor-pointer" data-action="closeArtModal">✕</button>
-                    </div>
-
-                    <!-- Visualização Atual -->
-                    <div class="flex items-center gap-4 bg-slate-950/80 p-3 rounded-xl border border-slate-700/60 mb-5">
-                        <div class="w-16 h-16 rounded-xl overflow-hidden border border-tomeGold/40 bg-black flex items-center justify-center shrink-0">
-                            <img src="${currentArt || currentToken || canonicalFallback}" alt="${artEditingCreature.name}" class="w-full h-full object-cover object-top" id="art-preview-img" onerror="this.style.display='none';">
-                        </div>
-                        <div class="flex-1 text-xs">
-                            <div class="text-amber-200 font-bold uppercase tracking-wider">${artEditingCreature.name}</div>
-                            <div class="text-slate-400 mt-0.5">${artEditingCreature.type || 'Monstro'} · ${selectedLevel}</div>
-                            <div class="mt-1 text-[0.7rem] ${isCustomized ? 'text-amber-400 font-bold' : 'text-emerald-400 font-bold'}">
-                                <i class="fa-solid ${isCustomized ? 'fa-pen-to-square' : 'fa-certificate'} mr-1"></i>
-                                ${isCustomized ? 'Arte personalizada ativa' : 'Arte oficial Monster Manual 5e'}
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Opção 1: Enviar Arquivo do Computador -->
-                    <div class="mb-4">
-                        <label class="text-xs font-bold font-cinzel text-slate-300 block mb-1.5">
-                            <i class="fa-solid fa-cloud-arrow-up mr-1 text-amber-400"></i> 1. Enviar Arquivo do Computador
-                        </label>
-                        <div class="border-2 border-dashed border-tomeGold/40 hover:border-amber-400 rounded-xl p-4 text-center cursor-pointer bg-slate-950/50 hover:bg-slate-950 transition-colors" onclick="document.getElementById('art-modal-file-input').click();">
-                            <i class="fa-solid fa-file-image text-2xl text-slate-400 mb-1 block"></i>
-                            <span class="text-xs text-slate-300 font-medium block">Clique para escolher imagem do computador</span>
-                            <span class="text-[0.65rem] text-slate-500 block mt-0.5" id="art-modal-file-name">Suporta PNG, JPG, WebP (tokens ou retratos)</span>
-                            <input type="file" id="art-modal-file-input" style="display:none;" accept="image/*" onchange="
-                                if (this.files && this.files[0]) {
-                                    document.getElementById('art-modal-file-name').innerText = 'Selecionado: ' + this.files[0].name;
-                                    var preview = document.getElementById('art-preview-img');
-                                    if (preview) { preview.src = URL.createObjectURL(this.files[0]); preview.style.display = 'block'; }
-                                }
-                            ">
-                        </div>
-                    </div>
-
-                    <!-- Opção 2: URL Direta -->
-                    <div class="mb-6">
-                        <label class="text-xs font-bold font-cinzel text-slate-300 block mb-1.5">
-                            <i class="fa-solid fa-link mr-1 text-amber-400"></i> 2. Ou cole um link de imagem (URL)
-                        </label>
-                        <input type="url" id="art-modal-url-input" class="legacy-input w-full bg-slate-950 border border-slate-700/60 rounded-lg p-2.5 text-xs text-white focus:border-amber-400 focus:outline-none" placeholder="https://exemplo.com/minha-arte.png" value="${isCustomized ? (artEditingCreature.customImg || artEditingCreature.img) : ''}" oninput="
-                            var preview = document.getElementById('art-preview-img');
-                            if (preview && this.value.trim()) { preview.src = this.value.trim(); preview.style.display = 'block'; }
-                        ">
-                    </div>
-
-                    <!-- Botões de Ação -->
-                    <div class="flex justify-between items-center gap-3 border-t border-tomeGold/20 pt-4">
-                        <button type="button" class="btn btn-ghost text-xs text-red-400 hover:bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2 cursor-pointer" data-action="resetArtToDefault">
-                            <i class="fa-solid fa-rotate-left mr-1"></i> Restaurar Oficial 5e
-                        </button>
-                        <div class="flex gap-2">
-                            <button type="button" class="btn btn-ghost text-xs text-slate-400 hover:text-white rounded-lg px-4 py-2 cursor-pointer" data-action="closeArtModal">CANCELAR</button>
-                            <button type="button" class="btn btn-primary text-xs font-bold px-5 py-2 rounded-lg bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white shadow-lg cursor-pointer" data-action="saveArtModal">SALVAR ARTE</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    /* ── Actions ───────────────────────────────────────────────── */
-    function selectLevel(e, el) {
-        setSelectedLevel(el.dataset.level);
-        setSelectedCreature(null);
-        setSearchQuery('');
-        render();
-    }
-
-    function rollBestiaryAttack(e, el) {
-        const idx = parseInt(el.dataset.index);
-        const m = selectedCreature;
-        if (!m) return;
-        
-        const actions = _getCreatureActions(m);
-        const action = actions[idx];
-        if (!action) return;
-        
-        // Get test AC from input
-        const acInput = $('#bestiary-test-ac');
-        const testAC = acInput ? (parseInt(acInput.value) || 13) : 13;
-        
-        const attacker = { name: m.name, emoji: m.emoji || '🐾' };
-        const target = { name: `Alvo de Treino`, ac: testAC };
-        
-        startVisualRoll(attacker, target, action);
-    }
-
-    function startVisualRoll(attacker, target, action) {
-        const newRoll = {
+        setActiveRoll({
             stage: 'd20',
             rolling: true,
-            attacker,
-            target,
+            monster,
             action,
-            d20Roll: null,
-            d20Total: null,
+            targetAC: parseInt(targetAC) || 13,
+            d20: null,
+            total: null,
             isCrit: false,
             isHit: false,
-            damageNotation: action.damage || '1d6',
+            damageFormula,
             damageRolls: [],
             damageTotal: null,
-            narrativeText: ''
-        };
-        setActiveRoll(newRoll);
+            narrative: ''
+        });
 
-        TOME.audio.playSFX('https://assets.mixkit.co/active_storage/sfx/2771/2771-preview.mp3');
+        if (window.TOME?.audio) {
+            window.TOME.audio.playSFX('https://assets.mixkit.co/active_storage/sfx/2771/2771-preview.mp3');
+        }
 
         setTimeout(() => {
-            const hitRes = RulesEngine.checkHit(action.bonus || 0, target.ac || 10, rollMod);
+            const hit = RulesEngine.checkHit(bonus, targetAC, 'normal');
             let narrative = '';
-            if (hitRes.success) {
-                TOME.audio.playSFX('https://assets.mixkit.co/active_storage/sfx/2770/2770-preview.mp3');
+            if (hit.success) {
+                if (window.TOME?.audio) window.TOME.audio.playSFX('https://assets.mixkit.co/active_storage/sfx/2770/2770-preview.mp3');
+                narrative = hit.isCrit ? '💥 ACERTO CRÍTICO! Golpe devastador!' : '⚔️ ACERTOU! O ataque superou as defesas!';
             } else {
-                TOME.audio.playSFX('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
-                narrative = _getNarrative('miss', target.name);
+                if (window.TOME?.audio) window.TOME.audio.playSFX('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
+                narrative = '🛡️ ERROU! A armadura resistiu à investida.';
             }
 
             setActiveRoll(prev => prev ? ({
                 ...prev,
                 rolling: false,
-                d20Roll: hitRes.roll,
-                d20Total: hitRes.total,
-                isCrit: hitRes.isCrit,
-                isHit: hitRes.success,
-                narrativeText: narrative
+                d20: hit.roll,
+                total: hit.total,
+                isCrit: hit.isCrit,
+                isHit: hit.success,
+                narrative
             }) : null);
-        }, 1100);
-    }
+        }, 900);
+    };
 
-    function proceedToDamage() {
-        setActiveRoll(prev => prev ? ({ ...prev, stage: 'damage' }) : null);
+    const handleRollDamage = () => {
+        if (!activeRoll) return;
+        setActiveRoll(prev => ({ ...prev, stage: 'damage' }));
 
-        TOME.audio.playSFX('https://assets.mixkit.co/active_storage/sfx/2770/2770-preview.mp3');
+        if (window.TOME?.audio) {
+            window.TOME.audio.playSFX('https://assets.mixkit.co/active_storage/sfx/2770/2770-preview.mp3');
+        }
 
         setTimeout(() => {
             setActiveRoll(prev => {
                 if (!prev) return null;
-                const dmgNotation = prev.action?.damage || '1d6';
-                const dmgRoll = Dice.roll(dmgNotation);
-                
-                let totalDmg = prev.isCrit ? (dmgRoll.total * 2) : dmgRoll.total;
-                if (isNaN(totalDmg)) totalDmg = 4;
-
-                const text = _getNarrative(prev.isCrit ? 'crit' : 'hit', prev.target?.name || 'Alvo', totalDmg);
+                const dmg = Dice.roll(prev.damageFormula);
+                let total = prev.isCrit ? (dmg.total * 2) : dmg.total;
+                if (isNaN(total)) total = 4;
                 return {
                     ...prev,
                     stage: 'complete',
-                    damageRolls: dmgRoll.rolls || [totalDmg],
-                    damageTotal: totalDmg,
-                    narrativeText: text
+                    damageRolls: dmg.rolls || [total],
+                    damageTotal: total,
+                    narrative: `🩸 ${prev.monster.name} causou ${total} de dano com ${prev.action.name}!`
                 };
             });
-        }, 1100);
-    }
+        }, 800);
+    };
 
-    function applyVisualRollResult() {
-        setActiveRoll(null);
-        render();
-    }
-
-    function closeVisualRoll() {
-        setActiveRoll(null);
-        render();
-    }
-
-    function _renderVisualDiceRoller() {
-        const roll = activeRoll;
-        const isD20Stage = roll.stage === 'd20';
-        const isDamageStage = roll.stage === 'damage';
-        const isComplete = roll.stage === 'complete';
-
-        return `
-            <div class="modal-overlay animate-fadeIn" style="position:fixed; inset:0; background:rgba(10,12,16,0.9); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); z-index:4000; display:flex; align-items:center; justify-content:center; padding:20px;">
-                <div class="card glass-accent animate-scaleIn" style="max-width:550px; width:100%; border:2px solid ${isComplete ? (roll.isHit ? 'var(--success)' : 'var(--danger)') : 'var(--accent)'}; padding:35px; text-align:center; background:var(--bg-surface); box-shadow: 0 25px 60px rgba(0,0,0,0.85);">
-                    
-                    <!-- Attacker Header info -->
-                    <div style="font-size:0.75rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; display:flex; align-items:center; justify-content:center; gap:8px;">
-                        <span>${roll.attacker.name}</span>
-                        <i class="fa-solid fa-right-long" style="color:var(--accent);"></i>
-                        <span>🎯 ${roll.target.name} (CA ${roll.target.ac})</span>
-                    </div>
-
-                    <h2 style="font-family:'Cinzel'; font-size:1.8rem; margin:10px 0 25px 0; color:var(--accent-bright); border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:12px;">
-                        Usa: ${roll.action.name}
-                    </h2>
-
-                    <!-- STAGE 1: D20 TO HIT ROLL -->
-                    ${isD20Stage ? `
-                        <div>
-                            <div class="dice-preview-box ${roll.rolling ? 'spinning' : ''}">
-                                🎲
-                            </div>
-                            
-                            ${roll.rolling ? `
-                                <div style="font-size:1rem; font-family:'Cinzel'; color:var(--accent); letter-spacing:1px; margin-top:15px;">
-                                    Sacudindo d20...
-                                </div>
-                            ` : `
-                                <div class="animate-fadeIn" style="margin-top:15px;">
-                                    <div style="font-size:3.2rem; font-weight:900; color:white; line-height:1;">
-                                        ${roll.d20Total}
-                                    </div>
-                                    <div style="font-size:0.75rem; color:var(--text-dim); margin-top:8px;">
-                                        Rolagem: <strong>${roll.d20Roll}</strong> | Bônus: +${roll.action.bonus || 0} vs CA ${roll.target.ac}
-                                    </div>
-                                    
-                                    <div style="margin-top:25px; padding:15px; border-radius:10px; background:${roll.isHit ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)'}; border:1px solid ${roll.isHit ? 'rgba(34, 197, 94, 0.4)' : 'rgba(239, 68, 68, 0.4)'};">
-                                        <div style="font-size:1.6rem; font-weight:800; font-family:'Cinzel'; color:${roll.isHit ? 'var(--success)' : 'var(--danger)'};">
-                                            ${roll.isCrit ? '🔥 ACERTO CRÍTICO!' : roll.isHit ? '⚔️ ACERTOU!' : '🛡️ ERROU...'}
-                                        </div>
-                                        <p style="font-size:0.8rem; color:var(--text-main); margin:6px 0 0 0;">
-                                            ${roll.isHit ? 'Prepare-se para desferir o dano!' : 'A criatura escapou ilesa desta investida.'}
-                                        </p>
-                                    </div>
-
-                                    <div style="display:flex; gap:10px; margin-top:30px;">
-                                        ${roll.isHit ? `
-                                            <button class="btn btn-primary btn-block" style="padding:12px; font-family:'Cinzel';" data-action="proceedToDamage">
-                                                💥 ROLAR DANO (${roll.action.damage || '1d6'})
-                                            </button>
-                                        ` : `
-                                            <button class="btn btn-danger btn-block" style="padding:12px; font-family:'Cinzel';" data-action="closeVisualRoll">
-                                                CONCLUIR TESTE
-                                            </button>
-                                        `}
-                                    </div>
-                                </div>
-                            `}
-                        </div>
-                    ` : ''}
-
-                    <!-- STAGE 2: DAMAGE ROLLING -->
-                    ${isDamageStage ? `
-                        <div>
-                            <div class="dice-preview-box shaking">
-                                💥
-                            </div>
-                            <div style="font-size:1.1rem; font-family:'Cinzel'; color:var(--danger); letter-spacing:1px; margin-top:15px;">
-                                Destruindo armaduras com ${roll.action.damage}...
-                            </div>
-                        </div>
-                    ` : ''}
-
-                    <!-- STAGE 3: COMPLETE -->
-                    ${isComplete ? `
-                        <div class="animate-fadeIn">
-                            <div class="dice-preview-box" style="font-size:4.5rem; color:var(--success);">
-                                🩸
-                            </div>
-                            
-                            <div style="font-size:3.5rem; font-weight:900; color:var(--danger); line-height:1; text-shadow:0 0 20px rgba(239, 68, 68, 0.4);">
-                                - ${roll.damageTotal} HP
-                            </div>
-                            <div style="font-size:0.8rem; color:var(--text-dim); margin-top:8px;">
-                                Dado de Dano: <strong>${roll.action.damage}</strong> | Resultado: <strong>${roll.damageRolls.join(' + ')}</strong>
-                            </div>
-
-                            <div style="margin-top:25px; padding:15px; border-radius:10px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.06); font-style:italic; font-size:0.85rem; color:var(--text-main);">
-                                "${roll.narrativeText}"
-                            </div>
-
-                            <button class="btn btn-primary btn-block" style="padding:14px; margin-top:35px; font-family:'Cinzel'; background:var(--success); border-color:#1b9d4c;" data-action="applyVisualRollResult">
-                                ✔️ CONCLUIR TESTE
-                            </button>
-                        </div>
-                    ` : ''}
-
-                </div>
-            </div>
-        `;
-    }
-
-    function viewCreature(e, el) {
-        if (el.closest('.creature-action-btn')) return;
-        const name = el.dataset.name;
-        const all = _getCombinedCreatures();
-        const m = all.find(c => c.name === name);
-        if (m) {
-            setSelectedCreature(m);
-            render();
+    // Save Forged Monster
+    const handleSaveForgedMonster = (monsterObj) => {
+        if (!monsterObj.name || !monsterObj.name.trim()) {
+            Toast.show('Informe o nome da criatura!', 'warning');
+            return;
         }
-    }
 
-    function backToGrid() {
-        setSelectedCreature(null);
-        render();
-    }
+        const payload = Schemas.createMonster({
+            id: monsterObj.id || `custom_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+            name: monsterObj.name.trim(),
+            type: monsterObj.type || 'Monstro',
+            ac: parseInt(monsterObj.ac) || 10,
+            hp: { current: parseInt(monsterObj.hp) || 10, max: parseInt(monsterObj.hp) || 10 },
+            level: monsterObj.level || 'Nível 1',
+            cr: (monsterObj.level || 'Nível 1').replace('Nível ', ''),
+            emoji: monsterObj.emoji || '👹',
+            img: monsterObj.img || '',
+            speed: monsterObj.speed || '30 ft.',
+            stats: monsterObj.stats || { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
+            actions: monsterObj.actions || [],
+            notes: monsterObj.notes || ''
+        });
 
-    function spawnCreature(e, el) {
-        e.stopPropagation();
-        const name = el.dataset.name;
-        const all = _getCombinedCreatures();
-        const m = all.find(c => c.name === name);
-        if (m) _addToStore(m);
-    }
-
-    function spawnFromDetail() {
-        if (selectedCreature) {
-            _addToStore(selectedCreature);
-        }
-    }
-
-    function deleteCustomMonster(e, el) {
-        e.stopPropagation();
-        if (confirm('Tem certeza que deseja banir esta criatura da sua biblioteca para sempre?')) {
-            const id = el.dataset.id;
-            TOME.store.update(s => {
-                s.customMonsters = (s.customMonsters || []).filter(m => m.id !== id);
-            });
-            Toast.show('Criatura deletada da biblioteca.');
-            render();
-        }
-    }
-
-    function _addToStore(m) {
-        let entity = {
-            id: 'm-' + Date.now(),
-            name: m.name,
-            cr: selectedLevel.replace('Nível ', ''),
-            hp_max: m.hp,
-            hp: m.hp, // hp atual
-            ac: m.ac || 10,
-            emoji: m.emoji || '👹',
-            img: m.img || MonsterArt.getImage(m) || '',
-            size: m.size || 'medium',
-            speed: m.speed || '30 ft.',
-            type: m.type || 'monster',
-            originalData: { ...m, cr: selectedLevel }
-        };
-
-        if (window.TOME && window.TOME.events) {
-            window.TOME.events.emit('MONSTER_INVOKED', entity);
-        }
-    }
-
-    function addCustomMonster() {
-        setShowForgeModal(true);
-        render();
-    }
-
-    function triggerImportJSON() {
-        $('#bestiary-json-input').click();
-    }
-
-    function _doSearch(val) {
-        setSearchQuery(val);
-        render();
-    }
-
-    function search(val) {
-        setSearchQuery(val);
-        render();
-    }
-
-    function select(id) {
-        setSelectedId(id);
-        render();
-    }
-
-    function onMount() {
-        // Set __component reference for inline event handlers
-        const el = containerRef.current?.querySelector('.bestiary');
-        if (el) el.__component = this;
-
-        // Mass JSON Import logic
-        const input = $('#bestiary-json-input');
-        if (input) {
-            input.onchange = async (e) => {
-                const files = Array.from(e.target.files);
-                if (files.length === 0) return;
-                
-                Toast.show(`📥 Lendo ${files.length} arquivo(s)...`);
-                let importedCount = 0;
-                
-                for (const file of files) {
-                    try {
-                        const content = await new Promise((resolve, reject) => {
-                            const reader = new FileReader();
-                            reader.onload = (ev) => resolve(ev.target.result);
-                            reader.onerror = reject;
-                            reader.readAsText(file);
-                        });
-                        
-                        const parsed = JSON.parse(content);
-                        const list = Array.isArray(parsed) ? parsed : [parsed];
-                        
-                        // Validate and sanitize each monster in list
-                        const validatedList = list.filter(m => m && m.name).map((m, idx) => ({
-                            id: m.id || `custom_${Date.now()}_${idx}_${Math.random().toString(36).substr(2, 5)}`,
-                            name: m.name || 'Criatura Sem Nome',
-                            type: m.type || 'Monstro',
-                            ac: parseInt(m.ac) || 10,
-                            hp: parseInt(m.hp) || 10,
-                            level: m.level || m.cr || 'Nível 1',
-                            emoji: m.emoji || '🐾',
-                            img: m.img || '',
-                            stats: m.stats || { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
-                            actions: Array.isArray(m.actions) ? m.actions : []
-                        }));
-                        
-                        if (validatedList.length > 0) {
-                            TOME.store.update(s => {
-                                if (!s.customMonsters) s.customMonsters = [];
-                                s.customMonsters = [...s.customMonsters, ...validatedList];
-                            });
-                            importedCount += validatedList.length;
-                        }
-                    } catch (err) {
-                        console.error('Erro ao ler arquivo do bestiário:', err);
-                    }
-                }
-                
-                if (importedCount > 0) {
-                    Toast.show(`✅ Sucesso! ${importedCount} monstros importados para o Bestiário!`, 'success');
-                    render();
+        if (window.TOME?.store) {
+            window.TOME.store.update(s => {
+                if (!s.customMonsters) s.customMonsters = [];
+                const idx = s.customMonsters.findIndex(m => m.id === payload.id);
+                if (idx >= 0) {
+                    s.customMonsters[idx] = payload;
                 } else {
-                    Toast.show('❌ Nenhum monstro válido encontrado nos arquivos.', 'danger');
+                    s.customMonsters.push(payload);
+                }
+            });
+        }
+
+        Toast.show(`🔥 ${payload.name} foi forjado no Bestiário!`, 'success');
+        setShowForgeModal(false);
+        setForgeData(null);
+        if (selectedMonster?.id === payload.id) {
+            setSelectedMonster(payload);
+        }
+    };
+
+    // Save Art Override
+    const handleSaveArtOverride = (monsterName, imageUrl) => {
+        if (!imageUrl || !imageUrl.trim()) {
+            Toast.show('URL de imagem inválida.', 'warning');
+            return;
+        }
+
+        if (window.TOME?.store) {
+            window.TOME.store.update(s => {
+                if (!s.monsterOverrides) s.monsterOverrides = {};
+                s.monsterOverrides[monsterName] = {
+                    ...(s.monsterOverrides[monsterName] || {}),
+                    customImg: imageUrl.trim(),
+                    img: imageUrl.trim()
+                };
+            });
+        }
+
+        if (selectedMonster && selectedMonster.name === monsterName) {
+            setSelectedMonster(prev => ({
+                ...prev,
+                customImg: imageUrl.trim(),
+                img: imageUrl.trim()
+            }));
+        }
+
+        Toast.show(`🎨 Arte de ${monsterName} atualizada!`, 'success');
+        setShowArtModal(false);
+        setArtTargetMonster(null);
+    };
+
+    const handleResetArtToDefault = (monsterName) => {
+        if (window.TOME?.store) {
+            window.TOME.store.update(s => {
+                if (s.monsterOverrides?.[monsterName]) {
+                    delete s.monsterOverrides[monsterName].customImg;
+                    delete s.monsterOverrides[monsterName].img;
+                }
+            });
+        }
+
+        if (selectedMonster && selectedMonster.name === monsterName) {
+            setSelectedMonster(prev => {
+                const copy = { ...prev };
+                delete copy.customImg;
+                delete copy.img;
+                return copy;
+            });
+        }
+
+        Toast.show(`✨ Arte padrão 5e restaurada para ${monsterName}.`, 'info');
+        setShowArtModal(false);
+        setArtTargetMonster(null);
+    };
+
+    // Mass JSON Import
+    const handleFileUpload = (e) => {
+        const files = Array.from(e.target.files || []);
+        if (!files.length) return;
+
+        let importedCount = 0;
+        files.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = (re) => {
+                try {
+                    const parsed = JSON.parse(re.target.result);
+                    const list = Array.isArray(parsed) ? parsed : [parsed];
+                    const valid = list.filter(m => m && m.name).map((m, idx) => Schemas.createMonster({
+                        ...m,
+                        id: m.id || `custom_${Date.now()}_${idx}_${Math.random().toString(36).substr(2, 4)}`,
+                        level: m.level || m.cr || 'Nível 1'
+                    }));
+
+                    if (valid.length > 0 && window.TOME?.store) {
+                        window.TOME.store.update(s => {
+                            if (!s.customMonsters) s.customMonsters = [];
+                            s.customMonsters.push(...valid);
+                        });
+                        importedCount += valid.length;
+                        Toast.show(`📥 ${valid.length} monstro(s) importados de ${file.name}!`, 'success');
+                    }
+                } catch (err) {
+                    Toast.show(`Erro ao ler ${file.name}.`, 'danger');
                 }
             };
+            reader.readAsText(file);
+        });
+    };
+
+    const handlePasteImport = () => {
+        if (!importJsonText.trim()) return;
+        try {
+            const parsed = JSON.parse(importJsonText.trim());
+            const list = Array.isArray(parsed) ? parsed : [parsed];
+            const valid = list.filter(m => m && m.name).map((m, idx) => Schemas.createMonster({
+                ...m,
+                id: m.id || `custom_${Date.now()}_${idx}_${Math.random().toString(36).substr(2, 4)}`,
+                level: m.level || m.cr || 'Nível 1'
+            }));
+
+            if (valid.length > 0 && window.TOME?.store) {
+                window.TOME.store.update(s => {
+                    if (!s.customMonsters) s.customMonsters = [];
+                    s.customMonsters.push(...valid);
+                });
+                Toast.show(`✅ ${valid.length} monstro(s) adicionados ao Bestiário!`, 'success');
+                setShowImportModal(false);
+                setImportJsonText('');
+            } else {
+                Toast.show('Nenhuma criatura válida encontrada no JSON.', 'warning');
+            }
+        } catch (err) {
+            Toast.show('Formato JSON inválido. Verifique o texto colado.', 'danger');
         }
+    };
+
+    // Export Custom Monsters as JSON
+    const handleExportMonsters = () => {
+        const dataStr = JSON.stringify(customMonsters, null, 2);
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `bestiario_custom_${new Date().toISOString().slice(0, 10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        Toast.show('Arquivo de criaturas exportado!', 'info');
+    };
+
+    // ------------------------------------------
+    // 3. RENDER: Detail View (5e Statblock)
+    // ------------------------------------------
+    if (selectedMonster) {
+        const m = selectedMonster;
+        const isBoss = m.level === 'BOSS';
+        const stats = m.stats || { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 };
+        const statNames = { str: 'FOR', dex: 'DES', con: 'CON', int: 'INT', wis: 'SAB', cha: 'CAR' };
+        const actions = getCreatureActions(m);
+        const portraitUrl = m.customImg || m.img || MonsterArt.getImage(m, false) || MonsterArt.getCdnFallback(m, false);
+        const hpVal = typeof m.hp === 'object' ? (m.hp.max ?? m.hp.current ?? 10) : (Number(m.hp) || 10);
+
+        return (
+            <div class="page max-w-[1200px] animate-fadeIn pb-20 font-outfit text-slate-200">
+                {/* Back Button & Top Toolbar */}
+                <div class="flex justify-between items-center mb-6 flex-wrap gap-3">
+                    <button
+                        class="btn btn-ghost border-white/10 text-xs px-4 py-2 font-cinzel font-bold text-slate-300 hover:text-white"
+                        onClick={() => setSelectedMonster(null)}>
+                        <i class="fa-solid fa-arrow-left mr-2 text-accent"></i> Voltar ao Bestiário
+                    </button>
+
+                    <div class="flex gap-2.5 flex-wrap">
+                        <button
+                            class="btn btn-ghost border-accent/40 text-xs px-3 text-accent hover:bg-accent/10"
+                            onClick={(e) => handleCloneMonster(m, e)}
+                            title="Duplicar para criar variante">
+                            <i class="fa-solid fa-copy mr-1.5"></i> Clonar Criatura
+                        </button>
+                        {m.isCustom && (
+                            <button
+                                class="btn btn-ghost border-white/10 text-xs px-3 text-slate-300 hover:text-white"
+                                onClick={() => { setForgeData(m); setShowForgeModal(true); }}>
+                                <i class="fa-solid fa-pen mr-1.5"></i> Editar Forja
+                            </button>
+                        )}
+                        <button
+                            class="btn btn-ghost border-amber-500/40 text-xs px-3 text-amber-300 hover:bg-amber-500/10"
+                            onClick={() => { setArtTargetMonster(m); setShowArtModal(true); }}>
+                            <i class="fa-solid fa-palette mr-1.5"></i> Trocar Arte
+                        </button>
+                        <button
+                            class="btn btn-primary text-xs px-4 py-2 font-cinzel font-bold shadow-[0_0_15px_rgba(197,160,89,0.3)]"
+                            onClick={(e) => handleSummonToCombat(m, e)}>
+                            <i class="fa-solid fa-swords mr-1.5"></i> Invocar na Arena
+                        </button>
+                    </div>
+                </div>
+
+                {/* 5e Statblock Card */}
+                <div class={`card relative rounded-2xl overflow-hidden backdrop-blur-md bg-gradient-to-b from-[#0e1017] via-[#090b10] to-[#0e1017] border-2 ${isBoss ? 'border-red-600/70 shadow-[0_0_45px_rgba(220,38,38,0.25)]' : 'border-accent/40 shadow-[0_20px_50px_rgba(0,0,0,0.85),0_0_30px_rgba(197,160,89,0.15)]'}`}>
+                    {/* Header Banner */}
+                    <header class="bg-gradient-to-r from-black/80 via-slate-900/90 to-black/80 p-6 sm:p-8 border-b border-accent/30 text-center relative">
+                        <div class="flex items-center justify-center gap-3 mb-2">
+                            {isBoss && (
+                                <span class="px-3 py-0.5 rounded-full text-[0.65rem] font-cinzel font-black uppercase tracking-widest bg-red-950 text-red-400 border border-red-500/40 shadow">
+                                    👑 Ameaça Lendária (Boss)
+                                </span>
+                            )}
+                            {m.isCustom && (
+                                <span class="px-3 py-0.5 rounded-full text-[0.65rem] font-cinzel font-black uppercase tracking-widest bg-amber-950 text-amber-300 border border-amber-500/40 shadow">
+                                    🔥 Forjado pelo Mestre
+                                </span>
+                            )}
+                        </div>
+                        <h1 class="m-0 font-cinzel text-3xl sm:text-4xl md:text-5xl font-black text-amber-300 uppercase tracking-widest drop-shadow-[0_2px_12px_rgba(251,191,36,0.3)]">
+                            {m.name}
+                        </h1>
+                        <p class="font-outfit text-xs sm:text-sm font-semibold text-slate-400 uppercase tracking-widest mt-2">
+                            {MonsterArt.getClassification(m)} • {MonsterArt.getSubtitle(m, m.level)}
+                        </p>
+                    </header>
+
+                    {/* Classification & CR bar */}
+                    <div class="mx-6 my-4 px-5 py-2.5 rounded-xl bg-gradient-to-r from-red-950/60 via-slate-900/80 to-red-950/60 border border-accent/30 flex justify-between items-center text-xs font-bold uppercase tracking-wider text-slate-200 shadow">
+                        <span class="text-amber-200 flex items-center gap-2">
+                            <i class="fa-solid fa-skull text-red-400"></i> {m.type || 'Monstro'}
+                        </span>
+                        <span class="px-3 py-1 rounded bg-black/60 border border-accent/40 text-amber-400 font-black font-cinzel">
+                            {MonsterArt.getCrDisplay(m.level)}
+                        </span>
+                    </div>
+
+                    {/* Vitals & Visual Presentation Grid */}
+                    <div class="grid grid-cols-1 md:grid-cols-[140px_1fr_300px] gap-6 p-6">
+                        {/* Left Column: Vitals */}
+                        <div class="flex flex-col gap-4">
+                            <div class="p-4 rounded-xl bg-slate-900/90 border border-slate-700/60 text-center shadow-md">
+                                <i class="fa-solid fa-shield-halved text-xl text-slate-400 mb-1 block"></i>
+                                <div class="text-3xl font-black text-white leading-none">{m.ac || 10}</div>
+                                <div class="text-[0.65rem] font-bold text-slate-400 uppercase mt-1">Classe de Armadura</div>
+                            </div>
+
+                            <div class="p-4 rounded-xl bg-slate-900/90 border border-red-900/60 text-center shadow-md">
+                                <i class="fa-solid fa-heart text-xl text-red-500 mb-1 block"></i>
+                                <div class="text-3xl font-black text-red-400 leading-none">{hpVal}</div>
+                                <div class="text-[0.65rem] font-bold text-red-300 uppercase mt-1">Pontos de Vida</div>
+                            </div>
+
+                            <div class="p-4 rounded-xl bg-slate-900/90 border border-emerald-900/60 text-center shadow-md">
+                                <i class="fa-solid fa-person-running text-xl text-emerald-400 mb-1 block"></i>
+                                <div class="text-2xl font-black text-emerald-300 leading-none">
+                                    {String(m.speed || '30 ft.').replace(' ft.', '')} ft
+                                </div>
+                                <div class="text-[0.65rem] font-bold text-emerald-400 uppercase mt-1">Deslocamento</div>
+                            </div>
+                        </div>
+
+                        {/* Center Column: Portrait Image */}
+                        <div class="flex flex-col gap-3 items-center justify-center">
+                            <div class="w-full max-w-[360px] h-[300px] rounded-2xl overflow-hidden border-2 border-accent/40 bg-black/50 relative shadow-2xl flex items-center justify-center group">
+                                {portraitUrl ? (
+                                    <img
+                                        src={portraitUrl}
+                                        alt={m.name}
+                                        class="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                                        onError={(e) => { e.target.style.display = 'none'; }}
+                                    />
+                                ) : (
+                                    <div class="flex flex-col items-center justify-center p-6 text-center">
+                                        <i class="fa-solid fa-dragon text-6xl text-accent/50 mb-3"></i>
+                                        <span class="font-cinzel text-sm text-slate-400">{m.name}</span>
+                                    </div>
+                                )}
+                                <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                                <span class="absolute bottom-3 left-4 text-[0.7rem] font-bold text-slate-300 uppercase tracking-widest font-cinzel">
+                                    {m.type || 'Monstro'}
+                                </span>
+                            </div>
+
+                            <div class="text-center text-xs text-slate-400 font-medium">
+                                Percepção Passiva: <strong class="text-amber-300">{10 + getMod(stats.wis)}</strong> • Sentidos: Visão no Escuro 60ft
+                            </div>
+                        </div>
+
+                        {/* Right Column: Combat Actions */}
+                        <div class="flex flex-col gap-3">
+                            <div class="p-3 rounded-xl bg-amber-950/60 border border-amber-500/40 text-xs font-bold text-amber-300 uppercase text-center shadow">
+                                Multi-Ataque<br />
+                                <span class="text-[0.7rem] text-slate-300 lowercase font-normal">
+                                    {MonsterArt.getMultiattackSummary(actions)}
+                                </span>
+                            </div>
+
+                            <div class="flex flex-col gap-2.5 max-h-[290px] overflow-y-auto pr-1">
+                                {actions.map((act, idx) => (
+                                    <div key={idx} class="p-3.5 rounded-xl bg-slate-900/90 border border-accent/30 flex flex-col justify-between shadow-md group hover:border-amber-400 transition-colors">
+                                        <div class="flex justify-between items-center mb-1">
+                                            <h4 class="m-0 text-sm font-cinzel font-bold text-amber-300 flex items-center gap-1.5">
+                                                <i class="fa-solid fa-swords text-red-400 text-xs"></i> {act.name}
+                                            </h4>
+                                            <span class="text-[0.65rem] px-2 py-0.5 rounded bg-black/40 text-amber-400 font-mono font-bold">
+                                                +{act.bonus}
+                                            </span>
+                                        </div>
+                                        <p class="text-xs text-slate-300 mb-2 leading-relaxed">
+                                            Dano: <strong class="text-red-400">{act.damage}</strong>
+                                        </p>
+                                        <button
+                                            type="button"
+                                            class="w-full py-1.5 px-3 text-xs font-bold font-outfit uppercase tracking-wider bg-red-900/80 hover:bg-red-800 text-white rounded-lg border border-red-500/50 cursor-pointer transition-colors shadow flex items-center justify-center gap-2"
+                                            onClick={() => handleStartAttackRoll(m, act)}>
+                                            <i class="fa-solid fa-dice-d20"></i> Rolar Ataque vs CA {targetAC}
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Ability Scores Bar */}
+                    <div class="grid grid-cols-3 sm:grid-cols-6 gap-3 px-6 pb-6">
+                        {Object.entries(stats).map(([k, v]) => {
+                            const mod = getMod(v);
+                            return (
+                                <div key={k} class="p-3 rounded-xl bg-slate-900/90 border border-accent/30 text-center shadow-md">
+                                    <div class="text-2xl font-black text-amber-400 leading-none">{formatMod(mod)}</div>
+                                    <div class="text-xs font-bold text-slate-300 mt-1">{v}</div>
+                                    <div class="text-[0.7rem] font-bold text-accent uppercase tracking-wider mt-0.5">
+                                        {statNames[k] || k.toUpperCase()}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    {/* Lore & Traits */}
+                    {(m.notes || m.description || m.traits) && (
+                        <div class="mx-6 mb-6 p-5 rounded-xl bg-slate-900/70 border border-white/10 text-xs text-slate-300 leading-relaxed">
+                            <h4 class="font-cinzel text-sm font-bold text-amber-300 mb-2 uppercase tracking-wider flex items-center gap-2">
+                                <i class="fa-solid fa-scroll text-accent"></i> Habilidades Especiais & Notas
+                            </h4>
+                            <p class="m-0 whitespace-pre-line">{m.notes || m.description || m.traits}</p>
+                        </div>
+                    )}
+
+                    {/* Footer Controls */}
+                    <footer class="border-t border-accent/30 p-5 bg-slate-900/80 flex flex-wrap justify-between items-center gap-4">
+                        <div class="flex items-center gap-2 text-xs font-bold text-slate-300">
+                            <span>CA de Teste do Alvo:</span>
+                            <input
+                                type="number"
+                                value={targetAC}
+                                min="1"
+                                max="35"
+                                class="w-14 text-center bg-black/60 border border-slate-700 rounded p-1 text-white font-bold focus:border-amber-400 focus:outline-none"
+                                onInput={(e) => setTargetAC(e.target.value)}
+                            />
+                        </div>
+
+                        <div class="flex gap-3">
+                            <button
+                                class="btn btn-ghost border-white/10 text-xs px-4 py-2 font-cinzel font-bold text-slate-300 hover:text-white"
+                                onClick={(e) => handlePlaceOnMap(m, e)}>
+                                <i class="fa-solid fa-map-pin mr-1.5 text-blue-400"></i> Posicionar no Mapa
+                            </button>
+                            <button
+                                class="btn btn-primary text-xs px-6 py-2.5 font-cinzel font-bold shadow-[0_0_15px_rgba(197,160,89,0.3)]"
+                                onClick={(e) => handleSummonToCombat(m, e)}>
+                                <i class="fa-solid fa-swords mr-2"></i> Invocar na Arena
+                            </button>
+                        </div>
+                    </footer>
+                </div>
+
+                {/* VISUAL INTERACTIVE DICE ROLLER MODAL */}
+                {activeRoll && renderVisualRollModal()}
+                {/* FORGE MODAL */}
+                {showForgeModal && renderForgeModal()}
+                {/* ART MODAL */}
+                {showArtModal && renderArtModal()}
+            </div>
+        );
     }
 
-    return html`<div ref=${containerRef} onClick=${handleGlobalClick} dangerouslySetInnerHTML=${{__html: template()}}></div>`;
+    // ------------------------------------------
+    // 4. RENDER: Grid and Table Catalog Views
+    // ------------------------------------------
+    return (
+        <div class="page max-w-[1400px] animate-fadeIn pb-24 font-outfit text-slate-200">
+            {/* Header / Library Summary */}
+            <div class="card glass-accent p-6 rounded-2xl mb-6 flex flex-wrap justify-between items-center gap-4 bg-gradient-to-r from-[#0a0c10]/95 via-[#121620]/90 to-[#0a0c10]/95 border border-accent/30 shadow-[0_10px_35px_rgba(0,0,0,0.7)]">
+                <div>
+                    <h1 class="m-0 font-cinzel text-2xl sm:text-3xl font-black text-amber-300 tracking-wider flex items-center gap-3">
+                        <i class="fa-solid fa-book-skull text-accent drop-shadow-[0_0_10px_rgba(197,160,89,0.5)]"></i> Bestiário Arcano
+                    </h1>
+                    <p class="font-outfit text-xs sm:text-sm text-slate-400 mt-1 m-0">
+                        Compêndio de ameaças D&D 5e e oficina de monstros forjados pelo Mestre ({filteredCreatures.length} criaturas visíveis)
+                    </p>
+                </div>
+
+                <div class="flex gap-2.5 flex-wrap items-center">
+                    <button
+                        class="btn btn-ghost border-white/10 text-xs px-3 text-slate-300 hover:text-white"
+                        onClick={() => fileImportInputRef.current?.click()}
+                        title="Importar arquivos JSON">
+                        <i class="fa-solid fa-file-import mr-1.5 text-accent"></i> Importar Arquivos
+                    </button>
+                    <input
+                        type="file"
+                        ref={fileImportInputRef}
+                        style={{ display: 'none' }}
+                        accept=".json"
+                        multiple
+                        onChange={handleFileUpload}
+                    />
+
+                    <button
+                        class="btn btn-ghost border-white/10 text-xs px-3 text-slate-300 hover:text-white"
+                        onClick={() => setShowImportModal(true)}
+                        title="Colar JSON de Criatura">
+                        <i class="fa-solid fa-code mr-1.5 text-accent"></i> Colar JSON
+                    </button>
+
+                    <button
+                        class="btn btn-ghost border-white/10 text-xs px-3 text-slate-300 hover:text-white"
+                        onClick={handleExportMonsters}
+                        title="Exportar Criaturas Forjadas">
+                        <i class="fa-solid fa-file-export mr-1.5 text-accent"></i> Exportar
+                    </button>
+
+                    <button
+                        class="btn btn-primary px-4 py-2 font-cinzel font-bold text-xs shadow-[0_0_15px_rgba(197,160,89,0.3)]"
+                        onClick={() => { setForgeData(null); setShowForgeModal(true); }}>
+                        <i class="fa-solid fa-hammer mr-1.5"></i> Forjar Criatura
+                    </button>
+                </div>
+            </div>
+
+            {/* Filter Controls Bar */}
+            <div class="card glass-accent p-4 rounded-xl mb-6 border border-white/10 bg-black/40 flex flex-col md:flex-row gap-4 justify-between items-center">
+                {/* Search Box */}
+                <div class="relative w-full md:w-[320px]">
+                    <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-accent/70 text-xs"></i>
+                    <input
+                        type="text"
+                        placeholder="Buscar por nome, tipo, traço..."
+                        value={searchQuery}
+                        onInput={(e) => setSearchQuery(e.target.value)}
+                        class="w-full pl-9 pr-8 py-2 bg-black/50 border border-slate-700/60 rounded-lg text-xs text-white placeholder-slate-500 focus:border-amber-400 focus:outline-none"
+                    />
+                    {searchQuery && (
+                        <button
+                            class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs"
+                            onClick={() => setSearchQuery('')}>
+                            ✕
+                        </button>
+                    )}
+                </div>
+
+                {/* Filters Row */}
+                <div class="flex gap-3 flex-wrap items-center w-full md:w-auto justify-end">
+                    {/* Source Filter */}
+                    <div class="flex bg-black/50 p-1 rounded-lg border border-slate-800 text-[0.7rem] font-bold">
+                        <button
+                            class={`px-3 py-1 rounded transition-colors ${sourceFilter === 'all' ? 'bg-accent text-black font-black' : 'text-slate-400 hover:text-white'}`}
+                            onClick={() => setSourceFilter('all')}>
+                            Todos
+                        </button>
+                        <button
+                            class={`px-3 py-1 rounded transition-colors ${sourceFilter === 'srd' ? 'bg-accent text-black font-black' : 'text-slate-400 hover:text-white'}`}
+                            onClick={() => setSourceFilter('srd')}>
+                            Oficiais 5e
+                        </button>
+                        <button
+                            class={`px-3 py-1 rounded transition-colors ${sourceFilter === 'custom' ? 'bg-accent text-black font-black' : 'text-slate-400 hover:text-white'}`}
+                            onClick={() => setSourceFilter('custom')}>
+                            Forjados ({customMonsters.length})
+                        </button>
+                    </div>
+
+                    {/* Type Select */}
+                    <select
+                        class="bg-black/50 border border-slate-700/60 text-xs text-slate-200 px-3 py-1.5 rounded-lg focus:border-amber-400 focus:outline-none cursor-pointer"
+                        value={selectedType}
+                        onChange={(e) => setSelectedType(e.target.value)}>
+                        {availableTypes.map(t => (
+                            <option key={t} value={t}>{t === 'Todos' ? 'Todos os Tipos' : t}</option>
+                        ))}
+                    </select>
+
+                    {/* View Mode Switcher */}
+                    <div class="flex bg-black/50 p-1 rounded-lg border border-slate-800 text-xs">
+                        <button
+                            class={`px-2.5 py-1 rounded ${viewMode === 'grid' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}
+                            onClick={() => setViewMode('grid')}
+                            title="Visualização em Cards">
+                            <i class="fa-solid fa-grip"></i>
+                        </button>
+                        <button
+                            class={`px-2.5 py-1 rounded ${viewMode === 'table' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}
+                            onClick={() => setViewMode('table')}
+                            title="Visualização em Tabela">
+                            <i class="fa-solid fa-table-list"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Level Tabs Scrollbar */}
+            <div class="flex overflow-x-auto gap-2 pb-3 mb-6 scrollbar-thin scrollbar-thumb-accent/20">
+                {availableLevels.map(lvl => {
+                    const isActive = selectedLevel === lvl;
+                    const isBoss = lvl === 'BOSS';
+                    return (
+                        <button
+                            key={lvl}
+                            onClick={() => setSelectedLevel(lvl)}
+                            class={`px-3.5 py-1.5 rounded-full text-xs font-cinzel font-bold whitespace-nowrap transition-all duration-200 cursor-pointer border ${
+                                isActive
+                                    ? isBoss
+                                        ? 'bg-red-900 text-white border-red-500 shadow-[0_0_12px_rgba(239,68,68,0.4)]'
+                                        : 'bg-accent text-black border-accent shadow-[0_0_12px_rgba(197,160,89,0.3)]'
+                                    : isBoss
+                                        ? 'bg-black/40 text-red-400 border-red-900/50 hover:border-red-500'
+                                        : 'bg-black/30 text-slate-400 border-white/10 hover:border-accent/40 hover:text-white'
+                            }`}>
+                            {isBoss && <i class="fa-solid fa-skull-crossbones mr-1.5"></i>}
+                            {lvl}
+                        </button>
+                    );
+                })}
+            </div>
+
+            {/* Content Display: Grid or Table */}
+            {filteredCreatures.length === 0 ? (
+                <div class="card p-12 text-center rounded-2xl border border-white/10 bg-black/30">
+                    <i class="fa-solid fa-ghost text-5xl opacity-20 text-slate-400 mb-4"></i>
+                    <h3 class="font-cinzel text-xl text-slate-300 m-0">Nenhuma criatura encontrada</h3>
+                    <p class="text-xs text-slate-500 mt-2">
+                        Tente ajustar seus filtros de busca ou forje uma nova lenda agora mesmo.
+                    </p>
+                    <button
+                        class="btn btn-primary text-xs px-5 py-2 font-cinzel font-bold mt-4"
+                        onClick={() => { setForgeData(null); setShowForgeModal(true); }}>
+                        <i class="fa-solid fa-plus mr-1"></i> Forjar Criatura
+                    </button>
+                </div>
+            ) : viewMode === 'grid' ? (
+                <div class="grid grid-cols-[repeat(auto-fill,minmax(310px,1fr))] gap-6">
+                    {filteredCreatures.map((m) => {
+                        const isBoss = m.level === 'BOSS';
+                        const hpVal = typeof m.hp === 'object' ? (m.hp.max ?? m.hp.current ?? 10) : (Number(m.hp) || 10);
+
+                        return (
+                            <div
+                                key={m.id || m.name}
+                                class="card glass-accent flex flex-col p-0 overflow-hidden rounded-2xl border border-accent/25 hover:border-accent transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_15px_30px_rgba(0,0,0,0.8),0_0_20px_rgba(197,160,89,0.15)] group cursor-pointer bg-[#0e1017]/90"
+                                onClick={() => setSelectedMonster(m)}>
+                                {/* Top Banner / Header */}
+                                <div class="px-4 py-3 border-b border-accent/20 bg-slate-950/80 flex justify-between items-center">
+                                    <h3 class="m-0 font-cinzel text-base font-bold text-amber-300 truncate max-w-[200px] drop-shadow">
+                                        {m.name}
+                                    </h3>
+                                    <div class="flex items-center gap-1.5">
+                                        {isBoss ? (
+                                            <span class="text-[0.6rem] font-bold px-2 py-0.5 rounded bg-red-950 border border-red-500/50 text-red-400 font-cinzel">
+                                                BOSS
+                                            </span>
+                                        ) : (
+                                            <span class="text-[0.6rem] font-bold px-2 py-0.5 rounded bg-black/60 border border-accent/30 text-amber-400 font-cinzel">
+                                                ND {m.cr || '1'}
+                                            </span>
+                                        )}
+                                        {m.isCustom && (
+                                            <span class="text-[0.55rem] font-bold px-1.5 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-500/40">
+                                                FORJA
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Center: Token / Portrait Art */}
+                                <div class="py-6 px-4 flex flex-col items-center justify-center bg-gradient-to-b from-black/40 via-slate-950/50 to-black/40 relative">
+                                    <MonsterToken monster={m} size="w-24 h-24" />
+                                    <span class="text-[0.7rem] font-bold uppercase tracking-widest text-slate-400 mt-3 font-cinzel">
+                                        {m.type || 'Monstro'}
+                                    </span>
+                                </div>
+
+                                {/* Quick Stats Bar */}
+                                <div class="grid grid-cols-2 p-2.5 border-t border-b border-white/5 text-center bg-black/30">
+                                    <div class="flex items-center justify-center gap-2 border-r border-white/5">
+                                        <i class="fa-solid fa-shield-halved text-slate-400 text-xs"></i>
+                                        <span class="text-xs text-slate-400 font-bold uppercase">CA</span>
+                                        <strong class="text-white text-sm font-cinzel">{m.ac || 10}</strong>
+                                    </div>
+                                    <div class="flex items-center justify-center gap-2">
+                                        <i class="fa-solid fa-heart text-red-400 text-xs"></i>
+                                        <span class="text-xs text-slate-400 font-bold uppercase">HP</span>
+                                        <strong class="text-red-400 text-sm font-cinzel">{hpVal}</strong>
+                                    </div>
+                                </div>
+
+                                {/* Action Buttons */}
+                                <div class="flex p-3 gap-2 bg-black/50 items-center">
+                                    <button
+                                        class="btn btn-primary flex-1 text-xs py-1.5 font-cinzel font-bold rounded-lg shadow"
+                                        onClick={(e) => { e.stopPropagation(); setSelectedMonster(m); }}>
+                                        <i class="fa-solid fa-scroll mr-1"></i> Ficha
+                                    </button>
+                                    <button
+                                        class="btn btn-ghost text-xs px-2.5 py-1.5 rounded-lg border border-red-500/40 text-red-300 hover:bg-red-500/20"
+                                        onClick={(e) => handleSummonToCombat(m, e)}
+                                        title="Invocar no Combate">
+                                        <i class="fa-solid fa-swords"></i>
+                                    </button>
+                                    <button
+                                        class="btn btn-ghost text-xs px-2 py-1.5 rounded-lg border border-white/10 text-slate-400 hover:text-white"
+                                        onClick={(e) => handleCloneMonster(m, e)}
+                                        title="Clonar Criatura">
+                                        <i class="fa-solid fa-copy"></i>
+                                    </button>
+                                    {m.isCustom && (
+                                        <button
+                                            class="btn btn-ghost text-xs px-2 py-1.5 rounded-lg border border-red-500/20 text-red-400 hover:bg-red-500/20"
+                                            onClick={(e) => handleDeleteCustomMonster(m.id, m.name, e)}
+                                            title="Excluir">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            ) : (
+                /* Table View */
+                <div class="card glass-accent p-0 rounded-2xl overflow-hidden border border-accent/25 bg-[#0e1017]/90 shadow-xl">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="border-b border-accent/20 bg-black/60 font-cinzel text-accent uppercase tracking-wider text-[0.7rem]">
+                                    <th class="p-3 pl-4">Token</th>
+                                    <th class="p-3">Nome</th>
+                                    <th class="p-3">Nível / ND</th>
+                                    <th class="p-3">Tipo</th>
+                                    <th class="p-3 text-center">CA</th>
+                                    <th class="p-3 text-center">HP</th>
+                                    <th class="p-3">Ações</th>
+                                    <th class="p-3 pr-4 text-right">Comandos</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredCreatures.map((m) => {
+                                    const isBoss = m.level === 'BOSS';
+                                    const hpVal = typeof m.hp === 'object' ? (m.hp.max ?? m.hp.current ?? 10) : (Number(m.hp) || 10);
+                                    const acts = getCreatureActions(m);
+
+                                    return (
+                                        <tr
+                                            key={m.id || m.name}
+                                            class="border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer"
+                                            onClick={() => setSelectedMonster(m)}>
+                                            <td class="p-2.5 pl-4">
+                                                <MonsterToken monster={m} size="w-10 h-10" showGlow={false} />
+                                            </td>
+                                            <td class="p-3 font-cinzel font-bold text-amber-300 text-sm">
+                                                {m.name}
+                                                {m.isCustom && <span class="ml-2 text-[0.55rem] px-1.5 py-0.5 rounded bg-amber-950 text-amber-400">Forjado</span>}
+                                            </td>
+                                            <td class="p-3 font-mono font-bold text-slate-300">
+                                                {isBoss ? <span class="text-red-400 font-cinzel font-black">BOSS</span> : (m.cr || '1')}
+                                            </td>
+                                            <td class="p-3 text-slate-400 uppercase font-semibold">
+                                                {m.type || 'Monstro'}
+                                            </td>
+                                            <td class="p-3 text-center font-bold text-white font-mono">
+                                                {m.ac || 10}
+                                            </td>
+                                            <td class="p-3 text-center font-bold text-red-400 font-mono">
+                                                {hpVal}
+                                            </td>
+                                            <td class="p-3 text-slate-400 max-w-[200px] truncate">
+                                                {acts.map(a => a.name).join(', ')}
+                                            </td>
+                                            <td class="p-3 pr-4 text-right">
+                                                <div class="flex gap-2 justify-end" onClick={(e) => e.stopPropagation()}>
+                                                    <button
+                                                        class="btn btn-ghost text-xs p-1.5 rounded bg-white/5 text-amber-300 hover:bg-white/10"
+                                                        onClick={() => setSelectedMonster(m)}
+                                                        title="Ver Ficha">
+                                                        <i class="fa-solid fa-scroll"></i>
+                                                    </button>
+                                                    <button
+                                                        class="btn btn-ghost text-xs p-1.5 rounded bg-red-900/30 text-red-300 border border-red-500/30 hover:bg-red-900/50"
+                                                        onClick={(e) => handleSummonToCombat(m, e)}
+                                                        title="Invocar na Arena">
+                                                        <i class="fa-solid fa-swords"></i>
+                                                    </button>
+                                                    <button
+                                                        class="btn btn-ghost text-xs p-1.5 rounded bg-white/5 text-slate-400 hover:text-white"
+                                                        onClick={(e) => handleCloneMonster(m, e)}
+                                                        title="Clonar">
+                                                        <i class="fa-solid fa-copy"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
+
+            {/* VISUAL INTERACTIVE DICE ROLLER MODAL */}
+            {activeRoll && renderVisualRollModal()}
+            {/* FORGE MODAL */}
+            {showForgeModal && renderForgeModal()}
+            {/* ART MODAL */}
+            {showArtModal && renderArtModal()}
+            {/* IMPORT MODAL */}
+            {showImportModal && renderImportModal()}
+        </div>
+    );
+
+    // ------------------------------------------
+    // 5. MODAL: Visual Interactive Dice Roller
+    // ------------------------------------------
+    function renderVisualRollModal() {
+        const roll = activeRoll;
+        if (!roll) return null;
+
+        const isD20 = roll.stage === 'd20';
+        const isDamage = roll.stage === 'damage';
+        const isComplete = roll.stage === 'complete';
+
+        return (
+            <div class="fixed inset-0 bg-black/90 backdrop-blur-md z-[5000] flex items-center justify-center p-4 animate-fadeIn">
+                <div class="card glass-accent max-w-lg w-full p-6 sm:p-8 rounded-2xl border-2 border-accent/60 bg-[#0c0e14] shadow-[0_20px_60px_rgba(0,0,0,0.9)] text-center animate-scaleIn relative">
+                    {/* Header */}
+                    <div class="text-[0.65rem] text-slate-400 uppercase tracking-widest font-bold mb-2 flex items-center justify-center gap-2">
+                        <span>{roll.monster.name}</span>
+                        <i class="fa-solid fa-arrow-right text-accent"></i>
+                        <span>Alvo (CA {roll.targetAC})</span>
+                    </div>
+
+                    <h2 class="font-cinzel text-xl sm:text-2xl text-amber-300 font-black mb-4 border-b border-accent/20 pb-3">
+                        Ação: {roll.action.name}
+                    </h2>
+
+                    {/* D20 Stage */}
+                    {isD20 && (
+                        <div class="flex flex-col items-center my-4">
+                            {roll.rolling ? (
+                                <div class="py-6 flex flex-col items-center">
+                                    <i class="fa-solid fa-dice-d20 text-6xl text-accent animate-spin mb-4"></i>
+                                    <p class="font-cinzel text-sm text-slate-300 tracking-wider">Rolando d20...</p>
+                                </div>
+                            ) : (
+                                <div class="flex flex-col items-center animate-fadeIn w-full">
+                                    <div class="text-6xl font-black text-white font-cinzel my-2 drop-shadow">
+                                        {roll.total}
+                                    </div>
+                                    <div class="text-xs text-slate-400 font-mono mb-4">
+                                        Rolagem no Dado: <strong>{roll.d20}</strong> {formatMod(roll.action.bonus)} = {roll.total} vs CA {roll.targetAC}
+                                    </div>
+
+                                    <div class={`p-4 rounded-xl w-full border ${roll.isHit ? 'bg-emerald-950/50 border-emerald-500/50 text-emerald-300' : 'bg-red-950/50 border-red-500/50 text-red-300'}`}>
+                                        <div class="font-cinzel text-xl font-extrabold uppercase">
+                                            {roll.isCrit ? '💥 Acerto Crítico!' : roll.isHit ? '⚔️ Acertou!' : '🛡️ Errou!'}
+                                        </div>
+                                        <p class="text-xs mt-1 m-0">{roll.narrative}</p>
+                                    </div>
+
+                                    <div class="flex gap-3 w-full mt-6">
+                                        {roll.isHit ? (
+                                            <button
+                                                class="btn btn-primary flex-1 py-3 font-cinzel font-bold text-sm shadow-[0_0_15px_rgba(197,160,89,0.3)]"
+                                                onClick={handleRollDamage}>
+                                                <i class="fa-solid fa-burst mr-2"></i> Rolar Dano ({roll.damageFormula})
+                                            </button>
+                                        ) : (
+                                            <button
+                                                class="btn btn-ghost border-white/20 flex-1 py-3 text-xs font-bold"
+                                                onClick={() => setActiveRoll(null)}>
+                                                Concluir Teste
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Damage Stage Rolling */}
+                    {isDamage && (
+                        <div class="py-8 flex flex-col items-center">
+                            <i class="fa-solid fa-burst text-6xl text-red-500 animate-pulse mb-4"></i>
+                            <p class="font-cinzel text-sm text-red-400 tracking-wider">
+                                Calculando impacto com {roll.damageFormula}...
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Damage Stage Complete */}
+                    {isComplete && (
+                        <div class="flex flex-col items-center animate-fadeIn my-4">
+                            <div class="text-5xl sm:text-6xl font-black text-red-500 font-cinzel drop-shadow-[0_0_20px_rgba(239,68,68,0.5)] my-2">
+                                -{roll.damageTotal} HP
+                            </div>
+                            <div class="text-xs text-slate-400 font-mono mb-4">
+                                Fórmula: <strong>{roll.damageFormula}</strong> {roll.isCrit ? '(Crítico: Dano Dobrado!)' : ''}
+                            </div>
+
+                            <div class="p-4 rounded-xl w-full bg-slate-900 border border-white/10 text-xs italic text-slate-300 mb-6">
+                                {roll.narrative}
+                            </div>
+
+                            <button
+                                class="btn btn-primary w-full py-3 font-cinzel font-bold text-sm bg-emerald-600 hover:bg-emerald-500 border-emerald-500 shadow-lg"
+                                onClick={() => {
+                                    Toast.show(`🩸 ${roll.damageTotal} de dano registrado!`, 'info');
+                                    setActiveRoll(null);
+                                }}>
+                                <i class="fa-solid fa-check mr-2"></i> Concluir Ataque
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
+    // ------------------------------------------
+    // 6. MODAL: Creature Forge (Create / Edit)
+    // ------------------------------------------
+    function renderForgeModal() {
+        const isEditing = !!forgeData?.id;
+        const [formName, setFormName] = useState(forgeData?.name || '');
+        const [formType, setFormType] = useState(forgeData?.type || 'Monstro');
+        const [formLevel, setFormLevel] = useState(forgeData?.level || 'Nível 1');
+        const [formAC, setFormAC] = useState(forgeData?.ac || 12);
+        const [formHP, setFormHP] = useState(typeof forgeData?.hp === 'object' ? (forgeData.hp.max || 15) : (forgeData?.hp || 15));
+        const [formSpeed, setFormSpeed] = useState(forgeData?.speed || '30 ft.');
+        const [formEmoji, setFormEmoji] = useState(forgeData?.emoji || '👹');
+        const [formImg, setFormImg] = useState(forgeData?.img || '');
+        const [formStats, setFormStats] = useState(forgeData?.stats || { str: 12, dex: 12, con: 12, int: 10, wis: 10, cha: 8 });
+        const [formActions, setFormActions] = useState(forgeData?.actions && forgeData.actions.length ? forgeData.actions : [
+            { name: 'Ataque de Garras', bonus: 4, damage: '1d6+2' }
+        ]);
+        const [formNotes, setFormNotes] = useState(forgeData?.notes || '');
+
+        const addActionRow = () => {
+            setFormActions(prev => [...prev, { name: 'Novo Ataque', bonus: 4, damage: '1d8+2' }]);
+        };
+        const removeActionRow = (idx) => {
+            setFormActions(prev => prev.filter((_, i) => i !== idx));
+        };
+        const updateActionRow = (idx, field, val) => {
+            setFormActions(prev => {
+                const copy = [...prev];
+                copy[idx] = { ...copy[idx], [field]: val };
+                return copy;
+            });
+        };
+
+        const handleSubmit = (e) => {
+            e.preventDefault();
+            handleSaveForgedMonster({
+                id: forgeData?.id,
+                name: formName,
+                type: formType,
+                level: formLevel,
+                ac: formAC,
+                hp: formHP,
+                speed: formSpeed,
+                emoji: formEmoji,
+                img: formImg,
+                stats: formStats,
+                actions: formActions,
+                notes: formNotes
+            });
+        };
+
+        return (
+            <div class="fixed inset-0 bg-black/90 backdrop-blur-md z-[5000] flex items-center justify-center p-4 animate-fadeIn">
+                <div class="card glass-accent max-w-2xl w-full p-6 sm:p-8 rounded-2xl border-2 border-accent/60 bg-[#0c0e14] shadow-[0_20px_60px_rgba(0,0,0,0.9)] max-h-[90vh] overflow-y-auto animate-scaleIn text-left">
+                    <div class="flex justify-between items-center border-b border-accent/20 pb-4 mb-6">
+                        <h2 class="font-cinzel text-xl text-amber-300 font-bold m-0 flex items-center gap-2.5">
+                            <i class="fa-solid fa-hammer text-accent"></i>
+                            {isEditing ? `Editar: ${forgeData.name}` : 'Forjar Nova Criatura'}
+                        </h2>
+                        <button
+                            class="btn btn-ghost text-slate-400 hover:text-white text-base leading-none"
+                            onClick={() => { setShowForgeModal(false); setForgeData(null); }}>
+                            ✕
+                        </button>
+                    </div>
+
+                    <form onSubmit={handleSubmit} class="flex flex-col gap-4 text-xs text-slate-300">
+                        {/* Name & Type */}
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block font-bold text-accent uppercase tracking-wider mb-1">Nome da Criatura *</label>
+                                <input
+                                    type="text"
+                                    required
+                                    placeholder="Ex: Ogro Sanguinário"
+                                    value={formName}
+                                    onInput={(e) => setFormName(e.target.value)}
+                                    class="w-full bg-black/50 border border-slate-700 rounded-lg p-2 text-white focus:border-amber-400 focus:outline-none"
+                                />
+                            </div>
+                            <div>
+                                <label class="block font-bold text-accent uppercase tracking-wider mb-1">Tipo de Criatura</label>
+                                <input
+                                    type="text"
+                                    placeholder="Ex: Gigante, Monstruosidade"
+                                    value={formType}
+                                    onInput={(e) => setFormType(e.target.value)}
+                                    class="w-full bg-black/50 border border-slate-700 rounded-lg p-2 text-white focus:border-amber-400 focus:outline-none"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Level / CR, AC, HP, Speed */}
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                            <div>
+                                <label class="block font-bold text-slate-400 uppercase mb-1">Nível / Categoria</label>
+                                <select
+                                    value={formLevel}
+                                    onChange={(e) => setFormLevel(e.target.value)}
+                                    class="w-full bg-black/50 border border-slate-700 rounded-lg p-2 text-white focus:border-amber-400 focus:outline-none">
+                                    {availableLevels.filter(l => l !== 'Todos').map(l => (
+                                        <option key={l} value={l}>{l}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-bold text-slate-400 uppercase mb-1">Classe Armadura</label>
+                                <input
+                                    type="number"
+                                    value={formAC}
+                                    min="1"
+                                    max="40"
+                                    onInput={(e) => setFormAC(e.target.value)}
+                                    class="w-full bg-black/50 border border-slate-700 rounded-lg p-2 text-white text-center font-bold focus:border-amber-400 focus:outline-none"
+                                />
+                            </div>
+                            <div>
+                                <label class="block font-bold text-slate-400 uppercase mb-1">Pontos de Vida</label>
+                                <input
+                                    type="number"
+                                    value={formHP}
+                                    min="1"
+                                    max="2000"
+                                    onInput={(e) => setFormHP(e.target.value)}
+                                    class="w-full bg-black/50 border border-slate-700 rounded-lg p-2 text-white text-center font-bold focus:border-amber-400 focus:outline-none"
+                                />
+                            </div>
+                            <div>
+                                <label class="block font-bold text-slate-400 uppercase mb-1">Deslocamento</label>
+                                <input
+                                    type="text"
+                                    value={formSpeed}
+                                    placeholder="30 ft."
+                                    onInput={(e) => setFormSpeed(e.target.value)}
+                                    class="w-full bg-black/50 border border-slate-700 rounded-lg p-2 text-white text-center focus:border-amber-400 focus:outline-none"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Emoji & Sprite Image URL */}
+                        <div class="grid grid-cols-1 sm:grid-cols-[80px_1fr] gap-4">
+                            <div>
+                                <label class="block font-bold text-slate-400 uppercase mb-1">Emoji</label>
+                                <input
+                                    type="text"
+                                    value={formEmoji}
+                                    onInput={(e) => setFormEmoji(e.target.value)}
+                                    class="w-full bg-black/50 border border-slate-700 rounded-lg p-2 text-white text-center text-lg focus:border-amber-400 focus:outline-none"
+                                />
+                            </div>
+                            <div>
+                                <label class="block font-bold text-slate-400 uppercase mb-1">URL da Imagem / Sprite (Opcional)</label>
+                                <input
+                                    type="url"
+                                    placeholder="https://exemplo.com/monstro.png"
+                                    value={formImg}
+                                    onInput={(e) => setFormImg(e.target.value)}
+                                    class="w-full bg-black/50 border border-slate-700 rounded-lg p-2 text-white focus:border-amber-400 focus:outline-none"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Ability Scores */}
+                        <div>
+                            <label class="block font-bold text-accent uppercase tracking-wider mb-1.5">Atributos Básicos</label>
+                            <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                                {['str', 'dex', 'con', 'int', 'wis', 'cha'].map(st => {
+                                    const labels = { str: 'FOR', dex: 'DES', con: 'CON', int: 'INT', wis: 'SAB', cha: 'CAR' };
+                                    const val = formStats[st] ?? 10;
+                                    const mod = getMod(val);
+                                    return (
+                                        <div key={st} class="p-2 rounded bg-black/50 border border-slate-800 text-center">
+                                            <span class="text-[0.65rem] font-bold text-slate-400 uppercase block">{labels[st]}</span>
+                                            <input
+                                                type="number"
+                                                value={val}
+                                                min="1"
+                                                max="30"
+                                                class="w-full text-center font-bold text-white bg-transparent border-none focus:outline-none"
+                                                onInput={(e) => {
+                                                    const v = parseInt(e.target.value) || 10;
+                                                    setFormStats(prev => ({ ...prev, [st]: v }));
+                                                }}
+                                            />
+                                            <span class="text-[0.65rem] font-bold text-amber-400">{formatMod(mod)}</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Combat Actions */}
+                        <div>
+                            <div class="flex justify-between items-center mb-1.5">
+                                <label class="font-bold text-accent uppercase tracking-wider m-0">Ações de Combate</label>
+                                <button
+                                    type="button"
+                                    class="btn btn-ghost text-xs text-amber-300 py-1 px-2 border border-amber-500/30"
+                                    onClick={addActionRow}>
+                                    <i class="fa-solid fa-plus mr-1"></i> Adicionar Ação
+                                </button>
+                            </div>
+                            <div class="flex flex-col gap-2">
+                                {formActions.map((act, idx) => (
+                                    <div key={idx} class="grid grid-cols-[1fr_80px_1fr_36px] gap-2 items-center bg-black/30 p-2 rounded-lg border border-slate-800">
+                                        <input
+                                            type="text"
+                                            placeholder="Nome (ex: Mordida)"
+                                            value={act.name}
+                                            class="bg-black/50 border border-slate-700 rounded p-1.5 text-xs text-white focus:border-amber-400 focus:outline-none"
+                                            onInput={(e) => updateActionRow(idx, 'name', e.target.value)}
+                                        />
+                                        <input
+                                            type="number"
+                                            placeholder="Bônus (+4)"
+                                            value={act.bonus}
+                                            class="bg-black/50 border border-slate-700 rounded p-1.5 text-xs text-white text-center focus:border-amber-400 focus:outline-none"
+                                            onInput={(e) => updateActionRow(idx, 'bonus', parseInt(e.target.value) || 0)}
+                                        />
+                                        <input
+                                            type="text"
+                                            placeholder="Dano (ex: 1d8+3)"
+                                            value={act.damage}
+                                            class="bg-black/50 border border-slate-700 rounded p-1.5 text-xs text-white focus:border-amber-400 focus:outline-none"
+                                            onInput={(e) => updateActionRow(idx, 'damage', e.target.value)}
+                                        />
+                                        <button
+                                            type="button"
+                                            class="btn btn-ghost text-red-400 hover:bg-red-500/20 p-1.5 text-xs"
+                                            onClick={() => removeActionRow(idx)}>
+                                            ✕
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Notes / Special Traits */}
+                        <div>
+                            <label class="block font-bold text-slate-400 uppercase mb-1">Traços Especiais & Notas de Narração</label>
+                            <textarea
+                                rows="3"
+                                placeholder="Resistências, táticas de combate, fraquezas..."
+                                value={formNotes}
+                                onInput={(e) => setFormNotes(e.target.value)}
+                                class="w-full bg-black/50 border border-slate-700 rounded-lg p-2 text-white focus:border-amber-400 focus:outline-none leading-relaxed"
+                            />
+                        </div>
+
+                        {/* Submit Buttons */}
+                        <div class="flex justify-end gap-3 border-t border-white/10 pt-4 mt-2">
+                            <button
+                                type="button"
+                                class="btn btn-ghost text-xs px-4 py-2"
+                                onClick={() => { setShowForgeModal(false); setForgeData(null); }}>
+                                Cancelar
+                            </button>
+                            <button
+                                type="submit"
+                                class="btn btn-primary text-xs px-6 py-2.5 font-cinzel font-bold shadow-[0_0_15px_rgba(197,160,89,0.3)]">
+                                <i class="fa-solid fa-save mr-1.5"></i> Salvar Criatura
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        );
+    }
+
+    // ------------------------------------------
+    // 7. MODAL: Customize Monster Art
+    // ------------------------------------------
+    function renderArtModal() {
+        const m = artTargetMonster;
+        if (!m) return null;
+
+        const currentArt = m.customImg || m.img || MonsterArt.getImage(m, false) || MonsterArt.getCdnFallback(m, false);
+        const [urlInput, setUrlInput] = useState(m.customImg || '');
+        const fileRef = useRef(null);
+
+        const handleLocalFile = (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                setUrlInput(ev.target.result);
+                Toast.show('Imagem carregada localmente!', 'info');
+            };
+            reader.readAsDataURL(file);
+        };
+
+        return (
+            <div class="fixed inset-0 bg-black/90 backdrop-blur-md z-[5000] flex items-center justify-center p-4 animate-fadeIn">
+                <div class="card glass-accent max-w-md w-full p-6 rounded-2xl border-2 border-accent/60 bg-[#0c0e14] shadow-[0_20px_60px_rgba(0,0,0,0.9)] animate-scaleIn text-left">
+                    <div class="flex justify-between items-center border-b border-accent/20 pb-3 mb-4">
+                        <h3 class="font-cinzel text-lg text-amber-300 font-bold m-0 flex items-center gap-2">
+                            <i class="fa-solid fa-palette text-accent"></i> Trocar Arte: {m.name}
+                        </h3>
+                        <button
+                            class="btn btn-ghost text-slate-400 hover:text-white"
+                            onClick={() => { setShowArtModal(false); setArtTargetMonster(null); }}>
+                            ✕
+                        </button>
+                    </div>
+
+                    {/* Preview */}
+                    <div class="flex items-center gap-4 bg-slate-950/80 p-3 rounded-xl border border-slate-700/60 mb-5">
+                        <div class="w-16 h-16 rounded-xl overflow-hidden border border-accent/40 bg-black flex items-center justify-center shrink-0">
+                            <img
+                                src={urlInput || currentArt}
+                                alt={m.name}
+                                class="w-full h-full object-cover object-top"
+                                onError={(e) => { e.target.style.display = 'none'; }}
+                            />
+                        </div>
+                        <div class="text-xs">
+                            <div class="text-amber-200 font-bold uppercase tracking-wider">{m.name}</div>
+                            <div class="text-slate-400 mt-0.5">{m.type || 'Monstro'} • {m.level || 'Nível 1'}</div>
+                            <div class="text-accent mt-1 text-[0.7rem] font-bold">
+                                {m.customImg ? '★ Arte Customizada Ativa' : 'Arte Oficial 5e'}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Upload File */}
+                    <div class="mb-4">
+                        <label class="text-xs font-bold text-slate-300 block mb-1.5 font-cinzel">
+                            1. Carregar Arquivo do Computador
+                        </label>
+                        <div
+                            class="border-2 border-dashed border-accent/40 hover:border-accent rounded-xl p-4 text-center cursor-pointer bg-slate-950/50 transition-colors"
+                            onClick={() => fileRef.current?.click()}>
+                            <i class="fa-solid fa-cloud-arrow-up text-2xl text-accent/70 mb-1 block"></i>
+                            <span class="text-xs text-slate-300 font-medium block">Clique para escolher imagem</span>
+                            <span class="text-[0.65rem] text-slate-500 block mt-0.5">PNG, JPG, WebP</span>
+                            <input
+                                type="file"
+                                ref={fileRef}
+                                style={{ display: 'none' }}
+                                accept="image/*"
+                                onChange={handleLocalFile}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Direct URL */}
+                    <div class="mb-6">
+                        <label class="text-xs font-bold text-slate-300 block mb-1.5 font-cinzel">
+                            2. Ou Cole o Link Direto (URL)
+                        </label>
+                        <input
+                            type="url"
+                            placeholder="https://exemplo.com/arte.png"
+                            value={urlInput}
+                            onInput={(e) => setUrlInput(e.target.value)}
+                            class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white focus:border-amber-400 focus:outline-none"
+                        />
+                    </div>
+
+                    {/* Actions */}
+                    <div class="flex justify-between items-center border-t border-white/10 pt-4">
+                        <button
+                            class="btn btn-ghost text-xs text-red-400 hover:bg-red-500/10 border border-red-500/30"
+                            onClick={() => handleResetArtToDefault(m.name)}>
+                            <i class="fa-solid fa-rotate-left mr-1"></i> Oficial 5e
+                        </button>
+                        <div class="flex gap-2">
+                            <button
+                                class="btn btn-ghost text-xs text-slate-400 hover:text-white"
+                                onClick={() => { setShowArtModal(false); setArtTargetMonster(null); }}>
+                                Cancelar
+                            </button>
+                            <button
+                                class="btn btn-primary text-xs px-4 py-2 font-bold"
+                                onClick={() => handleSaveArtOverride(m.name, urlInput)}>
+                                Salvar Arte
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // ------------------------------------------
+    // 8. MODAL: Paste JSON Importer
+    // ------------------------------------------
+    function renderImportModal() {
+        return (
+            <div class="fixed inset-0 bg-black/90 backdrop-blur-md z-[5000] flex items-center justify-center p-4 animate-fadeIn">
+                <div class="card glass-accent max-w-xl w-full p-6 rounded-2xl border-2 border-accent/60 bg-[#0c0e14] shadow-[0_20px_60px_rgba(0,0,0,0.9)] animate-scaleIn text-left">
+                    <div class="flex justify-between items-center border-b border-accent/20 pb-3 mb-4">
+                        <h3 class="font-cinzel text-lg text-amber-300 font-bold m-0 flex items-center gap-2">
+                            <i class="fa-solid fa-file-import text-accent"></i> Importar Criaturas via JSON
+                        </h3>
+                        <button
+                            class="btn btn-ghost text-slate-400 hover:text-white"
+                            onClick={() => setShowImportModal(false)}>
+                            ✕
+                        </button>
+                    </div>
+
+                    <p class="text-xs text-slate-400 leading-relaxed mb-3">
+                        Cole abaixo o conteúdo JSON contendo uma criatura ou uma lista de criaturas no formato D&D 5e / Tome.
+                    </p>
+
+                    <textarea
+                        rows="10"
+                        placeholder='[ { "name": "Dragão da Tormenta", "type": "Dragão", "cr": "12", "ac": 18, "hp": 180, "stats": { "str": 22, "dex": 14, "con": 20, "int": 16, "wis": 14, "cha": 18 } } ]'
+                        value={importJsonText}
+                        onInput={(e) => setImportJsonText(e.target.value)}
+                        class="w-full bg-slate-950 border border-slate-700/80 rounded-xl p-3 text-xs font-mono text-slate-200 focus:border-amber-400 focus:outline-none mb-4 leading-relaxed"
+                    />
+
+                    <div class="flex justify-end gap-3 border-t border-white/10 pt-4">
+                        <button
+                            class="btn btn-ghost text-xs text-slate-400 hover:text-white"
+                            onClick={() => setShowImportModal(false)}>
+                            Cancelar
+                        </button>
+                        <button
+                            class="btn btn-primary text-xs px-5 py-2.5 font-cinzel font-bold shadow-[0_0_15px_rgba(197,160,89,0.3)]"
+                            onClick={handlePasteImport}>
+                            <i class="fa-solid fa-download mr-1.5"></i> Importar para o Bestiário
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 }
+
+export default Bestiary;

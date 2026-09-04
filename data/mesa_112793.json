@@ -1,6 +1,6 @@
 {
   "activeView": "home",
-  "activeTab": "campaign",
+  "activeTab": "herohub",
   "players": [],
   "monsters": [],
   "savedNPCs": [],
@@ -9,8 +9,8 @@
   "combatRound": 0,
   "combatActive": false,
   "journalEntries": [],
-  "sessionNotes": "undefined",
-  "sessionTitle": "undefined",
+  "sessionNotes": "",
+  "sessionTitle": "",
   "campaigns": [],
   "activeCampaignId": null,
   "quests": [],
@@ -27,6 +27,5 @@
     "potions": 0,
     "scrolls": 0
   },
-  "schemaVersion": 5,
-  "sessionLoot": "undefined"
+  "schemaVersion": 5
 }

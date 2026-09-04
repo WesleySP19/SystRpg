@@ -261,3 +261,5 @@ export function ReferencePanel() {
         </div>
     `;
 }
+
+export default ReferencePanel;

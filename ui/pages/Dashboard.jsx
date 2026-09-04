@@ -36,7 +36,8 @@ const MODULE_MAP = {
     'quest': lazyLoad(() => import('../components/QuestManager.jsx')),
     'chareditor': lazyLoad(() => import('../components/DynamicCharacterBuilder.jsx')),
     'character': lazyLoad(() => import('../components/DynamicCharacterBuilder.jsx')),
-    'builder': lazyLoad(() => import('../components/PlayerForm.jsx')),
+    'builder': lazyLoad(() => import('../components/forge/HeroForge.jsx')),
+    'forge': lazyLoad(() => import('../components/forge/HeroForge.jsx')),
     'herohub': lazyLoad(() => import('../components/HeroHub.jsx')),
     'herosheet': lazyLoad(() => import('../components/hero/HeroSheetV22.jsx')),
     'cardgenerator': lazyLoad(() => import('../components/CardGenerator.jsx')),
@@ -47,7 +48,8 @@ const MODULE_MAP = {
     'npc': lazyLoad(() => import('../components/NPCHelper.jsx')),
     'settings': lazyLoad(() => import('../components/QuickReference.jsx')),
     'initiative': lazyLoad(() => import('../components/InitiativeMonitor.jsx')),
-    'tomesinal': lazyLoad(() => import('../components/TomeSinalPanel.jsx'))
+    'tomesinal': lazyLoad(() => import('../components/TomeSinalPanel.jsx')),
+    'reference': lazyLoad(() => import('../../engine/ReferencePanel.jsx'))
 };
 
 function LoadingSpinner({ label = "Carregando..." }) {

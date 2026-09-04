@@ -58,6 +58,13 @@ export function DMTable() {
         }).catch(err => console.warn('OracleModal module missing', err));
     };
 
+    const openReferencePanel = () => {
+        import('../../engine/ReferencePanel.jsx').then(m => {
+            const Comp = m.ReferencePanel || m.default;
+            if (Comp) mountLegacyModal(Comp);
+        }).catch(err => console.warn('ReferencePanel module missing', err));
+    };
+
     const inspectHero = (playerId) => setInspectedPlayerId(playerId);
 
     const requestRoll = (sides) => {
@@ -87,6 +94,9 @@ export function DMTable() {
                 <div class="flex gap-2.5 flex-wrap">
                     <button class="btn btn-primary bg-emerald-600 border-emerald-400 text-white shadow-[0_0_15px_rgba(16,185,129,0.4)] px-3.5" onClick=${openTacticalEye}>
                         <i class="fa-solid fa-map-location-dot"></i> Olho do Mestre
+                    </button>
+                    <button class="btn btn-ghost border-amber-500/60 text-amber-300 bg-amber-900/20 px-3.5" onClick=${openReferencePanel}>
+                        <i class="fa-solid fa-image"></i> Cenas & Telão
                     </button>
                     <button class="btn btn-ghost border-cyan-400 text-cyan-300 bg-cyan-900/10 px-3.5" onClick=${openSoundboard}>
                         <i class="fa-solid fa-headphones-simple"></i> Som & SFX

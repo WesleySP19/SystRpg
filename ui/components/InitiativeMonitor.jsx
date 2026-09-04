@@ -109,6 +109,20 @@ export function InitiativeMonitor() {
         }
     }, [initiativeIndex]);
 
+    useEffect(() => {
+        const activeCombatant = initiativeOrder[initiativeIndex];
+        if (activeCombatant?.actions) {
+            setEconomy({
+                action: activeCombatant.actions.action !== false,
+                bonus: activeCombatant.actions.bonus !== false,
+                reaction: activeCombatant.actions.reaction !== false,
+                movement: activeCombatant.actions.movement ?? 30
+            });
+        } else {
+            setEconomy({ action: true, bonus: true, reaction: true, movement: 30 });
+        }
+    }, [initiativeIndex, initiativeOrder]);
+
     const getOrderWithHP = () => {
         return initiativeOrder.map(c => {
             const hp = RulesEngine.getHP(c);
@@ -265,11 +279,35 @@ export function InitiativeMonitor() {
     };
 
     const toggleEconomy = (type) => {
-        setEconomy(prev => ({ ...prev, [type]: !prev[type] }));
+        const nextVal = !economy[type];
+        setEconomy(prev => ({ ...prev, [type]: nextVal }));
+        if (window.TOME?.store && current) {
+            window.TOME.store.update(s => {
+                const arr = s.initiativeOrder || s.combatants || [];
+                const target = arr.find(c => c.id === current.id);
+                if (target) {
+                    if (!target.actions) target.actions = { action: true, bonus: true, reaction: true, movement: 30 };
+                    target.actions[type] = nextVal;
+                }
+            });
+            setTimeout(() => broadcastStateUpdate(), 50);
+        }
     };
 
     const toggleMovement = () => {
-        setEconomy(prev => ({ ...prev, movement: Math.max(0, prev.movement - 5) }));
+        const nextVal = Math.max(0, economy.movement - 5);
+        setEconomy(prev => ({ ...prev, movement: nextVal }));
+        if (window.TOME?.store && current) {
+            window.TOME.store.update(s => {
+                const arr = s.initiativeOrder || s.combatants || [];
+                const target = arr.find(c => c.id === current.id);
+                if (target) {
+                    if (!target.actions) target.actions = { action: true, bonus: true, reaction: true, movement: 30 };
+                    target.actions.movement = nextVal;
+                }
+            });
+            setTimeout(() => broadcastStateUpdate(), 50);
+        }
     };
 
     const moveUp = (id, e) => {

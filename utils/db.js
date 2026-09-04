@@ -24,7 +24,15 @@ export async function initDb() {
 }
 
 export function getDbType() {
+    if (prisma) {
+        const url = process.env.DATABASE_URL || '';
+        return url.includes('sqlite') || url.includes('.db') ? 'sqlite' : 'postgresql';
+    }
     return dbType;
+}
+
+export function isDbActive() {
+    return !!prisma;
 }
 
 export function getPrisma() {

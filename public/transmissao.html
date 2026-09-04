@@ -278,6 +278,19 @@
             if (data.type === 'AOE_TEMPLATE' && data.data) {
                 mapEngine.setAoeTemplate(data.data);
             }
+            if (data.type === 'COMBAT_UPDATE' && data.state) {
+                const { initiativeOrder, initiativeIndex, combatActive } = data.state;
+                if (combatActive && initiativeOrder && initiativeOrder.length > 0) {
+                    const activeCombatant = initiativeOrder[initiativeIndex];
+                    if (activeCombatant) {
+                        const token = mapEngine.tokens.get(activeCombatant.id);
+                        if (token) {
+                            mapEngine.showPing(token.x, token.y, '#f59e0b');
+                            mapEngine.focusOn(token.x, token.y);
+                        }
+                    }
+                }
+            }
         }
 
         // 1. Ouve via BroadcastChannel (mesmo PC/navegador)

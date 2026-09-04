@@ -36,10 +36,12 @@ export function CombatantListV22() {
         if (isNaN(dragIndex) || dragIndex === dropIndex) return;
 
         store.update(s => {
-            const arr = [...s.initiativeOrder];
+            const arr = [...(s.initiativeOrder || s.combatants || [])];
+            if (arr.length === 0) return;
             const item = arr.splice(dragIndex, 1)[0];
             arr.splice(dropIndex, 0, item);
             s.initiativeOrder = arr;
+            s.combatants = [...arr];
             if (s.initiativeIndex === dragIndex) {
                 s.initiativeIndex = dropIndex;
             } else if (s.initiativeIndex > dragIndex && s.initiativeIndex <= dropIndex) {
@@ -47,6 +49,7 @@ export function CombatantListV22() {
             } else if (s.initiativeIndex < dragIndex && s.initiativeIndex >= dropIndex) {
                 s.initiativeIndex++;
             }
+            s.turnIndex = s.initiativeIndex;
         });
     };
 
@@ -55,7 +58,8 @@ export function CombatantListV22() {
         if (isNaN(val)) return;
         
         store.update(s => {
-            const c = s.combatants.find(x => x.id === id);
+            const list = s.initiativeOrder || s.combatants || [];
+            const c = list.find(x => x.id === id);
             if (c) {
                 const oldHp = typeof c.hp === 'number' ? c.hp : (c.hp?.current || 0);
                 
@@ -63,12 +67,14 @@ export function CombatantListV22() {
                     c.hp = Math.max(0, Math.min(val, maxHp || val));
                 } else if (c.hp && c.hp.current !== undefined) {
                     c.hp.current = Math.max(0, Math.min(val, c.hp.max || val));
+                } else {
+                    c.hp = Math.max(0, Math.min(val, maxHp || val));
                 }
 
                 const newHp = typeof c.hp === 'number' ? c.hp : (c.hp?.current || 0);
 
                 if (oldHp > 0 && newHp === 0) {
-                    if (c.type !== 'hero') {
+                    if (c.type !== 'hero' && c.type !== 'Player') {
                         if (window.TOME?.events) {
                             window.TOME.events.emit('ENTITY_SLAIN', { entity: c, name: c.name });
                         }
@@ -78,13 +84,19 @@ export function CombatantListV22() {
                     }
                 }
             }
+            if (s.combatants && s.combatants !== list) {
+                const leg = s.combatants.find(x => x.id === id);
+                if (leg && c) leg.hp = c.hp;
+            }
         });
     };
 
     const handleDeathSave = (id, type, value) => {
         store.update(s => {
-            const c = s.combatants.find(x => x.id === id);
-            if (c && c.deathSaves) {
+            const list = s.initiativeOrder || s.combatants || [];
+            const c = list.find(x => x.id === id);
+            if (c) {
+                if (!c.deathSaves) c.deathSaves = { successes: 0, failures: 0 };
                 c.deathSaves[type] = value;
                 if (c.deathSaves.failures >= 3 && !c.isDead) {
                     c.isDead = true;

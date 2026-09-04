@@ -118,6 +118,39 @@
         
         <!-- CHAT / MACROS SCREEN -->
         <div id="chat-screen" class="flex flex-col flex-1 overflow-hidden animate-fadeIn">
+            <!-- COMBAT & ACTION ECONOMY BANNER (Mobile HUD) -->
+            <div id="combat-hud-banner" class="hidden flex-col bg-gradient-to-r from-obsidian-950 via-black to-obsidian-950 border-b border-tomeGold/30 p-2.5 shadow-lg">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-2">
+                        <span id="combat-status-badge" class="px-2 py-0.5 rounded-full text-[0.65rem] font-black uppercase tracking-wider bg-tomeGold/20 text-tomeGold border border-tomeGold/40">
+                            Rodada 1
+                        </span>
+                        <span id="turn-actor-name" class="text-xs font-bold text-white truncate max-w-[150px]">
+                            Vez de Aventureiro
+                        </span>
+                    </div>
+                    <span id="my-turn-alert" class="hidden text-xs font-black text-emerald-400 animate-pulse flex items-center gap-1">
+                        <i class="fa-solid fa-sparkles"></i> SEU TURNO!
+                    </span>
+                </div>
+                
+                <!-- Action Economy Pills -->
+                <div class="grid grid-cols-4 gap-1.5">
+                    <button id="btn-player-action" class="flex items-center justify-center gap-1 py-1 px-1.5 rounded-lg border text-[0.65rem] font-bold bg-emerald-500/20 border-emerald-500/50 text-emerald-300">
+                        <i class="fa-solid fa-hand-fist text-[0.6rem]"></i> Ação
+                    </button>
+                    <button id="btn-player-bonus" class="flex items-center justify-center gap-1 py-1 px-1.5 rounded-lg border text-[0.65rem] font-bold bg-amber-500/20 border-amber-500/50 text-amber-300">
+                        <i class="fa-solid fa-bolt text-[0.6rem]"></i> Bônus
+                    </button>
+                    <button id="btn-player-reaction" class="flex items-center justify-center gap-1 py-1 px-1.5 rounded-lg border text-[0.65rem] font-bold bg-purple-500/20 border-purple-500/50 text-purple-300">
+                        <i class="fa-solid fa-shield-halved text-[0.6rem]"></i> Reação
+                    </button>
+                    <button id="btn-player-move" class="flex items-center justify-center gap-1 py-1 px-1.5 rounded-lg border text-[0.65rem] font-bold bg-blue-500/20 border-blue-500/50 text-blue-300">
+                        <i class="fa-solid fa-shoe-prints text-[0.6rem]"></i> 30ft
+                    </button>
+                </div>
+            </div>
+
             <div id="messages-container" class="flex-1 overflow-y-auto p-4 space-y-4"></div>
             
             <!-- MACROS BAR -->
@@ -344,6 +377,83 @@
                     if (data.type === 'AOE_TEMPLATE' && data.data) {
                         playerMapEngine.setAoeTemplate(data.data);
                     }
+                    if (data.type === 'COMBAT_UPDATE' && data.state) {
+                        updateCombatBanner(data.state);
+                    }
+                });
+
+                function updateCombatBanner(combatState) {
+                    const banner = document.getElementById('combat-hud-banner');
+                    const badge = document.getElementById('combat-status-badge');
+                    const actorName = document.getElementById('turn-actor-name');
+                    const myAlert = document.getElementById('my-turn-alert');
+                    if (!banner || !combatState) return;
+
+                    if (!combatState.combatActive || !combatState.initiativeOrder?.length) {
+                        banner.style.display = 'none';
+                        return;
+                    }
+
+                    banner.style.display = 'flex';
+                    badge.textContent = `Rodada ${combatState.combatRound || 1}`;
+                    const active = combatState.initiativeOrder[combatState.initiativeIndex || 0];
+                    actorName.textContent = `Vez de ${active?.name || 'Aventureiro'}`;
+
+                    const isMe = active && (
+                        (active.name && engine.currentName && active.name.toLowerCase() === engine.currentName.toLowerCase()) ||
+                        (active.id === engine.currentCharId)
+                    );
+
+                    if (isMe) {
+                        myAlert.classList.remove('hidden');
+                        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+                    } else {
+                        myAlert.classList.add('hidden');
+                    }
+
+                    const actions = active?.actions || { action: true, bonus: true, reaction: true, movement: 30 };
+                    const btnAction = document.getElementById('btn-player-action');
+                    const btnBonus = document.getElementById('btn-player-bonus');
+                    const btnReaction = document.getElementById('btn-player-reaction');
+                    const btnMove = document.getElementById('btn-player-move');
+
+                    if (btnAction) {
+                        btnAction.className = `flex items-center justify-center gap-1 py-1 px-1.5 rounded-lg border text-[0.65rem] font-bold ${actions.action !== false ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300' : 'bg-black/30 border-white/10 text-slate-500 line-through opacity-50'}`;
+                    }
+                    if (btnBonus) {
+                        btnBonus.className = `flex items-center justify-center gap-1 py-1 px-1.5 rounded-lg border text-[0.65rem] font-bold ${actions.bonus !== false ? 'bg-amber-500/20 border-amber-500/50 text-amber-300' : 'bg-black/30 border-white/10 text-slate-500 line-through opacity-50'}`;
+                    }
+                    if (btnReaction) {
+                        btnReaction.className = `flex items-center justify-center gap-1 py-1 px-1.5 rounded-lg border text-[0.65rem] font-bold ${actions.reaction !== false ? 'bg-purple-500/20 border-purple-500/50 text-purple-300' : 'bg-black/30 border-white/10 text-slate-500 line-through opacity-50'}`;
+                    }
+                    if (btnMove) {
+                        btnMove.className = `flex items-center justify-center gap-1 py-1 px-1.5 rounded-lg border text-[0.65rem] font-bold ${(actions.movement ?? 30) > 0 ? 'bg-blue-500/20 border-blue-500/50 text-blue-300' : 'bg-black/30 border-white/10 text-slate-500 line-through opacity-50'}`;
+                        btnMove.innerHTML = `<i class="fa-solid fa-shoe-prints text-[0.6rem]"></i> ${(actions.movement ?? 30) > 0 ? `${actions.movement ?? 30}ft` : '0ft'}`;
+                    }
+                }
+
+                socket.on('combat_update', updateCombatBanner);
+
+                try {
+                    const mapBc = new BroadcastChannel('tome_map');
+                    mapBc.onmessage = (e) => {
+                        if (e.data?.type === 'COMBAT_UPDATE' && e.data.state) {
+                            updateCombatBanner(e.data.state);
+                        }
+                    };
+                } catch(e) {}
+
+                document.getElementById('btn-player-action')?.addEventListener('click', () => {
+                    engine.sendMessage('⚔️ Utilizou sua Ação Padrão.');
+                });
+                document.getElementById('btn-player-bonus')?.addEventListener('click', () => {
+                    engine.sendMessage('⚡ Utilizou sua Ação Bônus.');
+                });
+                document.getElementById('btn-player-reaction')?.addEventListener('click', () => {
+                    engine.sendMessage('🛡️ Acionou sua Reação!');
+                });
+                document.getElementById('btn-player-move')?.addEventListener('click', () => {
+                    engine.sendMessage('🏃 Gastou deslocamento tático.');
                 });
 
                 // Solicita o mapa atual do servidor

@@ -41,16 +41,17 @@ function printHeader() {
 }
 
 function runViteBuild() {
-  console.log(colors.fgCyan + "[INFO]" + colors.reset + " Minificando e Otimizando a Interface (Python Build)...");
+  console.log(colors.fgCyan + "[INFO]" + colors.reset + " Minificando e Empacotando a Interface (Vite Production Build)...");
   try {
-    const pythonScript = path.join(ROOT_DIR, 'scripts', 'build.py');
-    if (fs.existsSync(pythonScript)) {
-      execSync(`python -X utf8 "${pythonScript}"`, { cwd: ROOT_DIR, stdio: 'inherit' });
+    const viteBin = path.join(ROOT_DIR, 'node_modules', 'vite', 'bin', 'vite.js');
+    if (fs.existsSync(viteBin)) {
+      execSync(`"${process.execPath}" "${viteBin}" build`, { cwd: ROOT_DIR, stdio: 'inherit' });
+      console.log(colors.fgGreen + "[OK] Build de Produção Vite gerado com sucesso!" + colors.reset);
     } else {
-      console.log(colors.fgRed + "[!] Aviso: Script build.py não encontrado." + colors.reset);
+      console.log(colors.fgRed + "[!] Aviso: Binário do Vite não encontrado em node_modules." + colors.reset);
     }
   } catch (e) {
-    console.log(colors.fgRed + "[!] Aviso: Falha ao rodar o build Otimizado do Python." + colors.reset);
+    console.log(colors.fgRed + "[!] Falha ao rodar o build do Vite: " + e.message + colors.reset);
   }
 }
 
@@ -137,7 +138,7 @@ async function main() {
   console.log("Escolha seu Caminho de Iniciação:");
   console.log(colors.fgGold + "  1." + colors.reset + " Modo Completo (Servidor + Janelas do Mestre e Jogador)");
   console.log(colors.fgCyan + "  2." + colors.reset + " Modo Headless (Apenas Servidor em Background)");
-  console.log(colors.fgGreen + "  3." + colors.reset + " Otimizar Produção (Rodar Build em Python)\n");
+  console.log(colors.fgGreen + "  3." + colors.reset + " Otimizar Produção (Rodar Build Vite)\n");
 
   rl.question('Opção [1-3]: ', (answer) => {
     rl.close();

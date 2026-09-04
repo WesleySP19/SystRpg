@@ -63,7 +63,7 @@ async function getTableChatHistory(tableId, dataDir) {
     const cleanId = tableId.replace(/^table-/, '');
     if (!messageHistory.has(cleanId)) {
         const prisma = getPrisma();
-        if (getDbType() === 'postgresql' && prisma) {
+        if (prisma) {
             try {
                 const messages = await prisma.chatMessage.findMany({
                     where: { tableId: cleanId },
@@ -103,7 +103,7 @@ async function getTableChatHistory(tableId, dataDir) {
 async function saveTableChatHistory(tableId, history, dataDir) {
     const cleanId = tableId.replace(/^table-/, '');
     const prisma = getPrisma();
-    if (getDbType() === 'postgresql' && prisma) {
+    if (prisma) {
         try {
             for (const msg of history) {
                 await prisma.chatMessage.upsert({
@@ -244,6 +244,10 @@ export function setupSyncEngine(server, io, dataDir, app) {
                 if (payload.data.points) current.fog.paths.push(payload.data.points);
                 if (payload.data.paths) current.fog.paths = payload.data.paths;
                 if (payload.data.enabled !== undefined) current.fog.enabled = payload.data.enabled;
+            } else if (payload.type === 'COMBAT_UPDATE' && payload.state) {
+                current.combat = payload.state;
+                socket.to(tableId).emit('combat_update', payload.state);
+                socket.to(`table-${tableId}`).emit('combat_update', payload.state);
             }
 
             // Transmite em tempo real para toda a sala da mesa (smart TVs, notebooks, mobile)
@@ -251,11 +255,24 @@ export function setupSyncEngine(server, io, dataDir, app) {
             socket.to(`table-${tableId}`).emit('map_sync_event', payload);
         });
 
+        socket.on('combat_update', (state = {}) => {
+            const tableId = String(socket._tableId || 'default-table').replace(/^table-/, '');
+            if (!tacticalMapCache.has(tableId)) tacticalMapCache.set(tableId, {});
+            tacticalMapCache.get(tableId).combat = state;
+            socket.to(tableId).emit('combat_update', state);
+            socket.to(`table-${tableId}`).emit('combat_update', state);
+            socket.to(tableId).emit('map_sync_event', { type: 'COMBAT_UPDATE', state });
+            socket.to(`table-${tableId}`).emit('map_sync_event', { type: 'COMBAT_UPDATE', state });
+        });
+
         socket.on('map_request_sync', (payload = {}) => {
             const tableId = String(payload.tableId || socket._tableId || 'default-table').replace(/^table-/, '');
             const cached = tacticalMapCache.get(tableId);
             if (cached) {
                 socket.emit('map_sync_event', { type: 'MAP_UPDATE', ...cached });
+                if (cached.combat) {
+                    socket.emit('combat_update', cached.combat);
+                }
             }
         });
         
@@ -396,7 +413,7 @@ export function setupSyncEngine(server, io, dataDir, app) {
             try {
                 let encodedState;
                 const prisma = getPrisma();
-                if (getDbType() === 'postgresql' && prisma) {
+                if (prisma) {
                     const blob = await prisma.yjsBlob.findUnique({ where: { id: cleanDocName } });
                     if (blob && blob.data) {
                         encodedState = blob.data;
@@ -456,7 +473,7 @@ export function setupSyncEngine(server, io, dataDir, app) {
                 const encodedState = Y.encodeStateAsUpdate(ydoc);
                 
                 const prisma = getPrisma();
-                if (getDbType() === 'postgresql' && prisma) {
+                if (prisma) {
                     await prisma.yjsBlob.upsert({
                         where: { id: cleanDocName },
                         update: { data: Buffer.from(encodedState) },

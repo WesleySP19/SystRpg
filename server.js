@@ -112,7 +112,7 @@ let activeTables = new Map(); // tableId -> Set of sessionTokens
 
 async function loadSessions() {
     const prisma = getPrisma();
-    if (getDbType() === 'postgresql' && prisma) {
+    if (prisma) {
         try {
             const tableSessions = await prisma.tableSession.findMany();
             const playerSessions = await prisma.playerSession.findMany();
@@ -139,7 +139,7 @@ async function loadSessions() {
                     classe: p.classe
                 });
             }
-            console.log(`[NodeServer] Carregado ${sessionTokens.size} sessões do banco de dados (PostgreSQL).`);
+            console.log(`[NodeServer] Carregado ${sessionTokens.size} sessões do banco de dados (${getDbType()}).`);
         } catch (err) {
              console.error(`[NodeServer] Erro ao carregar sessões do Prisma:`, err);
         }
@@ -162,7 +162,7 @@ async function loadSessions() {
 
 async function saveSessions() {
     const prisma = getPrisma();
-    if (getDbType() === 'sqlite' && prisma) {
+    if (prisma) {
         try {
             for (const [tableId] of activeTables.entries()) {
                 await prisma.tableSession.upsert({

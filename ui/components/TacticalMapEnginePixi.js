@@ -1,6 +1,7 @@
 import * as PIXI from '../../public/vendor/pixi.min.mjs';
 import { Raycaster } from '../../utils/Raycaster.js';
 import { MonsterArt } from '../../services/MonsterArt.js';
+import { CommandStack, PixiAddWallCommand, PixiPaintFogCommand, PixiMoveTokenCommand } from '../../engine/UndoRedo.js';
 
 export class TacticalMapEnginePixi {
     constructor(containerId, options = {}) {
@@ -14,9 +15,13 @@ export class TacticalMapEnginePixi {
         this.gridStep = 50;
         this.activeTool = 'pan'; 
         this.walls = [];
+        this.wallStart = null;
+        this.wallPreviewGraphics = new PIXI.Graphics();
         this.fogPaths = [];
         this.isDynamicLightingEnabled = false;
+        this.isFogEnabled = false;
         this.isVisible = true;
+        this.commandStack = new CommandStack(this);
     }
 
     async init(width, height) {
@@ -55,11 +60,13 @@ export class TacticalMapEnginePixi {
 
         this.mapSprite = new PIXI.Sprite();
         this.bgLayer.addChild(this.mapSprite);
+        this.uiLayer.addChild(this.wallPreviewGraphics);
 
         this._setupInteractions();
         this._setupTouchGestures();
         this._setupLazyRendering();
         this._setupWebRTCSync();
+        this._setupKeyboardShortcuts();
         
         // Setup Ticker for Lerp and Culling
         this.app.ticker.add((delta) => this._updateLoop(delta));
@@ -108,8 +115,13 @@ export class TacticalMapEnginePixi {
             const rect = this.app.canvas.getBoundingClientRect();
             const pointerX = e.clientX - rect.left;
             const pointerY = e.clientY - rect.top;
-            const localX = (pointerX - this.mapContainer.x) / this.mapContainer.scale.x;
-            const localY = (pointerY - this.mapContainer.y) / this.mapContainer.scale.y;
+            let localX = (pointerX - this.mapContainer.x) / this.mapContainer.scale.x;
+            let localY = (pointerY - this.mapContainer.y) / this.mapContainer.scale.y;
+
+            if (this.snapToGrid && (this.activeTool === 'wall' || this.activeTool === 'ruler')) {
+                localX = Math.round(localX / this.gridStep) * this.gridStep;
+                localY = Math.round(localY / this.gridStep) * this.gridStep;
+            }
 
             if (this.activeTool === 'pan' && this.isDM) {
                 isDragging = true;
@@ -117,9 +129,12 @@ export class TacticalMapEnginePixi {
             } else if (this.activeTool === 'ruler') {
                 isDragging = true;
                 measureStart = { x: localX, y: localY };
-            } else if (this.activeTool === 'fog' && this.isDM) {
+            } else if ((this.activeTool === 'fog' || this.activeTool === 'eraser') && this.isDM) {
                 isDragging = true;
-                this._paintFog(localX, localY);
+                this._paintFog(localX, localY, 150, true, true);
+            } else if (this.activeTool === 'wall' && this.isDM) {
+                isDragging = true;
+                this.wallStart = { x: localX, y: localY };
             }
         });
 
@@ -128,8 +143,13 @@ export class TacticalMapEnginePixi {
             const rect = this.app.canvas.getBoundingClientRect();
             const pointerX = e.clientX - rect.left;
             const pointerY = e.clientY - rect.top;
-            const localX = (pointerX - this.mapContainer.x) / this.mapContainer.scale.x;
-            const localY = (pointerY - this.mapContainer.y) / this.mapContainer.scale.y;
+            let localX = (pointerX - this.mapContainer.x) / this.mapContainer.scale.x;
+            let localY = (pointerY - this.mapContainer.y) / this.mapContainer.scale.y;
+
+            if (this.snapToGrid && (this.activeTool === 'wall' || this.activeTool === 'ruler')) {
+                localX = Math.round(localX / this.gridStep) * this.gridStep;
+                localY = Math.round(localY / this.gridStep) * this.gridStep;
+            }
 
             if (this.activeTool === 'pan' && this.isDM) {
                 const dx = e.clientX - lastPos.x;
@@ -164,18 +184,51 @@ export class TacticalMapEnginePixi {
                 window.dispatchEvent(new CustomEvent('tome:measure', {
                     detail: { sx: measureStart.x, sy: measureStart.y, ex: localX, ey: localY, text: measureText.text }
                 }));
-            } else if (this.activeTool === 'fog' && this.isDM) {
-                this._paintFog(localX, localY);
+            } else if ((this.activeTool === 'fog' || this.activeTool === 'eraser') && this.isDM) {
+                this._paintFog(localX, localY, 150, true, false);
+            } else if (this.activeTool === 'wall' && this.isDM && this.wallStart) {
+                this.wallPreviewGraphics.clear();
+                this.wallPreviewGraphics.lineStyle(3, 0x3b82f6, 0.85);
+                this.wallPreviewGraphics.moveTo(this.wallStart.x, this.wallStart.y);
+                this.wallPreviewGraphics.lineTo(localX, localY);
+                this.wallPreviewGraphics.beginFill(0x3b82f6);
+                this.wallPreviewGraphics.drawCircle(this.wallStart.x, this.wallStart.y, 4);
+                this.wallPreviewGraphics.drawCircle(localX, localY, 4);
+                this.wallPreviewGraphics.endFill();
             }
         });
 
-        window.addEventListener('pointerup', () => {
+        window.addEventListener('pointerup', (e) => {
+            if (!isDragging) return;
             isDragging = false;
             lastPos = null;
+
             if (this.activeTool === 'ruler') {
                 measureGraphics.clear();
                 measureText.text = '';
                 window.dispatchEvent(new CustomEvent('tome:measure_end'));
+            } else if (this.activeTool === 'wall' && this.isDM && this.wallStart) {
+                const rect = this.app.canvas.getBoundingClientRect();
+                let localX = (e.clientX - rect.left - this.mapContainer.x) / this.mapContainer.scale.x;
+                let localY = (e.clientY - rect.top - this.mapContainer.y) / this.mapContainer.scale.y;
+                if (this.snapToGrid) {
+                    localX = Math.round(localX / this.gridStep) * this.gridStep;
+                    localY = Math.round(localY / this.gridStep) * this.gridStep;
+                }
+                this.wallPreviewGraphics.clear();
+                const dist = Math.hypot(localX - this.wallStart.x, localY - this.wallStart.y);
+                if (dist >= 10) {
+                    const wall = {
+                        id: 'w_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+                        x1: this.wallStart.x,
+                        y1: this.wallStart.y,
+                        x2: localX,
+                        y2: localY
+                    };
+                    this.commandStack.execute(new PixiAddWallCommand(wall));
+                    window.dispatchEvent(new CustomEvent('tome:wall_added', { detail: wall }));
+                }
+                this.wallStart = null;
             }
         });
     }
@@ -223,7 +276,7 @@ export class TacticalMapEnginePixi {
         });
     }
 
-    _paintFog(x, y, radius = 150, broadcast = true) {
+    _paintFog(x, y, radius = 150, broadcast = true, recordUndo = false) {
         if (!this.fogLayer.children.length) return;
         const hole = new PIXI.Graphics();
         hole.beginFill(0xffffff, 1);
@@ -234,6 +287,10 @@ export class TacticalMapEnginePixi {
 
         const point = { x: Math.round(x), y: Math.round(y), radius };
         this.fogPaths.push(point);
+
+        if (recordUndo) {
+            this.commandStack.execute(new PixiPaintFogCommand(point));
+        }
 
         if (broadcast && this.isDM) {
             window.dispatchEvent(new CustomEvent('tome:fog_path', {
@@ -300,10 +357,158 @@ export class TacticalMapEnginePixi {
                     const px = p.x !== undefined ? p.x : (Array.isArray(p) ? p[0] : 0);
                     const py = p.y !== undefined ? p.y : (Array.isArray(p) ? p[1] : 0);
                     const pr = p.radius || 150;
-                    this._paintFog(px, py, pr, false);
+                    this._paintFog(px, py, pr, false, false);
                 });
             }
         }
+    }
+
+    setDynamicLightingEnabled(enabled) {
+        this.isDynamicLightingEnabled = enabled;
+        if (enabled) {
+            this.renderDynamicLighting();
+        } else {
+            this.setFog({ enabled: this.isFogEnabled || this.fogPaths.length > 0, paths: this.fogPaths });
+        }
+    }
+
+    renderDynamicLighting() {
+        if (!this.isDynamicLightingEnabled) return;
+        
+        this.fogLayer.removeChildren();
+        const darkness = new PIXI.Graphics();
+        darkness.beginFill(0x000000, 0.96);
+        darkness.drawRect(-10000, -10000, 20000, 20000);
+        darkness.endFill();
+        this.fogLayer.addChild(darkness);
+
+        // Re-aplica furos manuais de névoa revelada
+        if (this.fogPaths && this.fogPaths.length > 0) {
+            this.fogPaths.forEach(p => {
+                const hole = new PIXI.Graphics();
+                hole.beginFill(0xffffff, 1);
+                hole.drawCircle(p.x, p.y, p.radius || 150);
+                hole.endFill();
+                hole.blendMode = 'erase';
+                this.fogLayer.addChild(hole);
+            });
+        }
+
+        // Paredes para o Raycaster
+        const segments = (this.walls || []).map(w => ({
+            p1: { x: w.x1, y: w.y1 },
+            p2: { x: w.x2, y: w.y2 }
+        }));
+
+        // Renderiza linha de visão por token
+        for (const token of this.tokens.values()) {
+            const origin = { x: token.x, y: token.y };
+            const radius = token.lightRadius || 500; // Raio de iluminação padrão (15m / 50ft)
+            
+            const polygonPoints = Raycaster.computePolygon(origin, radius, segments);
+            if (polygonPoints && polygonPoints.length >= 6) {
+                const lightHole = new PIXI.Graphics();
+                lightHole.beginFill(0xffffff, 1);
+                lightHole.drawPolygon(polygonPoints);
+                lightHole.endFill();
+                lightHole.blendMode = 'erase';
+                this.fogLayer.addChild(lightHole);
+            }
+        }
+    }
+
+    _renderWalls() {
+        this.wallLayer.removeChildren();
+        if (!this.walls || this.walls.length === 0) return;
+        
+        const g = new PIXI.Graphics();
+        this.walls.forEach(w => {
+            g.lineStyle(4, 0x3b82f6, this.isDM ? 0.9 : 0);
+            g.moveTo(w.x1, w.y1);
+            g.lineTo(w.x2, w.y2);
+            if (this.isDM) {
+                g.beginFill(0x60a5fa);
+                g.drawCircle(w.x1, w.y1, 4);
+                g.drawCircle(w.x2, w.y2, 4);
+                g.endFill();
+            }
+        });
+        this.wallLayer.addChild(g);
+
+        if (this.isDynamicLightingEnabled) {
+            this.renderDynamicLighting();
+        }
+    }
+
+    undo() {
+        const res = this.commandStack.undo();
+        if (this.isDynamicLightingEnabled) this.renderDynamicLighting();
+        return res;
+    }
+
+    redo() {
+        const res = this.commandStack.redo();
+        if (this.isDynamicLightingEnabled) this.renderDynamicLighting();
+        return res;
+    }
+
+    canUndo() {
+        return this.commandStack.canUndo();
+    }
+
+    canRedo() {
+        return this.commandStack.canRedo();
+    }
+
+    _setupKeyboardShortcuts() {
+        this._keyHandler = (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+                e.preventDefault();
+                if (e.shiftKey) this.redo();
+                else this.undo();
+            } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+                e.preventDefault();
+                this.redo();
+            }
+        };
+        window.addEventListener('keydown', this._keyHandler);
+    }
+
+    setCamera(x, y, scale = null) {
+        if (!this.mapContainer) return;
+        if (x !== undefined && x !== null) this.mapContainer.x = x;
+        if (y !== undefined && y !== null) this.mapContainer.y = y;
+        if (scale !== undefined && scale !== null) {
+            this.mapContainer.scale.set(scale);
+        }
+    }
+
+    focusOn(localX, localY, targetScale = null) {
+        if (!this.mapContainer || !this.app) return;
+        const scale = targetScale || this.mapContainer.scale.x || 1;
+        if (targetScale) this.mapContainer.scale.set(scale);
+        
+        const screenW = this.app.screen.width;
+        const screenH = this.app.screen.height;
+        const targetX = screenW / 2 - localX * scale;
+        const targetY = screenH / 2 - localY * scale;
+
+        let step = 0;
+        const totalSteps = 20;
+        const startX = this.mapContainer.x;
+        const startY = this.mapContainer.y;
+
+        const panTick = () => {
+            step++;
+            const t = step / totalSteps;
+            const ease = t * (2 - t);
+            this.mapContainer.x = startX + (targetX - startX) * ease;
+            this.mapContainer.y = startY + (targetY - startY) * ease;
+            if (step >= totalSteps) {
+                this.app.ticker.remove(panTick);
+            }
+        };
+        this.app.ticker.add(panTick);
     }
 
     showPing(x, y, color = '#10b981') {
@@ -474,10 +679,12 @@ export class TacticalMapEnginePixi {
 
     async _createToken(data) {
         const group = new PIXI.Container();
+        group.id = data.id;
         group.x = data.x || 0;
         group.y = data.y || 0;
         group.targetX = group.x;
         group.targetY = group.y;
+        group.lightRadius = data.lightRadius || 350;
         
         const size = data.size || 25;
         
@@ -599,6 +806,10 @@ export class TacticalMapEnginePixi {
                     group.x = Math.round(group.x / step) * step;
                     group.y = Math.round(group.y / step) * step;
                 }
+
+                if (this.isDynamicLightingEnabled) {
+                    this.renderDynamicLighting();
+                }
                 
                 window.dispatchEvent(new CustomEvent('tome:token_moved', {
                     detail: { id: data.id, x: group.x, y: group.y }
@@ -612,6 +823,10 @@ export class TacticalMapEnginePixi {
                     const localPos = e.data.getLocalPosition(group.parent);
                     group.x = localPos.x + offset.x;
                     group.y = localPos.y + offset.y;
+
+                    if (this.isDynamicLightingEnabled) {
+                        this.renderDynamicLighting();
+                    }
 
                     // Emit high-frequency event for WebRTC broadcast
                     window.dispatchEvent(new CustomEvent('tome:token_dragging', {
@@ -649,6 +864,7 @@ export class TacticalMapEnginePixi {
     _updateToken(group, data) {
         group.targetX = data.x;
         group.targetY = data.y;
+        if (data.lightRadius !== undefined) group.lightRadius = data.lightRadius;
         
         if (group.hpFill && data.maxHp) {
             const size = data.size || 25;
@@ -675,15 +891,24 @@ export class TacticalMapEnginePixi {
             h: this.app.screen.height / this.mapContainer.scale.y
         };
         const padding = 200; // Extra padding to avoid pop-in
+        let anyMoved = false;
 
         for (const [id, group] of this.tokens.entries()) {
             // Lerp Position
             if (group.targetX !== undefined && group.targetY !== undefined) {
-                if (Math.abs(group.targetX - group.x) > 0.5) group.x += (group.targetX - group.x) * lerpFactor;
-                else group.x = group.targetX;
+                if (Math.abs(group.targetX - group.x) > 0.5) {
+                    group.x += (group.targetX - group.x) * lerpFactor;
+                    anyMoved = true;
+                } else {
+                    group.x = group.targetX;
+                }
                 
-                if (Math.abs(group.targetY - group.y) > 0.5) group.y += (group.targetY - group.y) * lerpFactor;
-                else group.y = group.targetY;
+                if (Math.abs(group.targetY - group.y) > 0.5) {
+                    group.y += (group.targetY - group.y) * lerpFactor;
+                    anyMoved = true;
+                } else {
+                    group.y = group.targetY;
+                }
             }
 
             // Culling logic
@@ -694,6 +919,10 @@ export class TacticalMapEnginePixi {
                 group.y <= viewRect.y + viewRect.h + padding
             );
             group.visible = isVisible;
+        }
+
+        if (anyMoved && this.isDynamicLightingEnabled) {
+            this.renderDynamicLighting();
         }
     }
 
@@ -735,6 +964,9 @@ export class TacticalMapEnginePixi {
         }
         if (this._webrtcSyncHandler) {
             window.removeEventListener('webrtc:token_sync', this._webrtcSyncHandler);
+        }
+        if (this._keyHandler) {
+            window.removeEventListener('keydown', this._keyHandler);
         }
     }
 }

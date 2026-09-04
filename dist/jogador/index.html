@@ -83,12 +83,12 @@
       }
     }
     </script>
-  <script type="module" crossorigin src="/assets/player-DcyJz_af.js"></script>
-  <link rel="modulepreload" crossorigin href="/assets/tailwind-hn7_9YSE.js">
-  <link rel="modulepreload" crossorigin href="/assets/FXEngine-BKbXWGrS.js">
+  <script type="module" crossorigin src="/assets/player-CnrdpcJi.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/tailwind-DeWATx8B.js">
+  <link rel="modulepreload" crossorigin href="/assets/FXEngine-Ck0EvS0v.js">
   <link rel="modulepreload" crossorigin href="/assets/MonsterArt-DEMUppHj.js">
-  <link rel="modulepreload" crossorigin href="/assets/TacticalMapEnginePixi-BMclrTBW.js">
-  <link rel="stylesheet" crossorigin href="/assets/tailwind-BE0TVmZw.css">
+  <link rel="modulepreload" crossorigin href="/assets/TacticalMapEnginePixi-BTjkogDV.js">
+  <link rel="stylesheet" crossorigin href="/assets/tailwind-D1Un5CwA.css">
   <link rel="stylesheet" crossorigin href="/assets/player-CqYoThyT.css">
 </head>
 <body class="text-gray-100 flex flex-col h-screen overflow-hidden selection:bg-tomeGold/30">
@@ -124,6 +124,39 @@
         
         <!-- CHAT / MACROS SCREEN -->
         <div id="chat-screen" class="flex flex-col flex-1 overflow-hidden animate-fadeIn">
+            <!-- COMBAT & ACTION ECONOMY BANNER (Mobile HUD) -->
+            <div id="combat-hud-banner" class="hidden flex-col bg-gradient-to-r from-obsidian-950 via-black to-obsidian-950 border-b border-tomeGold/30 p-2.5 shadow-lg">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-2">
+                        <span id="combat-status-badge" class="px-2 py-0.5 rounded-full text-[0.65rem] font-black uppercase tracking-wider bg-tomeGold/20 text-tomeGold border border-tomeGold/40">
+                            Rodada 1
+                        </span>
+                        <span id="turn-actor-name" class="text-xs font-bold text-white truncate max-w-[150px]">
+                            Vez de Aventureiro
+                        </span>
+                    </div>
+                    <span id="my-turn-alert" class="hidden text-xs font-black text-emerald-400 animate-pulse flex items-center gap-1">
+                        <i class="fa-solid fa-sparkles"></i> SEU TURNO!
+                    </span>
+                </div>
+                
+                <!-- Action Economy Pills -->
+                <div class="grid grid-cols-4 gap-1.5">
+                    <button id="btn-player-action" class="flex items-center justify-center gap-1 py-1 px-1.5 rounded-lg border text-[0.65rem] font-bold bg-emerald-500/20 border-emerald-500/50 text-emerald-300">
+                        <i class="fa-solid fa-hand-fist text-[0.6rem]"></i> Ação
+                    </button>
+                    <button id="btn-player-bonus" class="flex items-center justify-center gap-1 py-1 px-1.5 rounded-lg border text-[0.65rem] font-bold bg-amber-500/20 border-amber-500/50 text-amber-300">
+                        <i class="fa-solid fa-bolt text-[0.6rem]"></i> Bônus
+                    </button>
+                    <button id="btn-player-reaction" class="flex items-center justify-center gap-1 py-1 px-1.5 rounded-lg border text-[0.65rem] font-bold bg-purple-500/20 border-purple-500/50 text-purple-300">
+                        <i class="fa-solid fa-shield-halved text-[0.6rem]"></i> Reação
+                    </button>
+                    <button id="btn-player-move" class="flex items-center justify-center gap-1 py-1 px-1.5 rounded-lg border text-[0.65rem] font-bold bg-blue-500/20 border-blue-500/50 text-blue-300">
+                        <i class="fa-solid fa-shoe-prints text-[0.6rem]"></i> 30ft
+                    </button>
+                </div>
+            </div>
+
             <div id="messages-container" class="flex-1 overflow-y-auto p-4 space-y-4"></div>
             
             <!-- MACROS BAR -->
