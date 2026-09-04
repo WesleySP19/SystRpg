@@ -57,4 +57,31 @@ describe('Dice Engine', () => {
             expect(val).toBeLessThanOrEqual(6);
         }
     });
+
+    test('deve suportar lados numéricos e notações simplificadas (Dice.roll(20), d20)', () => {
+        const resNumeric = Dice.roll(20);
+        expect(resNumeric.error).toBeUndefined();
+        expect(resNumeric.total).toBeGreaterThanOrEqual(1);
+        expect(resNumeric.total).toBeLessThanOrEqual(20);
+
+        const resD20 = Dice.roll('d20');
+        expect(resD20.error).toBeUndefined();
+        expect(resD20.total).toBeGreaterThanOrEqual(1);
+        expect(resD20.total).toBeLessThanOrEqual(20);
+    });
+
+    test('deve suportar macros do jogador mobile 2d20h1 e 2d20l1', () => {
+        const resAdv = Dice.roll('2d20h1+3');
+        expect(resAdv.error).toBeUndefined();
+        expect(resAdv.rolls.length).toBe(2);
+        expect(resAdv.finalRolls.length).toBe(1);
+        expect(resAdv.finalRolls[0]).toBe(Math.max(...resAdv.rolls));
+        expect(resAdv.total).toBe(resAdv.finalRolls[0] + 3);
+
+        const resDis = Dice.roll('2d20l1');
+        expect(resDis.error).toBeUndefined();
+        expect(resDis.rolls.length).toBe(2);
+        expect(resDis.finalRolls.length).toBe(1);
+        expect(resDis.finalRolls[0]).toBe(Math.min(...resDis.rolls));
+    });
 });

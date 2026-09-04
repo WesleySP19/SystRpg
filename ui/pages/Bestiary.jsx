@@ -301,17 +301,35 @@ export function Bestiary() {
         });
 
         if (window.TOME?.audio) {
-            window.TOME.audio.playSFX('https://assets.mixkit.co/active_storage/sfx/2771/2771-preview.mp3');
+            if (window.TOME.audio.playSyntheticSFX) {
+                window.TOME.audio.playSyntheticSFX('dice');
+            } else {
+                window.TOME.audio.playSFX('https://assets.mixkit.co/active_storage/sfx/2771/2771-preview.mp3');
+            }
         }
 
         setTimeout(() => {
             const hit = RulesEngine.checkHit(bonus, targetAC, 'normal');
             let narrative = '';
             if (hit.success) {
-                if (window.TOME?.audio) window.TOME.audio.playSFX('https://assets.mixkit.co/active_storage/sfx/2770/2770-preview.mp3');
+                if (window.TOME?.audio) {
+                    if (hit.isCrit && window.TOME.audio.playSyntheticSFX) {
+                        window.TOME.audio.playSyntheticSFX('crit');
+                    } else if (window.TOME.audio.playSyntheticSFX) {
+                        window.TOME.audio.playSyntheticSFX('hit');
+                    } else {
+                        window.TOME.audio.playSFX('https://assets.mixkit.co/active_storage/sfx/2770/2770-preview.mp3');
+                    }
+                }
                 narrative = hit.isCrit ? '💥 ACERTO CRÍTICO! Golpe devastador!' : '⚔️ ACERTOU! O ataque superou as defesas!';
             } else {
-                if (window.TOME?.audio) window.TOME.audio.playSFX('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
+                if (window.TOME?.audio) {
+                    if (window.TOME.audio.playSyntheticSFX) {
+                        window.TOME.audio.playSyntheticSFX('alert');
+                    } else {
+                        window.TOME.audio.playSFX('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
+                    }
+                }
                 narrative = '🛡️ ERROU! A armadura resistiu à investida.';
             }
 
@@ -332,7 +350,11 @@ export function Bestiary() {
         setActiveRoll(prev => ({ ...prev, stage: 'damage' }));
 
         if (window.TOME?.audio) {
-            window.TOME.audio.playSFX('https://assets.mixkit.co/active_storage/sfx/2770/2770-preview.mp3');
+            if (window.TOME.audio.playSyntheticSFX) {
+                window.TOME.audio.playSyntheticSFX('hit');
+            } else {
+                window.TOME.audio.playSFX('https://assets.mixkit.co/active_storage/sfx/2770/2770-preview.mp3');
+            }
         }
 
         setTimeout(() => {

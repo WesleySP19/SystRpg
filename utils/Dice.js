@@ -10,9 +10,20 @@ export class Dice {
      */
     static roll(notation) {
         try {
-            const cleanStr = notation.toLowerCase().replace(/\s+/g, '');
+            if (typeof notation === 'number') {
+                notation = `1d${notation}`;
+            } else if (typeof notation !== 'string') {
+                notation = String(notation || '1d20');
+            }
+
+            let cleanStr = notation.toLowerCase().replace(/\s+/g, '');
+            // Normalize shorthand "d20" to "1d20"
+            if (cleanStr.startsWith('d')) cleanStr = '1' + cleanStr;
+            // Normalize advantage/disadvantage shorthands: "h1" -> "kh1", "l1" -> "kl1"
+            cleanStr = cleanStr.replace(/(\d+)h1/, '$1kh1').replace(/(\d+)l1/, '$1kl1');
+
             // Regex for basic dice: [num]d[sides](kh1|kl1)?([modifier])
-            // Supports: 1d20, 2d20kh1+5, 2d20kl1-2, 2d6+4
+            // Supports: 1d20, d20, 20, 2d20kh1+5, 2d20h1, 2d20kl1-2, 2d20l1, 2d6+4
             const regex = /^(\d+)d(\d+)(kh1|kl1)?([+-]\d+)?$/;
             const match = cleanStr.match(regex);
             

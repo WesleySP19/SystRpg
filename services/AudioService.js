@@ -51,7 +51,9 @@ export class AudioService {
                 const source = this.ctx.createMediaElementSource(audio);
                 source.connect(sfxGain);
 
-                audio.play().catch(() => {});
+                audio.play().catch(() => {
+                    this.playSyntheticSFX('hit');
+                });
 
                 // Clean up when ended
                 audio.onended = () => {
@@ -60,10 +62,118 @@ export class AudioService {
                 };
             } else {
                 audio.volume = this._masterVolume * 0.5;
-                await audio.play().catch(() => {});
+                audio.play().catch(() => {
+                    this.playSyntheticSFX('hit');
+                });
             }
         } catch (e) {
-            console.warn('[Audio] SFX failed:', url, e);
+            console.warn('[Audio] SFX failed, invoking synthetic sound fallback:', url, e);
+            this.playSyntheticSFX('hit');
+        }
+    }
+
+    /**
+     * Procedural synthetic Web Audio sound generator (100% offline & zero-latency)
+     * @param {'dice' | 'hit' | 'crit' | 'alert' | 'spell'} type 
+     */
+    playSyntheticSFX(type = 'dice') {
+        this._initAudioContext();
+        if (!this.ctx) return;
+        try {
+            if (this.ctx.state === 'suspended') {
+                this.ctx.resume();
+            }
+            const now = this.ctx.currentTime;
+
+            if (type === 'dice') {
+                // Procedural wooden dice roll clatter (3 rapid pitch-modulated clicks)
+                for (let i = 0; i < 3; i++) {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    const startTime = now + (i * 0.045);
+                    const freq = 320 + Math.random() * 180;
+                    
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, startTime);
+                    osc.frequency.exponentialRampToValueAtTime(120, startTime + 0.04);
+
+                    gain.gain.setValueAtTime(this._masterVolume * 0.25, startTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.04);
+
+                    osc.connect(gain);
+                    gain.connect(this.masterGain || this.ctx.destination);
+                    osc.start(startTime);
+                    osc.stop(startTime + 0.045);
+                }
+            } else if (type === 'hit') {
+                // Impact punch / weapon clash (fast noise burst + low thud)
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(180, now);
+                osc.frequency.exponentialRampToValueAtTime(40, now + 0.12);
+
+                gain.gain.setValueAtTime(this._masterVolume * 0.4, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+                osc.connect(gain);
+                gain.connect(this.masterGain || this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.13);
+            } else if (type === 'crit') {
+                // Golden heroic chime (major arpeggio chord: C5, E5, G5, C6)
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    const noteStart = now + (idx * 0.06);
+
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, noteStart);
+
+                    gain.gain.setValueAtTime(this._masterVolume * 0.2, noteStart);
+                    gain.gain.exponentialRampToValueAtTime(0.001, noteStart + 0.35);
+
+                    osc.connect(gain);
+                    gain.connect(this.masterGain || this.ctx.destination);
+                    osc.start(noteStart);
+                    osc.stop(noteStart + 0.36);
+                });
+            } else if (type === 'alert') {
+                // Diegetic brass bell ping (dual harmonic sines)
+                [880, 1760].forEach(freq => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now);
+
+                    gain.gain.setValueAtTime(this._masterVolume * 0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+
+                    osc.connect(gain);
+                    gain.connect(this.masterGain || this.ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.42);
+                });
+            } else if (type === 'spell') {
+                // Mystical resonant frequency sweep
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(220, now);
+                osc.frequency.exponentialRampToValueAtTime(880, now + 0.25);
+                osc.frequency.exponentialRampToValueAtTime(440, now + 0.4);
+
+                gain.gain.setValueAtTime(this._masterVolume * 0.25, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+
+                osc.connect(gain);
+                gain.connect(this.masterGain || this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.42);
+            }
+        } catch (e) {
+            console.warn('[AudioService] Synthetic SFX failed:', e);
         }
     }
 
