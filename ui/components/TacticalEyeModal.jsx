@@ -12,6 +12,8 @@ export function TacticalEyeModal({ unmount }) {
     const initialMapFog = storeState?.mapFog || false;
     const initialMapGrid = storeState?.mapGrid || false;
 
+    const currentTableId = storeState?.activeTable || localStorage.getItem('DM_ACTIVE_TABLE') || 'default-table';
+
     const [mapUrl, setMapUrl] = useState(initialMapUrl);
     const [fog, setFog] = useState(initialMapFog);
     const [grid, setGrid] = useState(initialMapGrid);
@@ -50,7 +52,7 @@ export function TacticalEyeModal({ unmount }) {
 
         const handleCameraUpdate = (e) => {
             const { x, y, scale } = e.detail;
-            const payload = { type: 'CAMERA_UPDATE', data: { x, y, scale } };
+            const payload = { type: 'CAMERA_UPDATE', data: { x, y, scale }, tableId: currentTableId };
             broadcastRef.current?.postMessage(payload);
             window.TOME?.socket?.emit('map_sync_event', payload);
         };
@@ -61,8 +63,8 @@ export function TacticalEyeModal({ unmount }) {
             if (paths) fogPathsRef.current = paths;
             else fogPathsRef.current.push(points);
 
-            const payload = { type: 'FOG_UPDATE', data: { points, paths: fogPathsRef.current } };
-            broadcastRef.current?.postMessage({ type: 'FOG_PATH_UPDATE', data: { points } });
+            const payload = { type: 'FOG_UPDATE', data: { points, paths: fogPathsRef.current }, tableId: currentTableId };
+            broadcastRef.current?.postMessage({ type: 'FOG_PATH_UPDATE', data: { points }, tableId: currentTableId });
             window.TOME?.socket?.emit('map_sync_event', payload);
         };
         window.addEventListener('tome:fog_path', handleFogPath);
@@ -73,11 +75,13 @@ export function TacticalEyeModal({ unmount }) {
             broadcastRef.current?.postMessage({
                 type: 'DELTA_UPDATE',
                 deltaType: 'TOKEN_MOVE',
-                data: payload
+                data: payload,
+                tableId: currentTableId
             });
             window.TOME?.socket?.emit('map_sync_event', {
                 type: 'TOKEN_MOVE',
-                data: payload
+                data: payload,
+                tableId: currentTableId
             });
             // Update server persistence on drop
             if (window.TOME?.socket) {
@@ -115,7 +119,8 @@ export function TacticalEyeModal({ unmount }) {
                 const pingData = {
                     type: 'PING',
                     position: { x: localX, y: localY },
-                    color: '#10b981'
+                    color: '#10b981',
+                    tableId: currentTableId
                 };
                 broadcastRef.current?.postMessage(pingData);
                 window.TOME?.socket?.emit('map_sync_event', pingData);
@@ -134,30 +139,44 @@ export function TacticalEyeModal({ unmount }) {
             if (dataStr) {
                 try {
                     const payload = JSON.parse(dataStr);
-                    const stage = mapEngine.app.stage; // Dummy since pixi is different, but context menu handled directly in mapEngine
-                    const pointer = {x: 0, y: 0}; // TBD: properly map pointers for drop in Pixi
-                    if (pointer) {
-                        const transform = stage.getAbsoluteTransform().copy();
-                        transform.invert();
-                        const relPos = transform.point(pointer);
-                        
-                        const center = getStageCenter(transform);
-                        
+                    const engine = mapEngineRef.current;
+                    if (engine && engine.mapContainer) {
+                        const rect = container.getBoundingClientRect();
+                        const pointerX = e.clientX - rect.left;
+                        const pointerY = e.clientY - rect.top;
+                        const scale = engine.mapContainer.scale.x || 1;
+                        const relX = (pointerX - engine.mapContainer.x) / scale;
+                        const relY = (pointerY - engine.mapContainer.y) / scale;
+                        const center = getStageCenter();
+
+                        const effectColor = payload.type === 'spell' ? '#9c27b0' : '#ef4444';
+                        engine.showSpellEffect(relX, relY, effectColor, payload.type);
+
+                        // Broadcast effect to Spectator screen & mobile players
+                        const spellBroadcast = {
+                            type: 'SPELL_EFFECT',
+                            x: relX,
+                            y: relY,
+                            color: effectColor,
+                            spellType: payload.type,
+                            tableId: currentTableId
+                        };
+                        broadcastRef.current?.postMessage(spellBroadcast);
+                        window.TOME?.socket?.emit('map_sync_event', spellBroadcast);
+
                         if (payload.type === 'spell') {
-                            mapEngine.showSpellEffect(relPos.x, relPos.y, '#9c27b0', 'spell');
                             if (window.TOME?.audio) {
-                                window.TOME.audio.playSpatialSFX('https://freesound.org/data/previews/404/404764_118613-lq.mp3', relPos.x, relPos.y, center.x, center.y, mapEngine.stage.scaleX());
+                                window.TOME.audio.playSpatialSFX('https://freesound.org/data/previews/404/404764_118613-lq.mp3', relX, relY, center.x, center.y, scale);
                             }
                             if (window.TOME?.events) {
-                                window.TOME.events.emit('SYSTEM_NOTIFICATION', { text: `${payload.sourceHeroName} invocou ${payload.data.name}!`, type: 'info' });
+                                window.TOME.events.emit('SYSTEM_NOTIFICATION', { text: `${payload.sourceHeroName || 'Herói'} invocou ${payload.data?.name || 'Magia'}!`, type: 'info' });
                             }
                         } else if (payload.type === 'attack') {
-                            mapEngine.showSpellEffect(relPos.x, relPos.y, '#ef4444', 'attack');
                             if (window.TOME?.audio) {
-                                window.TOME.audio.playSpatialSFX('https://freesound.org/data/previews/415/415209_5121236-lq.mp3', relPos.x, relPos.y, center.x, center.y, mapEngine.stage.scaleX());
+                                window.TOME.audio.playSpatialSFX('https://freesound.org/data/previews/415/415209_5121236-lq.mp3', relX, relY, center.x, center.y, scale);
                             }
                             if (window.TOME?.events) {
-                                window.TOME.events.emit('SYSTEM_NOTIFICATION', { text: `${payload.sourceHeroName} atacou com ${payload.data.name}!`, type: 'warning' });
+                                window.TOME.events.emit('SYSTEM_NOTIFICATION', { text: `${payload.sourceHeroName || 'Herói'} atacou com ${payload.data?.name || 'Ataque'}!`, type: 'warning' });
                             }
                         }
                     }
@@ -224,14 +243,17 @@ export function TacticalEyeModal({ unmount }) {
             const existing = mapEngineRef.current.tokens.get(c.id);
             const size = c.size === 'Grande' ? 50 : (c.size === 'Enorme' ? 75 : 25);
             
+            const existingX = existing ? (typeof existing.x === 'function' ? existing.x() : existing.x) : null;
+            const existingY = existing ? (typeof existing.y === 'function' ? existing.y() : existing.y) : null;
+
             return {
                 id: c.id,
                 name: c.name,
                 avatar: avatar,
                 color: isEnemy ? '#ef4444' : '#3b82f6', 
                 size: size,
-                x: existing ? existing.x() : 100 + (i * 60) % 500, 
-                y: existing ? existing.y() : 100 + Math.floor(i / 8) * 60
+                x: (existingX !== null && existingX !== undefined && !isNaN(existingX)) ? existingX : 100 + (i * 60) % 500, 
+                y: (existingY !== null && existingY !== undefined && !isNaN(existingY)) ? existingY : 100 + Math.floor(i / 8) * 60
             };
         });
 
@@ -252,7 +274,8 @@ export function TacticalEyeModal({ unmount }) {
         if (mapEngineRef.current) mapEngineRef.current.setMapUrl(url);
         window.TOME?.socket?.emit('map_sync_event', {
             type: 'MAP_UPDATE',
-            mapUrl: url
+            mapUrl: url,
+            tableId: currentTableId
         });
         Toast.show('Mapa atualizado.', 'info');
     };
@@ -267,7 +290,8 @@ export function TacticalEyeModal({ unmount }) {
         window.TOME?.socket?.emit('map_sync_event', {
             type: 'MAP_UPDATE',
             gridActive: newGrid,
-            gridScale: '1.5m'
+            gridScale: '1.5m',
+            tableId: currentTableId
         });
     };
 
@@ -286,7 +310,8 @@ export function TacticalEyeModal({ unmount }) {
         }
         window.TOME?.socket?.emit('map_sync_event', {
             type: 'FOG_UPDATE',
-            data: { enabled: newFog, paths: fogPathsRef.current }
+            data: { enabled: newFog, paths: fogPathsRef.current },
+            tableId: currentTableId
         });
     };
 
@@ -359,7 +384,8 @@ export function TacticalEyeModal({ unmount }) {
             fog: { enabled: fog, paths: fogPathsRef.current },
             gridActive: grid,
             gridScale: '1.5m',
-            tokens: enrichedTokens
+            tokens: enrichedTokens,
+            tableId: currentTableId
         };
 
         const cameraPayload = {
@@ -368,7 +394,8 @@ export function TacticalEyeModal({ unmount }) {
                 x: mapEngineRef.current.mapContainer.x, 
                 y: mapEngineRef.current.mapContainer.y, 
                 scale: mapEngineRef.current.mapContainer.scale.x 
-            }
+            },
+            tableId: currentTableId
         };
 
         broadcastRef.current?.postMessage(mapPayload);
@@ -385,13 +412,17 @@ export function TacticalEyeModal({ unmount }) {
     const triggerAoeTemplate = () => {
         if (!mapEngineRef.current) return;
         const center = getStageCenter();
-        mapEngineRef.current.setAoeTemplate({
+        const aoeData = {
             type: 'sphere',
             x: center.x,
             y: center.y,
             radius: 200,
             color: '#ef4444'
-        });
+        };
+        mapEngineRef.current.setAoeTemplate(aoeData);
+        const payload = { type: 'AOE_TEMPLATE', data: aoeData, tableId: currentTableId };
+        broadcastRef.current?.postMessage(payload);
+        window.TOME?.socket?.emit('map_sync_event', payload);
         Toast.show('🔥 Modelo de Área de Efeito (20ft) gerado no mapa.', 'warning');
     };
 

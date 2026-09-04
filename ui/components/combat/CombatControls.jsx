@@ -9,7 +9,8 @@ export function CombatControls() {
         addMonster, 
         insertHeroes, 
         rollInitiatives,
-        toggleAction
+        toggleAction,
+        partyRest
     } = useCombat();
 
     return (
@@ -108,6 +109,14 @@ export function CombatControls() {
                 <button onClick={rollInitiatives} className="btn btn-ghost btn-block rounded-lg border border-white/10 flex justify-between items-center">
                     <span><i className="fa-solid fa-dice-d20 text-tomeGold mr-2"></i> Rolar Iniciativas</span>
                 </button>
+                <div className="grid grid-cols-2 gap-2 mt-1">
+                    <button onClick={() => partyRest('short')} className="btn btn-ghost btn-sm rounded-lg border border-tomeGold/30 text-tomeGold text-[0.7rem] hover:bg-tomeGold/10" title="Descanso Curto para todos os heróis (+25% PV)">
+                        <i className="fa-solid fa-mug-hot mr-1"></i> D. Curto
+                    </button>
+                    <button onClick={() => partyRest('long')} className="btn btn-ghost btn-sm rounded-lg border border-emerald-500/30 text-emerald-400 text-[0.7rem] hover:bg-emerald-500/10" title="Descanso Longo para todos os heróis (100% PV)">
+                        <i className="fa-solid fa-moon mr-1"></i> D. Longo
+                    </button>
+                </div>
             </div>
 
             {/* Danger Zone */}

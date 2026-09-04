@@ -55,5 +55,14 @@ describe('Rules Engine (D&D 5e)', () => {
 
         const actor3 = {}; // fallbacks
         expect(RulesEngine.getHP(actor3)).toEqual({ current: 10, max: 10 });
+
+        const actorPrimitive = { hp: 25, maxHp: 30 };
+        expect(RulesEngine.getHP(actorPrimitive)).toEqual({ current: 25, max: 30 });
+
+        const actorCombat = { combat: { hp_current: 18, hp_max: 22 } };
+        expect(RulesEngine.getHP(actorCombat)).toEqual({ current: 18, max: 22 });
+
+        const actorNull = null;
+        expect(RulesEngine.getHP(actorNull)).toEqual({ current: 10, max: 10 });
     });
 });

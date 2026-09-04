@@ -361,7 +361,7 @@ app.post('/api/fx/trigger', (req, res) => {
 });
 
 // Rota para Tela de Transmissão (TV / Espectadores na sala)
-app.get(['/transmissao', '/transmissão', '/espectador'], (req, res) => {
+app.get(['/transmissao', '/transmissão', '/espectador', '/transmissao.html', '/player-view.html'], (req, res) => {
     const targetPath = path.join(PSScriptRoot, 'public', 'transmissao.html');
     if (fs.existsSync(targetPath)) {
         res.sendFile(targetPath);

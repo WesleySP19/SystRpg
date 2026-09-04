@@ -24,6 +24,14 @@ export class UI {
         this.heroNameDisplay = document.getElementById('hero-name-display');
         this.heroClassDisplay = document.getElementById('hero-class-display');
         this.statMesa = document.getElementById('stat-mesa');
+
+        // Vital Stats Elements
+        this.heroHpText = document.getElementById('hero-hp-text');
+        this.heroHpBar = document.getElementById('hero-hp-bar');
+        this.heroHpTemp = document.getElementById('hero-hp-temp');
+        this.heroAcDisplay = document.getElementById('hero-ac-display');
+        this.heroSpeedDisplay = document.getElementById('hero-speed-display');
+        this.heroConditionsList = document.getElementById('hero-conditions-list');
         
         this.engine = null;
 
@@ -138,6 +146,60 @@ export class UI {
         if (data.classe && this.heroClassDisplay) this.heroClassDisplay.textContent = data.classe;
         if (data.tableId && this.statMesa) this.statMesa.textContent = `#${data.tableId}`;
         if (data.avatar) this.updateAvatarDisplay(data.avatar);
+    }
+
+    renderVitals(char) {
+        if (!char) return;
+
+        let currentHp = 0;
+        let maxHp = 0;
+        let tempHp = 0;
+
+        if (typeof char.hp === 'object' && char.hp !== null) {
+            currentHp = Number(char.hp.current ?? char.hp.hp ?? 0);
+            maxHp = Number(char.hp.max ?? char.hp_max ?? 0);
+            tempHp = Number(char.hp.temp ?? 0);
+        } else {
+            currentHp = Number(char.hp ?? char.hp_current ?? 0);
+            maxHp = Number(char.hp_max ?? char.maxHp ?? currentHp);
+            tempHp = Number(char.tempHp ?? char.hp_temp ?? 0);
+        }
+
+        if (this.heroHpText) {
+            this.heroHpText.textContent = `${currentHp} / ${maxHp} HP`;
+        }
+        if (this.heroHpTemp) {
+            this.heroHpTemp.textContent = tempHp > 0 ? `+${tempHp} Temp` : '';
+        }
+        if (this.heroHpBar && maxHp > 0) {
+            const pct = Math.max(0, Math.min(100, Math.round((currentHp / maxHp) * 100)));
+            this.heroHpBar.style.width = `${pct}%`;
+            if (pct > 50) {
+                this.heroHpBar.className = 'h-full bg-emerald-500 rounded-full transition-all duration-300';
+            } else if (pct > 20) {
+                this.heroHpBar.className = 'h-full bg-amber-500 rounded-full transition-all duration-300';
+            } else {
+                this.heroHpBar.className = 'h-full bg-red-600 rounded-full transition-all duration-300';
+            }
+        }
+
+        const ac = char.ca ?? char.ac ?? char.combat?.ca ?? char.armorClass ?? 10;
+        if (this.heroAcDisplay) this.heroAcDisplay.textContent = ac;
+
+        const speed = char.speed ?? char.deslocamento ?? 30;
+        if (this.heroSpeedDisplay) this.heroSpeedDisplay.textContent = `${speed}ft`;
+
+        if (this.heroConditionsList) {
+            const conditions = char.conditions || [];
+            if (conditions.length === 0) {
+                this.heroConditionsList.innerHTML = '<span class="text-emerald-400/80 text-xs flex items-center gap-1 font-medium"><i class="fa-solid fa-heart-pulse"></i> Normal (Sem Condições)</span>';
+            } else {
+                this.heroConditionsList.innerHTML = conditions.map(c => {
+                    const name = typeof c === 'string' ? c : (c.name || 'Condição');
+                    return `<span class="px-2 py-0.5 rounded-md text-[0.65rem] font-bold uppercase tracking-wider bg-red-500/20 text-red-300 border border-red-500/40">${name}</span>`;
+                }).join('');
+            }
+        }
     }
 
     updateAvatarDisplay(avatarUrl) {

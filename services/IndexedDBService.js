@@ -1,90 +1,180 @@
-/*
- * IndexedDB Service
- * Simple wrapper around idb (https://github.com/jakearchibald/idb) for fast local caching.
- * The service opens a database with a single object store (named by "storeName")
- * and provides async methods to set, get and delete entries.
+/**
+ * IndexedDBService — "Resilient Local-First Cache"
+ * 100% Offline e nativo, sem qualquer dependência externa ou CDN.
+ * Suporta operações por instância (new IndexedDBService()) e chamadas estáticas.
  */
-
 export class IndexedDBService {
+    static _dbName = 'RPGMasterDB';
+    static _dbVersion = 2;
+    static _defaultStore = 'states';
+    static _instance = null;
+
     /**
-     * @param {string} dbName - Name of the IndexedDB database.
-     * @param {string} storeName - Name of the object store where key/value pairs are kept.
+     * @param {string} dbName - Nome do banco IndexedDB.
+     * @param {string} storeName - Object store padrão para estados.
      */
-    constructor(dbName = 'RPGMasterDB', storeName = 'states') {
+    constructor(dbName = IndexedDBService._dbName, storeName = IndexedDBService._defaultStore) {
         this.dbName = dbName;
         this.storeName = storeName;
         this.db = null;
+        IndexedDBService._instance = this;
     }
 
     /**
-     * Initialise the database. Returns a promise that resolves when the DB is ready.
+     * Inicializa a conexão com o IndexedDB nativo do navegador.
+     * @returns {Promise<IDBDatabase>}
      */
     async init() {
         if (this.db) return this.db;
-        const { openDB } = await import('https://unpkg.com/idb?module');
-        this.db = await openDB(this.dbName, 2, {
-            upgrade(db) {
+
+        return new Promise((resolve, reject) => {
+            if (typeof indexedDB === 'undefined') {
+                return reject(new Error('IndexedDB não suportado neste ambiente.'));
+            }
+
+            const request = indexedDB.open(this.dbName, IndexedDBService._dbVersion);
+
+            request.onupgradeneeded = (event) => {
+                const db = event.target.result;
                 if (!db.objectStoreNames.contains('states')) {
                     db.createObjectStore('states');
                 }
                 if (!db.objectStoreNames.contains('media')) {
                     db.createObjectStore('media');
                 }
-            },
+                if (!db.objectStoreNames.contains('state')) {
+                    db.createObjectStore('state');
+                }
+            };
+
+            request.onsuccess = (event) => {
+                this.db = event.target.result;
+                resolve(this.db);
+            };
+
+            request.onerror = (event) => {
+                console.error('[IndexedDBService] Erro ao abrir banco de dados:', event.target.error);
+                reject(event.target.error);
+            };
         });
-        return this.db;
     }
 
     /**
-     * Store a value under a given key.
-     * @param {string} key - The filename or identifier.
-     * @param {any} value - JSON‑serialisable value.
+     * Salva um valor serializável sob uma chave no store configurado.
      */
-    async set(key, value) {
+    async set(key, value, storeName = this.storeName) {
         const db = await this.init();
-        return db.put(this.storeName, value, key);
+        return new Promise((resolve, reject) => {
+            try {
+                const tx = db.transaction([storeName], 'readwrite');
+                const store = tx.objectStore(storeName);
+                const req = store.put(value, key);
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            } catch (err) {
+                reject(err);
+            }
+        });
     }
 
     /**
-     * Retrieve a value by key.
-     * @param {string} key
-     * @returns {Promise<any|null>}
+     * Recupera um valor do store configurado pela chave.
      */
-    async get(key) {
+    async get(key, storeName = this.storeName) {
         const db = await this.init();
-        return db.get(this.storeName, key);
+        return new Promise((resolve, reject) => {
+            try {
+                const tx = db.transaction([storeName], 'readonly');
+                const store = tx.objectStore(storeName);
+                const req = store.get(key);
+                req.onsuccess = () => resolve(req.result !== undefined ? req.result : null);
+                req.onerror = () => reject(req.error);
+            } catch (err) {
+                reject(err);
+            }
+        });
     }
 
     /**
-     * Delete a stored entry.
+     * Remove uma chave do store configurado.
      */
-    async delete(key) {
+    async delete(key, storeName = this.storeName) {
         const db = await this.init();
-        return db.delete(this.storeName, key);
+        return new Promise((resolve, reject) => {
+            try {
+                const tx = db.transaction([storeName], 'readwrite');
+                const store = tx.objectStore(storeName);
+                const req = store.delete(key);
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            } catch (err) {
+                reject(err);
+            }
+        });
     }
 
     /**
-     * Store a media asset (e.g. Base64 portrait/token).
+     * Armazena um asset de mídia (imagem, token, som em base64/blob).
      */
     async setMedia(key, value) {
-        const db = await this.init();
-        return db.put('media', value, key);
+        return this.set(key, value, 'media');
     }
 
     /**
-     * Retrieve a stored media asset.
+     * Recupera um asset de mídia armazenado.
      */
     async getMedia(key) {
-        const db = await this.init();
-        return db.get('media', key);
+        return this.get(key, 'media');
     }
 
     /**
-     * Clear the entire store (useful for debugging).
+     * Limpa os stores principais.
      */
-    async clear() {
+    async clear(storeName = this.storeName) {
         const db = await this.init();
-        await db.clear('media');
-        return db.clear(this.storeName);
+        return new Promise((resolve, reject) => {
+            try {
+                const tx = db.transaction([storeName], 'readwrite');
+                const store = tx.objectStore(storeName);
+                const req = store.clear();
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            } catch (err) {
+                reject(err);
+            }
+        });
+    }
+
+    // --- Métodos Estáticos (Compatibilidade com FrontendDirectoryService) ---
+
+    static _getDefaultInstance() {
+        if (!this._instance) {
+            this._instance = new IndexedDBService();
+        }
+        return this._instance;
+    }
+
+    static async set(key, value, storeName) {
+        return this._getDefaultInstance().set(key, value, storeName || this._defaultStore);
+    }
+
+    static async get(key, storeName) {
+        return this._getDefaultInstance().get(key, storeName || this._defaultStore);
+    }
+
+    static async delete(key, storeName) {
+        return this._getDefaultInstance().delete(key, storeName || this._defaultStore);
+    }
+
+    static async remove(key, storeName) {
+        return this._getDefaultInstance().delete(key, storeName || this._defaultStore);
+    }
+
+    static async setMedia(key, value) {
+        return this._getDefaultInstance().setMedia(key, value);
+    }
+
+    static async getMedia(key) {
+        return this._getDefaultInstance().getMedia(key);
     }
 }

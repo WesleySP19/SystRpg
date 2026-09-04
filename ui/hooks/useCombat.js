@@ -1,5 +1,6 @@
 import { useStore } from '../core/hooks.js';
 import { TOME } from '../../core/Registry.js';
+import { RulesEngine } from '../../core/RulesEngine.js';
 
 export function useCombat() {
     const initiativeOrder = useStore('initiativeOrder');
@@ -28,13 +29,14 @@ export function useCombat() {
             }
             // Reset action economy for the new turn combatant
             if (currentList[nextIndex]) {
-                if (!currentList[nextIndex].actions) {
-                    currentList[nextIndex].actions = { action: true, bonus: true, reaction: true, movement: 30 };
+                const c = currentList[nextIndex];
+                if (!c.actions) {
+                    c.actions = { action: true, bonus: true, reaction: true, movement: c.speed || 30 };
                 } else {
-                    currentList[nextIndex].actions.action = true;
-                    currentList[nextIndex].actions.bonus = true;
-                    currentList[nextIndex].actions.reaction = true;
-                    currentList[nextIndex].actions.movement = 30;
+                    c.actions.action = true;
+                    c.actions.bonus = true;
+                    c.actions.reaction = true;
+                    c.actions.movement = c.speed || 30;
                 }
             }
         });
@@ -58,16 +60,26 @@ export function useCombat() {
             if (!s.initiativeOrder) s.initiativeOrder = [];
             if (!s.combatants) s.combatants = [];
             
-            const monster = customMonster || {
+            const maxHp = customMonster?.hp_max ?? customMonster?.hp?.max ?? customMonster?.hp ?? 15;
+            const curHp = customMonster?.hp_current ?? customMonster?.hp?.current ?? customMonster?.hp ?? maxHp;
+
+            const monster = customMonster ? {
+                ...customMonster,
+                hp: { current: curHp, max: maxHp },
+                hp_current: curHp,
+                hp_max: maxHp,
+                actions: customMonster.actions || { action: true, bonus: true, reaction: true, movement: customMonster.speed || 30 }
+            } : {
                 id: 'm_' + Date.now(),
                 name: 'Monstro Desconhecido',
                 initiative: Math.floor(Math.random() * 20) + 1,
                 isHero: false,
                 type: 'monster',
-                hp: 15,
-                maxHp: 15,
+                hp: { current: 15, max: 15 },
+                hp_current: 15,
                 hp_max: 15,
                 ac: 10,
+                conditions: [],
                 actions: { action: true, bonus: true, reaction: true, movement: 30 }
             };
             
@@ -86,17 +98,22 @@ export function useCombat() {
             
             heroes.forEach(h => {
                 if (!s.initiativeOrder.find(c => c.id === h.id)) {
+                    const hpInfo = RulesEngine.getHP(h);
                     const heroEntry = {
                         id: h.id,
                         name: h.name,
                         initiative: Math.floor(Math.random() * 20) + 1,
                         isHero: true,
                         type: 'Player',
-                        hp: typeof h.hp === 'number' ? h.hp : (h.hp?.current || 10),
-                        maxHp: h.maxHp || h.hp_max || (typeof h.hp === 'number' ? h.hp : h.hp?.max) || 10,
+                        hp: { current: hpInfo.current, max: hpInfo.max },
+                        hp_current: hpInfo.current,
+                        hp_max: hpInfo.max,
                         ac: h.ac || 10,
+                        speed: h.speed || 30,
                         avatar: h.avatar || h.img || h.portraitData || '',
-                        actions: { action: true, bonus: true, reaction: true, movement: 30 }
+                        portraitData: h.portraitData || h.img || h.avatar || '',
+                        conditions: h.conditions || [],
+                        actions: { action: true, bonus: true, reaction: true, movement: h.speed || 30 }
                     };
                     s.initiativeOrder.push(heroEntry);
                 }
@@ -143,17 +160,36 @@ export function useCombat() {
             const list = s.initiativeOrder || s.combatants;
             const c = list?.find(x => x.id === id);
             if (c) {
-                if (typeof c.hp === 'number') {
-                    c.hp = newHp;
-                } else if (c.hp && typeof c.hp === 'object') {
-                    c.hp.current = newHp;
+                const hpInfo = RulesEngine.getHP(c);
+                const safeHp = Math.max(0, Math.min(newHp, hpInfo.max || newHp));
+                
+                if (c.hp && typeof c.hp === 'object') {
+                    c.hp.current = safeHp;
                 } else {
-                    c.hp = newHp;
+                    c.hp = { current: safeHp, max: hpInfo.max || safeHp };
+                }
+                c.hp_current = safeHp;
+
+                // Sincronização Bidirecional com s.players para Heróis
+                if (c.isHero || c.type === 'Player') {
+                    const hero = (s.players || []).find(p => p.id === id || p.name === c.name);
+                    if (hero) {
+                        if (hero.hp && typeof hero.hp === 'object') {
+                            hero.hp.current = safeHp;
+                        } else {
+                            hero.hp = { current: safeHp, max: hero.hp_max || hero.maxHp || safeHp };
+                        }
+                        hero.hp_current = safeHp;
+                    }
                 }
             }
-            if (s.initiativeOrder && s.combatants) {
+
+            if (s.combatants && s.combatants !== list) {
                 const legacyC = s.combatants.find(x => x.id === id);
-                if (legacyC && legacyC !== c) legacyC.hp = newHp;
+                if (legacyC && legacyC !== c) {
+                    legacyC.hp = c.hp;
+                    legacyC.hp_current = c.hp_current;
+                }
             }
         });
     };
@@ -164,7 +200,7 @@ export function useCombat() {
             const target = list.find(c => c.id === combatantId);
             if (target) {
                 if (!target.actions) {
-                    target.actions = { action: true, bonus: true, reaction: true, movement: 30 };
+                    target.actions = { action: true, bonus: true, reaction: true, movement: target.speed || 30 };
                 }
                 if (actionKey === 'movement') {
                     target.actions.movement = target.actions.movement > 0 ? 0 : (target.speed || 30);
@@ -178,6 +214,69 @@ export function useCombat() {
                     cTarget.actions = { ...target.actions };
                 }
             }
+        });
+    };
+
+    const toggleCondition = (combatantId, condition) => {
+        TOME.store.update(s => {
+            const list = s.initiativeOrder || s.combatants || [];
+            const target = list.find(c => c.id === combatantId);
+            if (target) {
+                target.conditions = target.conditions || [];
+                const idx = target.conditions.indexOf(condition);
+                if (idx >= 0) {
+                    target.conditions.splice(idx, 1);
+                } else {
+                    target.conditions.push(condition);
+                }
+
+                // Sincronizar com s.players se for herói
+                if (target.isHero || target.type === 'Player') {
+                    const hero = (s.players || []).find(p => p.id === combatantId || p.name === target.name);
+                    if (hero) {
+                        hero.conditions = [...target.conditions];
+                    }
+                }
+            }
+        });
+    };
+
+    const partyRest = (type = 'short') => {
+        TOME.store.update(s => {
+            const isLong = type === 'long';
+            
+            // Atualiza s.players
+            (s.players || []).forEach(p => {
+                const hpInfo = RulesEngine.getHP(p);
+                if (isLong) {
+                    p.hp = { current: hpInfo.max, max: hpInfo.max };
+                    p.hp_current = hpInfo.max;
+                    p.conditions = (p.conditions || []).filter(c => c !== 'caído' && c !== 'envenenado');
+                } else {
+                    // Descanso curto cura pelo menos 25% ou 1 dado de vida
+                    const healAmount = Math.max(1, Math.round(hpInfo.max * 0.25));
+                    const newHp = Math.min(hpInfo.max, hpInfo.current + healAmount);
+                    p.hp = { current: newHp, max: hpInfo.max };
+                    p.hp_current = newHp;
+                }
+            });
+
+            // Atualiza combatentes na arena se presentes
+            (s.initiativeOrder || []).forEach(c => {
+                if (c.isHero || c.type === 'Player') {
+                    const hpInfo = RulesEngine.getHP(c);
+                    if (isLong) {
+                        c.hp = { current: hpInfo.max, max: hpInfo.max };
+                        c.hp_current = hpInfo.max;
+                        c.conditions = (c.conditions || []).filter(cond => cond !== 'caído' && cond !== 'envenenado');
+                    } else {
+                        const healAmount = Math.max(1, Math.round(hpInfo.max * 0.25));
+                        const newHp = Math.min(hpInfo.max, hpInfo.current + healAmount);
+                        c.hp = { current: newHp, max: hpInfo.max };
+                        c.hp_current = newHp;
+                    }
+                }
+            });
         });
     };
 
@@ -195,6 +294,8 @@ export function useCombat() {
         rollInitiatives,
         removeCombatant,
         updateCombatantHP,
-        toggleAction
+        toggleAction,
+        toggleCondition,
+        partyRest
     };
 }

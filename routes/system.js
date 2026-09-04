@@ -17,8 +17,8 @@ export default function registerSystemRoutes(app) {
         res.json({ ip: localIp, port: finalPort });
     });
 
-    app.get('/api/system/active', async (req, res) => {
-        // Rota de heartbeat
-        res.json({ status: 'ok', time: Date.now() });
+    app.get(['/api/system/health', '/api/system/status'], async (req, res) => {
+        // Rota de heartbeat e integridade do servidor
+        res.json({ status: 'ok', time: Date.now(), uptime: process.uptime() });
     });
 }

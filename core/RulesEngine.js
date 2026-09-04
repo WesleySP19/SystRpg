@@ -135,9 +135,32 @@ export class RulesEngine {
     }
 
     static getHP(actor) {
-        const current = actor.hp?.current !== undefined ? actor.hp.current : (actor.hp_current !== undefined ? actor.hp_current : 10);
-        const max = actor.hp?.max !== undefined ? actor.hp.max : (actor.hp_max !== undefined ? actor.hp_max : 10);
-        return { current: parseInt(current), max: parseInt(max) };
+        if (!actor) return { current: 10, max: 10 };
+        
+        let current = 10;
+        let max = 10;
+
+        if (actor.hp && typeof actor.hp === 'object') {
+            current = actor.hp.current ?? actor.hp.value ?? actor.hp.cur ?? 10;
+            max = actor.hp.max ?? actor.hp.maxHp ?? current ?? 10;
+        } else if (typeof actor.hp === 'number') {
+            current = actor.hp;
+            max = actor.maxHp || actor.hp_max || actor.hp;
+        } else if (actor.hp_current !== undefined) {
+            current = actor.hp_current;
+            max = actor.hp_max ?? actor.maxHp ?? actor.hp_current ?? 10;
+        } else if (actor.combat && typeof actor.combat === 'object') {
+            current = actor.combat.hp_current ?? actor.combat.hp ?? 10;
+            max = actor.combat.hp_max ?? actor.combat.maxHp ?? current ?? 10;
+        }
+
+        const parsedCurrent = parseInt(current, 10);
+        const parsedMax = parseInt(max, 10);
+
+        return {
+            current: isNaN(parsedCurrent) ? 10 : Math.max(0, parsedCurrent),
+            max: isNaN(parsedMax) ? Math.max(1, isNaN(parsedCurrent) ? 10 : parsedCurrent) : Math.max(1, parsedMax)
+        };
     }
 
     /**

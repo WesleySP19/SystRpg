@@ -1,5 +1,17 @@
 import { h } from 'preact';
 
+const COMMON_CONDITIONS = [
+    { id: 'envenenado', label: 'Envenenado', emoji: '🤢', color: '#10b981' },
+    { id: 'caído', label: 'Caído', emoji: '🤕', color: '#f59e0b' },
+    { id: 'cego', label: 'Cego', emoji: '🙈', color: '#ef4444' },
+    { id: 'agarrado', label: 'Agarrado', emoji: '🤝', color: '#3b82f6' },
+    { id: 'amedrontado', label: 'Amedrontado', emoji: '😨', color: '#a855f7' },
+    { id: 'incapacitado', label: 'Incapacitado', emoji: '😵', color: '#dc2626' },
+    { id: 'invisível', label: 'Invisível', emoji: '👻', color: '#06b6d4' },
+    { id: 'paralisado', label: 'Paralisado', emoji: '🧊', color: '#6366f1' },
+    { id: 'exausto', label: 'Exausto', emoji: '😫', color: '#d97706' },
+];
+
 export function HeroCommandPanel({ 
     player, 
     onAdjustHP, 
@@ -9,7 +21,9 @@ export function HeroCommandPanel({
     onPrintCard, 
     onRollAttribute, 
     onUpdateItems, 
-    onUpdateNotes 
+    onUpdateNotes,
+    onRestHero,
+    onToggleCondition
 }) {
     if (!player) {
         return (
@@ -21,7 +35,9 @@ export function HeroCommandPanel({
         );
     }
 
-    const hpPct = player.hp?.max ? (player.hp.current / player.hp.max) * 100 : 0;
+    const curHp = player.hp?.current !== undefined ? player.hp.current : (player.hp_current || 0);
+    const maxHp = player.hp?.max || player.hp_max || 10;
+    const hpPct = maxHp > 0 ? (curHp / maxHp) * 100 : 0;
     
     // D&D 5e XP levels threshold mapping
     const levelsXP = [0, 0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000, 85000, 100000, 120000, 140000, 165000, 195000, 225000, 265000, 305000, 355000];
@@ -42,7 +58,8 @@ export function HeroCommandPanel({
     }
 
     const attrNames = { str: 'Força', dex: 'Destreza', con: 'Constituição', int: 'Inteligência', wis: 'Sabedoria', cha: 'Carisma' };
-    const stats = player.stats || {str:10,dex:10,con:10,int:10,wis:10,cha:10};
+    const stats = player.stats || { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 };
+    const activeConditions = player.conditions || [];
 
     const handleInputShowStatus = (id) => {
         const el = document.getElementById(id);
@@ -57,27 +74,45 @@ export function HeroCommandPanel({
     return (
         <div className="flex flex-col gap-6 animate-fade-in font-sans pb-10">
             {/* TOP CARD HEADER WITH XP PROGRESS TRACKER */}
-            <div className="card glass-accent p-8">
-                <div className="flex gap-6 items-center flex-wrap">
-                    <div className="w-[90px] h-[90px] rounded-full border-[3px] border-tomeGold font-cinzel text-3xl shadow-[0_0_15px_rgba(197,160,89,0.3)] bg-black/80 flex items-center justify-center text-tomeGold font-bold shrink-0"
-                         style={player.img ? { background: `url(${player.img}) center/cover` } : {}}>
-                        {player.img ? '' : player.name.substring(0,2)}
+            <div className="card glass-accent p-8 relative overflow-hidden">
+                <div className="flex gap-6 items-center flex-wrap relative z-10">
+                    <div className="w-[90px] h-[90px] rounded-full border-[3px] border-tomeGold font-cinzel text-3xl shadow-[0_0_15px_rgba(197,160,89,0.3)] bg-black/80 flex items-center justify-center text-tomeGold font-bold shrink-0 overflow-hidden"
+                         style={player.img || player.avatar ? { background: `url(${player.img || player.avatar}) center/cover` } : {}}>
+                        {(!player.img && !player.avatar) && player.name.substring(0,2)}
                     </div>
                     <div className="flex-1 min-w-[250px]">
                         <h1 className="m-0 text-4xl font-cinzel text-tomeGold drop-shadow-md tracking-wide">{player.name}</h1>
                         <p className="text-slate-300 text-[0.95rem] mt-1.5 font-semibold uppercase tracking-wide">
                             <i className="fa-solid fa-wand-magic-sparkles text-tomeGold mr-1.5"></i> 
-                            {player.race} {player.class} • Nível {lvl}
+                            {player.race || 'Humano'} {player.class || 'Aventureiro'} • Nível {lvl}
                         </p>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right flex flex-col items-end gap-1">
                         <div className="text-[0.65rem] text-tomeGold font-extrabold tracking-[1.5px] uppercase">Experiência Acumulada</div>
                         <div className="text-3xl font-black text-white font-cinzel drop-shadow-sm">{currentXP} <span className="text-base text-tomeGold">XP</span></div>
+                        {onRestHero && (
+                            <div className="flex gap-2 mt-1">
+                                <button 
+                                    className="btn btn-ghost btn-xs text-[0.68rem] px-2.5 py-1 rounded-md border border-tomeGold/30 text-tomeGold hover:bg-tomeGold/10"
+                                    onClick={() => onRestHero('short')}
+                                    title="Descanso Curto (recupera 25% do HP)"
+                                >
+                                    <i className="fa-solid fa-mug-hot mr-1"></i> D. Curto
+                                </button>
+                                <button 
+                                    className="btn btn-ghost btn-xs text-[0.68rem] px-2.5 py-1 rounded-md border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+                                    onClick={() => onRestHero('long')}
+                                    title="Descanso Longo (recupera 100% do HP)"
+                                >
+                                    <i className="fa-solid fa-moon mr-1"></i> D. Longo
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
 
                 {/* PROGRESS BAR */}
-                <div className="mt-6 bg-black/40 p-4 rounded-xl border border-white/5 shadow-inner">
+                <div className="mt-6 bg-black/40 p-4 rounded-xl border border-white/5 shadow-inner relative z-10">
                     <div className="flex justify-between text-xs text-slate-300 mb-2 font-bold">
                         <span className="text-tomeGold">Nível {lvl}</span>
                         <span className="text-white">{currentXP} / {nextXP} XP ({Math.round(progress)}%)</span>
@@ -91,15 +126,15 @@ export function HeroCommandPanel({
             </div>
 
             {/* QUICK ACTIONS SECTION */}
-            <div className="grid grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* HP CARD */}
                 <div className="card glass rounded-2xl p-5 flex flex-col justify-between">
                     <div className="flex justify-between items-center mb-3">
                         <span className="text-xs text-slate-400 font-extrabold uppercase"><i className="fa-solid fa-heart text-dndRedBright mr-1.5"></i> Vida do Herói</span>
-                        <span className="text-sm font-extrabold text-white">{player.hp?.current} / {player.hp?.max} HP</span>
+                        <span className="text-sm font-extrabold text-white">{curHp} / {maxHp} HP</span>
                     </div>
                     <div className="h-2.5 mb-5 bg-black/40 rounded border border-white/5 overflow-hidden">
-                        <div className={`h-full transition-all duration-300 ${hpPct < 30 ? 'bg-dndRedBright' : 'bg-green-500'}`} 
+                        <div className={`h-full transition-all duration-300 ${hpPct < 30 ? 'bg-dndRedBright' : (hpPct < 60 ? 'bg-yellow-500' : 'bg-green-500')}`} 
                              style={{ width: `${Math.max(0, Math.min(100, hpPct))}%` }}></div>
                     </div>
                     <div className="grid grid-cols-4 gap-1.5">
@@ -134,12 +169,50 @@ export function HeroCommandPanel({
                 </div>
             </div>
 
+            {/* CONDIÇÕES DE STATUS INTERATIVAS */}
+            {onToggleCondition && (
+                <div className="card glass p-5 rounded-2xl border border-white/5 bg-black/40">
+                    <div className="flex justify-between items-center mb-3">
+                        <span className="text-xs text-tomeGold font-extrabold uppercase font-cinzel tracking-wider flex items-center gap-2">
+                            <i className="fa-solid fa-skull-crossbones"></i> Condições de Status do Herói
+                        </span>
+                        <span className="text-[0.65rem] text-slate-400">Clique para ativar ou remover</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        {COMMON_CONDITIONS.map(cond => {
+                            const isActive = activeConditions.includes(cond.id);
+                            return (
+                                <button
+                                    key={cond.id}
+                                    type="button"
+                                    onClick={() => onToggleCondition(cond.id)}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                                        isActive
+                                            ? 'shadow-[0_0_12px_rgba(239,68,68,0.4)]'
+                                            : 'bg-black/30 text-slate-400 border border-white/10 hover:border-white/30 hover:text-white'
+                                    }`}
+                                    style={isActive ? {
+                                        background: `${cond.color}25`,
+                                        color: '#fff',
+                                        border: `1.5px solid ${cond.color}`
+                                    } : {}}
+                                >
+                                    <span>{cond.emoji}</span>
+                                    <span>{cond.label}</span>
+                                    {isActive && <i className="fa-solid fa-check text-[0.65rem] ml-1 text-emerald-400"></i>}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+
             {/* INTERACTIVE ATTRIBUTE GRID WITH CLICK-TO-ROLL */}
             <div className="card glass p-6 rounded-2xl border-transparent">
                 <div className="text-sm text-tomeGold font-extrabold uppercase mb-4 font-cinzel tracking-wide">
                     <i className="fa-solid fa-dice-d20 mr-1.5"></i> Atributos do Personagem (Clique para Rolar d20)
                 </div>
-                <div className="grid grid-cols-6 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
                     {Object.entries(stats).map(([s, v]) => {
                         const mod = Math.floor((v - 10) / 2);
                         return (
@@ -158,7 +231,7 @@ export function HeroCommandPanel({
             </div>
 
             {/* INVENTORY & NARRATIVE PARCHMENT TEXTAREAS */}
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* ITEMS INVENTORY */}
                 <div className="card glass rounded-2xl p-6 flex flex-col gap-3 border-transparent">
                     <div className="flex justify-between items-center">

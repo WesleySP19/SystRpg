@@ -158,11 +158,98 @@ export function CampaignManager() {
         TOME.store.update(s => {
             const p = s.players.find(x => x.id === selectedHeroId);
             if (p) {
-                p.hp.current = Math.max(0, Math.min(p.hp.max, p.hp.current + val));
-                const combatant = s.initiativeOrder?.find(c => c.name === p.name);
-                if (combatant) combatant.hp_current = p.hp.current;
+                const maxHp = p.hp?.max || p.hp_max || 10;
+                const curHp = p.hp?.current !== undefined ? p.hp.current : (p.hp_current || maxHp);
+                const nextHp = Math.max(0, Math.min(maxHp, curHp + val));
+                p.hp = { current: nextHp, max: maxHp };
+                p.hp_current = nextHp;
+                const combatant = s.initiativeOrder?.find(c => c.id === p.id || c.name === p.name);
+                if (combatant) {
+                    combatant.hp = { current: nextHp, max: maxHp };
+                    combatant.hp_current = nextHp;
+                }
             }
         });
+    };
+
+    const handleRestHero = (type = 'short') => {
+        if (!selectedHeroId) return;
+        TOME.store.update(s => {
+            const p = s.players.find(x => x.id === selectedHeroId);
+            if (p) {
+                const maxHp = p.hp?.max || p.hp_max || 10;
+                if (type === 'long') {
+                    p.hp = { current: maxHp, max: maxHp };
+                    p.hp_current = maxHp;
+                    p.conditions = (p.conditions || []).filter(c => c !== 'caído' && c !== 'envenenado');
+                    Toast.show(`🌙 Descanso Longo: ${p.name} recuperou 100% dos PV!`, 'success');
+                } else {
+                    const heal = Math.max(1, Math.round(maxHp * 0.25));
+                    const curHp = p.hp?.current ?? p.hp_current ?? maxHp;
+                    const nextHp = Math.min(maxHp, curHp + heal);
+                    p.hp = { current: nextHp, max: maxHp };
+                    p.hp_current = nextHp;
+                    Toast.show(`☕ Descanso Curto: ${p.name} recuperou +${heal} PV.`, 'info');
+                }
+                const combatant = s.initiativeOrder?.find(c => c.id === p.id || c.name === p.name);
+                if (combatant) {
+                    combatant.hp = { ...p.hp };
+                    combatant.hp_current = p.hp_current;
+                    combatant.conditions = [...(p.conditions || [])];
+                }
+            }
+        });
+    };
+
+    const handleToggleCondition = (condition) => {
+        if (!selectedHeroId) return;
+        TOME.store.update(s => {
+            const p = s.players.find(x => x.id === selectedHeroId);
+            if (p) {
+                p.conditions = p.conditions || [];
+                const idx = p.conditions.indexOf(condition);
+                if (idx >= 0) {
+                    p.conditions.splice(idx, 1);
+                    Toast.show(`Removido status "${condition}" de ${p.name}.`, 'info');
+                } else {
+                    p.conditions.push(condition);
+                    Toast.show(`Aplicado status "${condition}" a ${p.name}.`, 'warning');
+                }
+                const combatant = s.initiativeOrder?.find(c => c.id === p.id || c.name === p.name);
+                if (combatant) {
+                    combatant.conditions = [...p.conditions];
+                }
+            }
+        });
+    };
+
+    const handlePartyRest = (type = 'short') => {
+        const isLong = type === 'long';
+        if (!confirm(`Aplicar ${isLong ? 'Descanso Longo (100% de cura)' : 'Descanso Curto (+25% de cura)'} a TODOS os heróis?`)) return;
+        
+        TOME.store.update(s => {
+            (s.players || []).forEach(p => {
+                const maxHp = p.hp?.max || p.hp_max || 10;
+                if (isLong) {
+                    p.hp = { current: maxHp, max: maxHp };
+                    p.hp_current = maxHp;
+                    p.conditions = (p.conditions || []).filter(c => c !== 'caído' && c !== 'envenenado');
+                } else {
+                    const heal = Math.max(1, Math.round(maxHp * 0.25));
+                    const curHp = p.hp?.current ?? p.hp_current ?? maxHp;
+                    const nextHp = Math.min(maxHp, curHp + heal);
+                    p.hp = { current: nextHp, max: maxHp };
+                    p.hp_current = nextHp;
+                }
+                const combatant = s.initiativeOrder?.find(c => c.id === p.id || c.name === p.name);
+                if (combatant) {
+                    combatant.hp = { ...p.hp };
+                    combatant.hp_current = p.hp_current;
+                    combatant.conditions = [...(p.conditions || [])];
+                }
+            });
+        });
+        Toast.show(isLong ? '🌙 Descanso Longo aplicado a todo o grupo!' : '☕ Descanso Curto aplicado a todo o grupo!', 'success');
     };
 
     const handleAdjustXP = (val) => {
@@ -361,7 +448,13 @@ export function CampaignManager() {
                     <h2 className="section-title m-0"><i className="fa-solid fa-users-rectangle text-tomeGold mr-3"></i> Gestão de Campanha</h2>
                     <p className="section-subtitle mt-1 text-slate-400">Sincronização Total com a Sessão Ativa</p>
                 </div>
-                <div className="flex gap-2.5">
+                <div className="flex gap-2.5 items-center flex-wrap">
+                    <button className="btn btn-ghost text-xs text-tomeGold border-tomeGold/30 hover:bg-tomeGold/10" onClick={() => handlePartyRest('short')} title="Descanso Curto para todo o grupo (+25% PV)">
+                        <i className="fa-solid fa-mug-hot mr-1"></i> Descanso Curto (Grupo)
+                    </button>
+                    <button className="btn btn-ghost text-xs text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10" onClick={() => handlePartyRest('long')} title="Descanso Longo para todo o grupo (100% PV)">
+                        <i className="fa-solid fa-moon mr-1"></i> Descanso Longo (Grupo)
+                    </button>
                     <button className="btn btn-ghost text-xs" onClick={importCamp}><i className="fa-solid fa-file-import mr-1"></i> Importar</button>
                     <button className="btn btn-primary text-xs" onClick={exportCamp}><i className="fa-solid fa-download mr-1"></i> Exportar Dados</button>
                 </div>
@@ -399,6 +492,8 @@ export function CampaignManager() {
                             onPrintSheet={handlePrintSheet}
                             onPrintCard={handlePrintCard}
                             onRollAttribute={handleRollAttribute}
+                            onRestHero={handleRestHero}
+                            onToggleCondition={handleToggleCondition}
                         />
                     </div>
 
