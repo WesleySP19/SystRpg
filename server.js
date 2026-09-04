@@ -285,7 +285,6 @@ app.post('/api/sessao/encerrar', (req, res) => {
         activeTables.delete(tableId);
         saveSessions(); // Atualiza persistência
         cleanupSession(tableId); // Limpa memória do SyncEngine
-        broadcastPlayerStatus(tableId);
     }
     res.json({ status: 'success' });
 });

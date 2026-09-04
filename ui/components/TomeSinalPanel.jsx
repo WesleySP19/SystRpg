@@ -24,7 +24,7 @@ export function TomeSinalPanel() {
     useEffect(() => {
         if (!window.QRious) {
             const script = document.createElement('script');
-            script.src = './ui/utils/vendor/qr-encoder.js';
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js';
             document.head.appendChild(script);
         }
 
