@@ -289,25 +289,17 @@ app.post('/api/sessao/encerrar', (req, res) => {
     res.json({ status: 'success' });
 });
 
-// Servir app do jogador mapeado pelo token
-app.get('/jogador/:sessionToken', (req, res) => {
+// Servir app do jogador mapeado pelo token do QR Code
+app.get('/jogador/:sessionToken', (req, res, next) => {
     const { sessionToken } = req.params;
     
-    // Se a rota for exatamente /jogador
-    if (!sessionToken || sessionToken === 'index.html' || sessionToken === 'js' || sessionToken === 'css') {
-        // Verifica se tem cookie
-        const cookieHeader = req.headers.cookie || '';
-        const match = cookieHeader.match(/(?:^| )tome_player_session=([^;]+)/);
-        const token = match ? match[1] : null;
-
-        if (!token || !sessionTokens.has(token)) {
-            return res.status(401).send('Acesso Negado: Você precisa escanear o QR Code da mesa.');
-        }
-        return res.sendFile(path.join(PSScriptRoot, 'jogador', 'index.html'));
+    // Ignora arquivos estáticos para que passem ao express.static
+    if (!sessionToken || sessionToken.includes('.') || sessionToken === 'js' || sessionToken === 'css') {
+        return next();
     }
 
     if (!sessionTokens.has(sessionToken)) {
-        return res.status(404).send('Sessão expirada ou token inválido. Peça um novo QR Code ao Mestre.');
+        return res.redirect('/jogador?msg=expired');
     }
     
     // Configura cookie HTTP-Only
@@ -321,16 +313,12 @@ app.get('/jogador/:sessionToken', (req, res) => {
     return res.redirect('/jogador');
 });
 
-// A Rota base /jogador (após o redirect)
-app.get('/jogador', (req, res) => {
-    const cookieHeader = req.headers.cookie || '';
-    const match = cookieHeader.match(/(?:^| )tome_player_session=([^;]+)/);
-    const token = match ? match[1] : null;
-
-    if (!token || !sessionTokens.has(token)) {
-        return res.status(401).send('Acesso Negado: Você precisa escanear o QR Code da mesa.');
-    }
-    res.sendFile(path.join(PSScriptRoot, 'jogador', 'index.html'));
+// A Rota base /jogador (funciona tanto via QR Code com cookie quanto com login manual)
+app.get(['/jogador', '/jogador/index.html'], (req, res) => {
+    const playerFile = fs.existsSync(path.join(distPath, 'jogador', 'index.html'))
+        ? path.join(distPath, 'jogador', 'index.html')
+        : path.join(PSScriptRoot, 'jogador', 'index.html');
+    res.sendFile(playerFile);
 });
 
 app.get('/api/sessao/token-info', (req, res) => {
@@ -499,46 +487,6 @@ app.get(['/api/load', '/api/data/:filename'], async (req, res) => {
     }
 });
 
-// 2. POST /api/upload — Faz o upload de imagens base64 decodificando e salvando em disco (Com JWT se em produção)
-app.post('/api/upload', authenticateToken, async (req, res) => {
-    try {
-        const { filename, base64 } = req.body;
-        let rawName = filename || `upload_${Date.now()}.png`;
-
-        let rawBase = req.body.base64 || req.body.image;
-        if (!rawBase) return res.status(400).json({ error: 'Nenhum base64 fornecido.' });
-
-        // Resolve extensão a partir do cabeçalho base64 data URI se disponível
-        let ext = path.extname(rawName) || '.png';
-        let cleanBase64 = rawBase;
-        
-        const match = rawBase.match(/^data:image\/([a-zA-Z+.-]+);base64,/);
-        if (match) {
-            let mimeSub = match[1].toLowerCase();
-            if (mimeSub === 'jpeg' || mimeSub === 'jpg') ext = '.jpg';
-            else if (mimeSub === 'png') ext = '.png';
-            else if (mimeSub === 'webp') ext = '.webp';
-            else if (mimeSub === 'gif') ext = '.gif';
-            else if (mimeSub === 'svg+xml') ext = '.svg';
-            cleanBase64 = rawBase.replace(match[0], '');
-        }
-
-        // Sanitiza o nome final garantindo a extensão apropriada
-        let baseNameWithoutExt = path.basename(rawName, path.extname(rawName));
-        let safeName = baseNameWithoutExt.replace(/[^a-zA-Z0-9_.-]/g, '') + ext;
-
-        const buffer = Buffer.from(cleanBase64, 'base64');
-        const filePath = path.join(uploadDir, safeName);
-        await fs.promises.writeFile(filePath, buffer);
-
-        const urlPath = `/public/uploads/${safeName}`;
-        console.log(`[NodeServer] Imagem salva: ${urlPath}`);
-        res.json({ status: 'success', url: urlPath });
-    } catch (err) {
-        console.error('[NodeServer] Erro no upload:', err);
-        res.status(500).json({ status: 'error', message: err.message });
-    }
-});
 
 // Cache control matches PowerShell implementation (no-store)
 app.use((req, res, next) => {
@@ -578,6 +526,7 @@ if (fs.existsSync(distPath)) {
     app.use('/assets', express.static(path.join(PSScriptRoot, 'assets'), cacheOptions));
     app.use('/vendor', express.static(path.join(PSScriptRoot, 'public', 'vendor'), cacheOptions));
     app.use('/public', express.static(path.join(PSScriptRoot, 'public'), cacheOptions));
+    app.use('/jogador', express.static(path.join(PSScriptRoot, 'jogador'), cacheOptions));
     app.use('/data', express.static(dataDir, cacheOptions));
     app.use('/node_modules', express.static(path.join(PSScriptRoot, 'node_modules'), cacheOptions));
 } else {
@@ -585,8 +534,17 @@ if (fs.existsSync(distPath)) {
     app.use('/', express.static(PSScriptRoot, cacheOptions));
     app.use('/vendor', express.static(path.join(PSScriptRoot, 'public', 'vendor'), cacheOptions));
     app.use('/public', express.static(path.join(PSScriptRoot, 'public'), cacheOptions));
+    app.use('/jogador', express.static(path.join(PSScriptRoot, 'jogador'), cacheOptions));
     app.use('/data', express.static(dataDir, cacheOptions));
 }
+
+// Rota do Telão / Projetor de Transmissão para Espectadores e TV
+app.get(['/player-view.html', '/player-view', '/transmissao', '/transmissao.html'], (req, res) => {
+    const file = fs.existsSync(path.join(distPath, 'transmissao.html'))
+        ? path.join(distPath, 'transmissao.html')
+        : path.join(PSScriptRoot, 'public', 'transmissao.html');
+    res.sendFile(file);
+});
 
 // Fallback para index.html nas rotas raiz
 app.get('/', (req, res) => {

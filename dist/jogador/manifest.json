@@ -1,0 +1,22 @@
+{
+  "name": "Elo Arcano - TOME VTT",
+  "short_name": "Elo Arcano",
+  "description": "Portal do Jogador de RPG para TOME V17",
+  "start_url": "/jogador/index.html",
+  "display": "standalone",
+  "background_color": "#121212",
+  "theme_color": "#c5a059",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "../assets/logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "../assets/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

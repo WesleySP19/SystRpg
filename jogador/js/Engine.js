@@ -62,12 +62,12 @@ export class Engine {
                 
                 this.initYjs(this.currentTable);
                 this.initFallbackPolling();
-            } else {
-                alert("Token de sessão inválido ou expirado. Peça um novo QR Code ao Mestre.");
+                return true;
             }
         } catch(e) {
-            alert("Erro ao se conectar ao servidor na LAN.");
+            console.log('[Engine] Sem token ativo no cookie, aguardando login manual.');
         }
+        return false;
     }
 
     async connect() {
@@ -467,18 +467,25 @@ export class Engine {
 
         if (navigator.vibrate) navigator.vibrate([40, 50, 40]);
 
+        if (this.socket && this.socket.connected) {
+            try {
+                this.socket.emit('chat_message', Object.assign({ tableId: this.currentTable }, newEntry));
+                this.socket.emit('dice_roll_3d', { notation: formula, total: total });
+            } catch(e) {}
+        } else {
+            try {
+                await fetch('/api/chat/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tableId: this.currentTable, message: newEntry })
+                });
+            } catch(e) {}
+        }
+
         if (this.isSocketConnected && this.provider) {
             try {
                 this.chatHistory.push([newEntry]);
             } catch(e) {}
         }
-
-        try {
-            await fetch('/api/chat/send', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ tableId: this.currentTable, message: newEntry })
-            });
-        } catch(e) {}
     }
 }

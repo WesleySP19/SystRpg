@@ -414,6 +414,16 @@
             socket.on('chat_message', msg => {
                 showEventPopup(msg);
             });
+
+            socket.on('dice_roll_3d', data => {
+                if (data && data.notation) {
+                    showEventPopup({
+                        tipo: 'rolagem',
+                        nome: 'Mesa Psigologos',
+                        conteudo: `🎲 Rolagem 3D: <strong>${data.notation}</strong> = <strong>${data.total}</strong>`
+                    });
+                }
+            });
         } catch(e) {
             console.warn("Socket.io indisponível no cliente.");
         }

@@ -361,9 +361,17 @@
 
             // Socket.IO para sincronização com o Mestre na LAN
             try {
-                if (typeof io === 'function') {
-                    socket = io();
-                    socket.emit('joinRoom', { mesaId: tableId });
+                if (!socket) {
+                    socket = engine.socket || (typeof io === 'function' ? io() : null);
+                }
+                if (socket) {
+                    if (socket.connected) {
+                        socket.emit('joinRoom', { mesaId: tableId });
+                    } else {
+                        socket.on('connect', () => {
+                            socket.emit('joinRoom', { mesaId: tableId });
+                        });
+                    }
 
                     socket.on('map_sync_event', (data) => {
                     if (!data || !playerMapEngine) return;
@@ -540,17 +548,20 @@
             });
         });
 
-        const pathParts = window.location.pathname.split('/');
-        if (pathParts.length >= 2 && pathParts[1] === 'jogador') {
-            engine.connectWithToken().then(() => {
-                if (engine.currentTable) initPlayerMap(engine.currentTable);
-            });
-        } else {
-            document.getElementById('btn-connect').addEventListener('click', async () => {
+        const btnConnect = document.getElementById('btn-connect');
+        if (btnConnect) {
+            btnConnect.addEventListener('click', async () => {
                 await engine.connect();
                 if (engine.currentTable) initPlayerMap(engine.currentTable);
             });
         }
+
+        // Tenta autenticação automática se houver token ativo no cookie
+        engine.connectWithToken().then((connected) => {
+            if (connected && engine.currentTable) {
+                initPlayerMap(engine.currentTable);
+            }
+        });
 
         let deferredPrompt;
         window.addEventListener('beforeinstallprompt', (e) => {

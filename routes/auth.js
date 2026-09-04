@@ -1,6 +1,13 @@
 import jwt from 'jsonwebtoken';
 import { registerMaster, loginMaster, quickLoginMaster, resetPassword } from '../controllers/AuthController.js';
 
+function sanitizeMaster(master) {
+    if (!master) return null;
+    const safe = { ...master };
+    delete safe.password;
+    return safe;
+}
+
 export default function registerAuthRoutes(app, { JWT_SECRET }) {
     // Registro de um novo Mestre
     app.post('/api/auth/register', async (req, res) => {
@@ -19,7 +26,7 @@ export default function registerAuthRoutes(app, { JWT_SECRET }) {
                 name: master.name
             }, JWT_SECRET, { expiresIn: '30d' });
             
-            res.json({ status: 'success', message: 'Mestre registrado com sucesso.', token, master });
+            res.json({ status: 'success', message: 'Mestre registrado com sucesso.', token, master: sanitizeMaster(master) });
         } catch (err) {
             console.error('[NodeServer] Erro no registro:', err);
             res.status(500).json({ status: 'error', message: err.message });
@@ -43,7 +50,7 @@ export default function registerAuthRoutes(app, { JWT_SECRET }) {
                 name: master.name
             }, JWT_SECRET, { expiresIn: '30d' });
             
-            res.json({ status: 'success', token, master });
+            res.json({ status: 'success', token, master: sanitizeMaster(master) });
         } catch (err) {
             console.error('[NodeServer] Erro no login:', err);
             res.status(401).json({ status: 'error', message: err.message });
@@ -67,7 +74,7 @@ export default function registerAuthRoutes(app, { JWT_SECRET }) {
                 name: master.name
             }, JWT_SECRET, { expiresIn: '30d' });
 
-            res.json({ status: 'success', token, master });
+            res.json({ status: 'success', token, master: sanitizeMaster(master) });
         } catch (err) {
             console.error('[NodeServer] Erro no acesso rápido:', err);
             res.status(404).json({ status: 'error', message: err.message });
@@ -94,7 +101,7 @@ export default function registerAuthRoutes(app, { JWT_SECRET }) {
                 name: master.name
             }, JWT_SECRET, { expiresIn: '30d' });
 
-            res.json({ status: 'success', message: 'Senha redefinida com sucesso.', token, master });
+            res.json({ status: 'success', message: 'Senha redefinida com sucesso.', token, master: sanitizeMaster(master) });
         } catch (err) {
             console.error('[NodeServer] Erro na redefinição de senha:', err);
             res.status(400).json({ status: 'error', message: err.message });

@@ -375,6 +375,16 @@ export function setupSyncEngine(server, io, dataDir, app) {
             io.emit('fx_animation', data);
         });
 
+        socket.on('dice_roll_3d', (data) => {
+            if (socket.rooms && socket.rooms.size > 1) {
+                for (const r of socket.rooms) {
+                    if (r !== socket.id) socket.to(r).emit('dice_roll_3d', data);
+                }
+            } else {
+                io.emit('dice_roll_3d', data);
+            }
+        });
+
         // --- WebRTC Signaling ---
         socket.on('webrtc-join', ({ mesaId, userId }) => {
             const room = `webrtc-${mesaId}`;

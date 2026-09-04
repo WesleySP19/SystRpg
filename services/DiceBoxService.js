@@ -1,31 +1,64 @@
 /**
  * DiceBoxService - Gerencia o motor de física 3D para dados (Phase 10)
- * Utiliza @3d-dice/dice-box carregado via CDN.
+ * Suporta @3d-dice/dice-box com fallback 100% autônomo offline na LAN.
  */
 export class DiceBoxService {
     constructor() {
         this.box = null;
         this.initialized = false;
+        this.failed = false;
         this.containerId = 'dice-box-container';
         
-        // Garantir que o container existe
-        if (!document.getElementById(this.containerId)) {
+        // Garantir que o container existe no DOM
+        if (typeof document !== 'undefined' && !document.getElementById(this.containerId)) {
             const container = document.createElement('div');
             container.id = this.containerId;
             document.body.appendChild(container);
         }
 
         try {
-            this.channel = new BroadcastChannel('tome_dice');
-            this.channel.onmessage = async (e) => {
-                if (e.data?.type === 'DICE_ROLL_3D' && e.data.notation) {
-                    if (!this.initialized) await this.init();
-                    if (this.box) {
-                        this.box.roll(e.data.notation);
-                        setTimeout(() => this.box?.clear(), 3500);
+            this.channel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('tome_dice') : null;
+            if (this.channel) {
+                this.channel.onmessage = async (e) => {
+                    if (e.data?.type === 'DICE_ROLL_3D' && e.data.notation) {
+                        await this._handleRemoteRoll(e.data.notation);
                     }
-                }
-            };
+                };
+            }
+        } catch(e) {}
+
+        this._setupSocketListener();
+    }
+
+    _setupSocketListener() {
+        if (typeof window === 'undefined') return;
+        const attach = () => {
+            const s = window.TOME?.socket;
+            if (s && !s._tomeDiceBoxAttached) {
+                s._tomeDiceBoxAttached = true;
+                s.on('dice_roll_3d', async (data) => {
+                    if (data && data.notation) {
+                        await this._handleRemoteRoll(data.notation);
+                    }
+                });
+            }
+        };
+        attach();
+        window.addEventListener('tome:socket_ready', attach);
+    }
+
+    async _handleRemoteRoll(notation) {
+        if (!this.initialized && !this.failed) {
+            try { await this.init(); } catch(e) {}
+        }
+        if (this.box && this.initialized) {
+            try {
+                this.box.roll(notation);
+                setTimeout(() => this.box?.clear(), 3500);
+            } catch(e) {}
+        }
+        try {
+            window.TOME?.audio?.playSyntheticSFX('dice');
         } catch(e) {}
     }
 
@@ -33,10 +66,10 @@ export class DiceBoxService {
      * Inicializa preguiçosamente (lazy load) o motor 3D
      */
     async init() {
-        if (this.initialized) return;
+        if (this.initialized || this.failed) return;
         
         try {
-            // Importar dinamicamente o ES Module do CDN
+            // Importar dinamicamente o ES Module do CDN se online
             const { default: DiceBox } = await import('https://unpkg.com/@3d-dice/dice-box@1.1.3/dist/dice-box.es.min.js');
             
             this.box = new DiceBox(`#${this.containerId}`, {
@@ -53,7 +86,6 @@ export class DiceBoxService {
 
             await this.box.init();
             
-            // Corrige possível problema do canvas interceptar cliques quando não está rolando
             const canvas = document.querySelector(`#${this.containerId} canvas`);
             if (canvas) {
                 canvas.style.pointerEvents = 'none';
@@ -62,36 +94,47 @@ export class DiceBoxService {
             this.initialized = true;
             console.log('[DiceBoxService] Motor de física 3D inicializado com sucesso.');
         } catch (error) {
-            console.error('[DiceBoxService] Erro ao inicializar motor 3D:', error);
-            throw error;
+            this.failed = true;
+            console.warn('[DiceBoxService] Motor 3D indisponível (Modo LAN/Offline ativo, usando síntese sonora):', error.message);
         }
     }
 
     /**
-     * Rola dados com física 3D
+     * Rola dados com física 3D ou fallback matemático offline
      * @param {string|number} notation Pode ser "1d20", "2d6+2" ou apenas o número de lados (ex: 20)
      * @returns {Promise<number>} O total numérico da rolagem
      */
     async roll(notation) {
-        if (!this.initialized) await this.init();
+        let rollString = typeof notation === 'number' ? `1d${notation}` : String(notation || '1d20');
 
-        let rollString = typeof notation === 'number' ? `1d${notation}` : notation;
+        if (!this.initialized && !this.failed) {
+            try { await this.init(); } catch(e) {}
+        }
 
         try {
-            // DiceBox.roll retorna os resultados da física assim que o dado parar
-            const results = await this.box.roll(rollString);
-            
-            // O retorno costuma ser um array com os grupos de dados. Somamos o 'value' de cada grupo
             let total = 0;
-            if (Array.isArray(results)) {
-                total = results.reduce((acc, group) => acc + (group.value || 0), 0);
-            } else if (results.value) {
-                total = results.value;
+            if (this.box && this.initialized) {
+                const results = await this.box.roll(rollString);
+                if (Array.isArray(results)) {
+                    total = results.reduce((acc, group) => acc + (group.value || 0), 0);
+                } else if (results && results.value !== undefined) {
+                    total = results.value;
+                } else {
+                    total = Number(results) || 1;
+                }
+                setTimeout(() => {
+                    try { this.box?.clear(); } catch(e) {}
+                }, 3000);
             } else {
-                total = results;
+                // Fallback offline puro
+                const sides = typeof notation === 'number' ? notation : (parseInt(rollString.replace(/\D/g, '')) || 20);
+                total = Math.floor(Math.random() * sides) + 1;
+                try {
+                    window.TOME?.audio?.playSyntheticSFX('dice');
+                } catch(e) {}
             }
 
-            // Broadcast do dado 3D para o Telão e dispositivos
+            // Broadcast do dado para o Telão e dispositivos LAN
             try {
                 this.channel?.postMessage({ type: 'DICE_ROLL_3D', notation: rollString, total });
                 if (window.TOME?.socket) {
@@ -99,16 +142,11 @@ export class DiceBoxService {
                 }
             } catch(e) {}
 
-            // Oculta os dados após 3 segundos
-            setTimeout(() => {
-                this.box.clear();
-            }, 3000);
-
             return total;
         } catch (err) {
-            console.error('[DiceBoxService] Erro ao rolar:', err);
-            // Fallback se falhar
-            return Math.floor(Math.random() * (typeof notation === 'number' ? notation : 20)) + 1;
+            console.warn('[DiceBoxService] Fallback de rolagem ativado:', err);
+            const sides = typeof notation === 'number' ? notation : 20;
+            return Math.floor(Math.random() * sides) + 1;
         }
     }
 }
