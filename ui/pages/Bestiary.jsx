@@ -182,14 +182,6 @@ export function Bestiary() {
             { name: 'Ataque Principal', bonus: toHit, damage: `${dmgDice}${formatMod(primaryMod)}`, desc: `Ataque natural com bônus de ${formatMod(toHit)} e dano de ${dmgDice}${formatMod(primaryMod)}.` },
             { name: 'Investida Secundária', bonus: toHit, damage: '1d6+2', desc: `Golpe tático veloz causando 1d6+2 de dano.` }
         ];
-<<<<<<< HEAD
-=======
-    }
-    
-    useEffect(() => {
-        if (opts.onMount) opts.onMount();
-        return () => { if (opts.onUnmount) opts.onUnmount(); };
->>>>>>> 972ecab325881c9c5d9ce15fd64e436b1f25c040
     }, []);
 
     // Combat Summoning (1-Click)
